@@ -26,6 +26,7 @@ export_definitions {
 "AF_IPX",
 "AF_NETLINK",
 "AF_PACKET",
+
 -- socket types
 "SOCK_STREAM",
 "SOCK_DGRAM",
@@ -40,7 +41,9 @@ export_definitions {
 "SHUT_RD",
 "SHUT_WR",
 "SHUT_RDWR",
+}
 
+export_definitions "Options" {
 -- set/get sockopt levels.
 "SOL_SOCKET",
 
@@ -135,13 +138,13 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 ]],
 	},
 	method "set_nonblock" {
-		c_method_call "int" "l_socket_set_nonblock" { "bool", "nonblock" },
+		c_method_call "errno_rc" "l_socket_set_nonblock" { "bool", "nonblock" },
 	},
 	method "set_option" {
 		var_in{"int", "level"},
 		var_in{"int", "opt"},
 		var_in{"<any>", "value"},
-		var_out{"int", "rc"},
+		var_out{"errno_rc", "rc"},
 		c_source "pre" [[
 	int val_type;
 ]],
@@ -160,25 +163,32 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 ]],
 	},
 	method "set_int_option" {
-		c_method_call "int" "l_socket_set_int_option" { "int", "level", "int", "opt", "int", "val" },
+		c_method_call "errno_rc" "l_socket_set_int_option" { "int", "level", "int", "opt", "int", "val" },
 	},
 	method "get_int_option" {
-		c_method_call "int" "l_socket_get_int_option" { "int", "level", "int", "opt", "int", "&val>1" },
+		c_method_call "errno_rc" "l_socket_get_int_option" { "int", "level", "int", "opt", "int", "&val>1" },
 	},
 	method "connect" {
-		c_method_call "int" "l_socket_connect" { "LSockAddr *", "addr" },
+		c_method_call "errno_rc" "l_socket_connect" { "LSockAddr *", "addr" },
 	},
 	method "bind" {
-		c_method_call "int" "l_socket_bind" { "LSockAddr *", "addr" },
+		c_method_call "errno_rc" "l_socket_bind" { "LSockAddr *", "addr" },
 	},
 	method "listen" {
-		c_method_call "int" "l_socket_listen" { "int", "backlog" },
+		c_method_call "errno_rc" "l_socket_listen" { "int", "backlog" },
 	},
 	method "accept" {
-		c_method_call "LSocketFD" "l_socket_accept" { "LSockAddr *", "peer?", "int", "flags?" },
+		var_out{"LSocketFD", "client"},
+		c_method_call { "errno_rc", "rc"} "l_socket_accept" { "LSockAddr *", "peer?", "int", "flags?" },
+		c_source[[
+	${client} = ${rc};
+]],
+		ffi_source[[
+	${client} = ${rc};
+]],
 	},
 	method "send" {
-		c_method_call "int" "l_socket_send"
+		c_method_call "errno_rc" "l_socket_send"
 			{ "const char *", "data", "size_t", "#data", "int", "flags?" },
 	},
 	ffi_source[[
@@ -189,36 +199,31 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 		var_in{"size_t", "len"},
 		var_in{"int", "flags?"},
 		var_out{"char *", "data", has_length = true},
+		var_out{"errno_rc", "rc"},
 		c_source "pre" [[
 #define BUF_LEN 8192
 	char buf[BUF_LEN];
 	int buf_len = BUF_LEN;
-	int rc;
 ]],
 		c_source[[
 	if(buf_len > ${len}) { buf_len = ${len}; }
-	rc = l_socket_recv(${this}, buf, buf_len, ${flags});
-	if(rc <= 0) {
-		/* rc == 0, then socket is closed. */
-		if(rc == 0) { lua_pushnil(L); return 1; }
-		/* return error. */
-		lua_pushinteger(L, rc);
-		return 1;
+	${rc} = l_socket_recv(${this}, buf, buf_len, ${flags});
+	/* ${rc} == 0, then socket is closed. */
+	if(${rc} == 0) {
+		lua_pushnil(L);
+		lua_pushliteral(L, "CLOSED");
+		return 2;
 	}
 	${data} = buf;
-	${data_len} = rc;
+	${data_len} = ${rc};
 ]],
 		ffi_source[[
 	local buf_len = (tmp_buf_len < ${len}) and tmp_buf_len or ${len}
-	local rc = C.l_socket_recv(${this}, tmp_buf, buf_len, ${flags})
-	if rc <= 0 then
-		-- rc == 0, then socket is closed.
-		if rc == 0 then return nil end
-		-- return error
-		return rc
-	end
+	${rc} = C.l_socket_recv(${this}, tmp_buf, buf_len, ${flags})
+	-- ${rc} == 0, then socket is closed.
+	if ${rc} == 0 then return nil, "CLOSED" end
 	${data} = tmp_buf;
-	${data_len} = rc;
+	${data_len} = ${rc};
 ]],
 	},
 }

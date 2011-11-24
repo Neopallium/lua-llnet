@@ -42,7 +42,7 @@ struct LSockAddr {
 typedef struct LSockAddr LSockAddr;
 
 ]],
-	constructor {
+	constructor "ip_port" {
 		c_source "pre" [[
 	LSockAddr addr;
 	${this} = &addr;

@@ -18,6 +18,9 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+-- make generated variable nicer.
+set_variable_format "%s%d"
+
 c_module "llnet" {
 -- module settings.
 use_globals = false,
@@ -30,10 +33,11 @@ Windows = "libllnet",
 },
 
 subfiles {
+"src/error.nobj.lua",
 "src/protocols.nobj.lua",
 "src/services.nobj.lua",
-"src/sockaddr.nobj.lua",
-"src/socket.nobj.lua",
+"src/lsockaddr.nobj.lua",
+"src/lsocket.nobj.lua",
 },
 
 }

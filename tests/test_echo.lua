@@ -12,8 +12,8 @@ end
 
 local server = llnet.LSocketFD(domain, sock_type, proto, llnet.SOCK_CLOEXEC)
 local addr = llnet.LSockAddr(host, port)
-assert(server:bind(addr) == 0)
-assert(server:listen(10) == 0)
+assert(server:bind(addr))
+assert(server:listen(10))
 
 while true do
 	local client = server:accept(nil, nil)
