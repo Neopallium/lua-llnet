@@ -23,13 +23,13 @@ typedef struct LSockAddr LSockAddr;
 #define L_SOCKADDR_TO_CONST_ADDR_AND_LEN(addr) \
 	(addr)->addr, (addr)->addrlen
 
-L_LIB_API int l_sockaddr_init_ip_port(LSockAddr *addr, const char *ip, int port);
+L_LIB_API int l_sockaddr_init(LSockAddr *addr);
 
-L_LIB_API int l_sockaddr_init_unix(LSockAddr *addr, const char *path);
+L_LIB_API int l_sockaddr_set_ip_port(LSockAddr *addr, const char *ip, int port);
 
-L_LIB_API int l_sockaddr_init_family(LSockAddr *addr, sa_family_t family);
+L_LIB_API int l_sockaddr_set_unix(LSockAddr *addr, const char *path);
 
-L_LIB_API int l_sockaddr_init_len(LSockAddr *addr, socklen_t addrlen);
+L_LIB_API int l_sockaddr_set_family(LSockAddr *addr, sa_family_t family);
 
 L_LIB_API void l_sockaddr_clear(LSockAddr *addr);
 

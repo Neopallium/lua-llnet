@@ -12,21 +12,24 @@
 
 #include "lsockaddr.h"
 
-static int l_sockaddr_init_internal(LSockAddr *addr, sa_family_t family, socklen_t addrlen) {
-	addr->addr = NULL;
-	addr->addrlen = 0;
-
+static int l_sockaddr_set_internal(LSockAddr *addr, sa_family_t family, socklen_t addrlen) {
 	if(addrlen < sizeof(struct sockaddr)) {
 		addrlen = sizeof(struct sockaddr);
 	}
 	l_sockaddr_resize(addr, addrlen);
-	/* set family type */
 	addr->addr->sa_family = family;
 
 	return 0;
 }
 
-int l_sockaddr_init_ip_port(LSockAddr *addr, const char *ip, int port) {
+int l_sockaddr_init(LSockAddr *addr) {
+	addr->addr = NULL;
+	addr->addrlen = 0;
+
+	return l_sockaddr_set_internal(addr, PF_UNSPEC, 0);
+}
+
+int l_sockaddr_set_ip_port(LSockAddr *addr, const char *ip, int port) {
 	unsigned char buf[sizeof(struct in6_addr)];
 	sa_family_t family;
 	int rc;
@@ -41,7 +44,7 @@ int l_sockaddr_init_ip_port(LSockAddr *addr, const char *ip, int port) {
 		if(rc == 0) {
 			return -1;
 		} else if(rc < 0) {
-			perror("l_sockaddr_init_ip_port(): inet_pton failed");
+			perror("l_sockaddr_set_ip_port(): inet_pton failed");
 			return -1;
 		}
 	}
@@ -50,7 +53,7 @@ int l_sockaddr_init_ip_port(LSockAddr *addr, const char *ip, int port) {
 	switch(family) {
 	case PF_INET: {
 		struct sockaddr_in *addr_in;
-		l_sockaddr_init_internal(addr, family, sizeof(*addr_in));
+		l_sockaddr_set_internal(addr, family, sizeof(*addr_in));
 		addr_in = (struct sockaddr_in *)addr->addr;
 		addr_in->sin_port = port;
 		memcpy(&(addr_in->sin_addr), buf, sizeof(struct in_addr));
@@ -58,7 +61,7 @@ int l_sockaddr_init_ip_port(LSockAddr *addr, const char *ip, int port) {
 	}
 	case PF_INET6: {
 		struct sockaddr_in6 *addr_in;
-		l_sockaddr_init_internal(addr, family, sizeof(*addr_in));
+		l_sockaddr_set_internal(addr, family, sizeof(*addr_in));
 		addr_in = (struct sockaddr_in6 *)addr->addr;
 		addr_in->sin6_port = port;
 		addr_in->sin6_flowinfo = 0;
@@ -73,17 +76,17 @@ int l_sockaddr_init_ip_port(LSockAddr *addr, const char *ip, int port) {
 	return 0;
 }
 
-int l_sockaddr_init_unix(LSockAddr *addr, const char *path) {
+int l_sockaddr_set_unix(LSockAddr *addr, const char *path) {
 	struct sockaddr_un *addr_un;
 
-	l_sockaddr_init_internal(addr, PF_LOCAL, sizeof(struct sockaddr_un));
+	l_sockaddr_set_internal(addr, PF_LOCAL, sizeof(struct sockaddr_un));
 	addr_un = (struct sockaddr_un *)addr->addr;
 	strncpy(addr_un->sun_path, path, sizeof(addr_un->sun_path));
 
 	return 0;
 }
 
-int l_sockaddr_init_family(LSockAddr *addr, sa_family_t family) {
+int l_sockaddr_set_family(LSockAddr *addr, sa_family_t family) {
 	socklen_t addrlen = sizeof(struct sockaddr);
 
 	/* resize to minimal family size. */
@@ -102,13 +105,11 @@ int l_sockaddr_init_family(LSockAddr *addr, sa_family_t family) {
 		break;
 	}
 
-	return l_sockaddr_init_internal(addr, family, addrlen);
+	return l_sockaddr_set_internal(addr, family, addrlen);
 }
 
-int l_sockaddr_init_len(LSockAddr *addr, socklen_t addrlen) {
-	l_sockaddr_init_internal(addr, PF_UNSPEC, addrlen);
-
-	l_sockaddr_resize(addr, addrlen);
+int l_sockaddr_set_len(LSockAddr *addr, socklen_t addrlen) {
+	return l_sockaddr_set_internal(addr, PF_UNSPEC, addrlen);
 	return 0;
 }
 

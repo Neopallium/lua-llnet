@@ -42,15 +42,26 @@ struct LSockAddr {
 typedef struct LSockAddr LSockAddr;
 
 ]],
+	constructor {
+		c_source "pre" [[
+	LSockAddr addr;
+	${this} = &addr;
+]],
+		ffi_source "ffi_pre" [[
+	${this} = ffi.new("LSockAddr[1]");
+]],
+		c_method_call "int" "l_sockaddr_init" {},
+	},
 	constructor "ip_port" {
 		c_source "pre" [[
 	LSockAddr addr;
 	${this} = &addr;
 ]],
 		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr");
+	${this} = ffi.new("LSockAddr[1]");
 ]],
-		c_method_call "int" "l_sockaddr_init_ip_port" { "const char *", "ip", "int", "port" },
+		c_method_call "int" "l_sockaddr_init" {},
+		c_method_call "int" "l_sockaddr_set_ip_port" { "const char *", "ip", "int", "port" },
 	},
 	constructor "unix" {
 		c_source "pre" [[
@@ -58,9 +69,10 @@ typedef struct LSockAddr LSockAddr;
 	${this} = &addr;
 ]],
 		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr");
+	${this} = ffi.new("LSockAddr[1]");
 ]],
-		c_method_call "int" "l_sockaddr_init_unix" { "const char *", "unix" },
+		c_method_call "int" "l_sockaddr_init" {},
+		c_method_call "int" "l_sockaddr_set_unix" { "const char *", "unix" },
 	},
 	constructor "family" {
 		c_source "pre" [[
@@ -68,22 +80,19 @@ typedef struct LSockAddr LSockAddr;
 	${this} = &addr;
 ]],
 		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr");
+	${this} = ffi.new("LSockAddr[1]");
 ]],
-		c_method_call "int" "l_sockaddr_init_family" { "sa_family_t", "family" },
-	},
-	constructor "len" {
-		c_source "pre" [[
-	LSockAddr addr;
-	${this} = &addr;
-]],
-		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr");
-]],
-		c_method_call "int" "l_sockaddr_init_len" { "socklen_t", "len" },
+		c_method_call "int" "l_sockaddr_init" {},
+		c_method_call "int" "l_sockaddr_set_family" { "sa_family_t", "family" },
 	},
 	destructor {
 		c_method_call "void" "l_sockaddr_cleanup" {},
+	},
+	method "set_ip_port" {
+		c_method_call "int" "l_sockaddr_set_ip_port" { "const char *", "ip", "int", "port" },
+	},
+	method "set_unix" {
+		c_method_call "int" "l_sockaddr_set_unix" { "const char *", "unix" },
 	},
 	method "resize" {
 		c_method_call "void" "l_sockaddr_resize" {"socklen_t", "addrlen"},
