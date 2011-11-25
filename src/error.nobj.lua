@@ -201,6 +201,7 @@ meta_object "Errors" {
 ffi_source "ffi_src" [[
 -- get Errors table to map errno to error name.
 local Error_names = _M.Errors
+local l_errno = _M.l_errno
 ]]
 
 c_source "extra_code" [[
@@ -240,7 +241,7 @@ error_code "errno_rc" "int" {
 ]],
 	ffi_source [[
 	if(-1 == err) then
-		err_str = Error_names[ffi.errno()]
+		err_str = Error_names[l_errno()]
 	end
 ]],
 }
