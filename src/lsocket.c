@@ -1,5 +1,5 @@
 /***************************************************************************
- * Copyright (C) 2007-2010 by Robert G. Jakabosky <bobby@neoawareness.com> *
+ * Copyright (C) 2011 by Robert G. Jakabosky <bobby@sharedrealm.com>       *
  *                                                                         *
  ***************************************************************************/
 
