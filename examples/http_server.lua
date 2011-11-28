@@ -16,6 +16,7 @@ print("using backend:", backend)
 
 local sock = require("examples.sock_" .. backend)
 local new_sock = sock.new
+local sock_flags = sock.NONBLOCK + sock.CLOEXEC
 
 local lhp = require 'http.parser'
 
@@ -26,8 +27,7 @@ local socks = {}
 local poll = epoller.new()
 
 local function new_acceptor(host, port, family, cb)
-	local sock = new_sock(family or 'inet', 'stream')
-	sock:setblocking(false)
+	local sock = new_sock(family or 'inet', 'stream', 0, sock_flags)
 	assert(sock:setopt('socket', 'reuseaddr', 1))
 	assert(sock:setopt('tcp', 'defer_accept', 1))
 	assert(sock:bind(host, port))
@@ -43,6 +43,7 @@ local function sock_close(sock)
 	sock:close()
 end
 
+local READ_LEN = 2 * 1024
 local RESPONSE =
   "HTTP/1.0 200 OK\r\n" ..
   "Content-Type: text/plain\r\n" ..
@@ -94,29 +95,38 @@ local function create_parser()
 end
 
 local function http_parse(sock)
-	local data, err = sock:recv(1024)
+	local data, err = sock:recv(READ_LEN)
 	if data then
 		local parsed = sock.parser:execute(data)
 		if parsed ~= #data then
 			print('http parse error:', sock.parser:error())
 			sock_close(sock)
+			return false
 		end
 	else
 		if err ~= 'EAGAIN' then
 			sock_close(sock)
+			return false
 		end
 	end
+	return true
 end
 
+local MAX_ACCEPT = 100
 local function new_client(server)
-	local sock = server:accept()
-	if not sock then return end
-	sock:setblocking(false)
-	sock.parser = create_parser()
-	sock.parser.sock = sock
-	-- register callback for read events.
-	sock.on_io_event = http_parse
-	poll:add(sock, epoller.EPOLLIN)
+	for i=1,MAX_ACCEPT do
+		local sock, err = server:accept(nil, sock_flags)
+		if not sock then return end
+		sock.parser = create_parser()
+		sock.parser.sock = sock
+		-- register callback for read events.
+		sock.on_io_event = http_parse
+		-- read first request.
+		if http_parse(sock) then
+			-- add socket to poller.
+			poll:add(sock, epoller.EPOLLIN)
+		end
+	end
 end
 
 local function new_server(port)

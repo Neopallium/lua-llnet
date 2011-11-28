@@ -93,8 +93,8 @@ local function wrap_llnet_sock(fd, family, stype)
 	}, sock_mt)
 end
 
-function sock_mt:accept()
-	local sock, err = self.fd:accept(nil, nil)
+function sock_mt:accept(addr, flags)
+	local sock, err = self.fd:accept(addr, flags)
 	if sock then
 		return wrap_llnet_sock(sock, self.family, self.stype)
 	end
@@ -160,6 +160,9 @@ function sock_mt:recv(len)
 end
 
 module(...)
+
+NONBLOCK = llnet.SOCK_NONBLOCK
+CLOEXEC = llnet.SOCK_CLOEXEC
 
 function new(family, stype, proto, flags)
 	family = Families[family or 'inet']

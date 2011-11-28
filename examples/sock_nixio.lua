@@ -25,19 +25,27 @@ local assert = assert
 local nixio = require"nixio"
 local new_socket = nixio.socket
 
+local SOCK_NONBLOCK = 1
+local SOCK_CLOEXEC = 0
+
 local sock_mt = {}
 sock_mt.__index = sock_mt
 
-local function wrap_nixio_sock(sock)
+local function wrap_nixio_sock(sock, flags)
+	if flags and flags > 0 then
+		if flags == SOCK_NONBLOCK then
+			sock:setblocking(false)
+		end
+	end
 	return setmetatable({
 		sock = sock,
 	}, sock_mt)
 end
 
-function sock_mt:accept()
+function sock_mt:accept(addr, flags)
 	local sock, errno, errmsg = self.sock:accept()
 	if sock then
-		return wrap_nixio_sock(sock)
+		return wrap_nixio_sock(sock, flags)
 	end
 	if sock == false then return nil, 'EAGAIN' end
 	return nil, errmsg
@@ -114,7 +122,10 @@ end
 
 module(...)
 
-function new(family, stype)
-	return wrap_nixio_sock(new_socket(family or 'inet', stype or 'stream'))
+NONBLOCK = SOCK_NONBLOCK
+CLOEXEC = SOCK_CLOEXEC
+
+function new(family, stype, proto, flags)
+	return wrap_nixio_sock(new_socket(family or 'inet', stype or 'stream'), flags)
 end
 

@@ -177,8 +177,8 @@ end
 local tmp_addr = ffi.new("LSockAddr[1]")
 C.l_sockaddr_init(tmp_addr)
 
-function sock_mt:accept()
-	local fd = C.l_socket_accept(self.fd, nil, 0)
+function sock_mt:accept(addr, flags)
+	local fd = C.l_socket_accept(self.fd, addr, flags or 0)
 	if fd == -1 then return push_perror() end
 	return wrap_llnet_sock(fd, self.family, self.stype)
 end
@@ -273,6 +273,9 @@ function sock_mt:recv(len)
 end
 
 module(...)
+
+NONBLOCK = llnet.SOCK_NONBLOCK
+CLOEXEC = llnet.SOCK_CLOEXEC
 
 function new(family, stype, proto, flags)
 	family = Families[family or 'inet']

@@ -78,6 +78,7 @@ local sformat = string.format
 local stdout = io.stdout
 local sock = require("examples.sock_" .. backend)
 local new_sock = sock.new
+local sock_flags = sock.NONBLOCK + sock.CLOEXEC
 
 local epoller = require"examples.epoller"
 
@@ -221,10 +222,8 @@ local function connected_cb(sock)
 end
 
 new_client = function ()
-	local sock = assert(new_sock(family, 'stream'))
+	local sock = assert(new_sock(family, 'stream', 0, sock_flags))
 	connections = connections + 1
-	sock:setblocking(false)
-	assert(sock:setopt('socket', 'reuseaddr', 1))
 	local stat, err = sock:connect(host, port)
 	if not stat then
 		if err == 'EINPROGRESS' then
