@@ -182,7 +182,7 @@ local function http_parse(sock)
 			failed = failed + 1
 		end
 		-- check if we should close the connection.
-		if not resp_parsed.keep_alive then
+		if not resp_parsed.keep_alive or not keep_alive then
 			sock_close(sock)
 			-- create a new client if we are not done.
 			if clients < concurrent then
