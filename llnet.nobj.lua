@@ -40,12 +40,5 @@ subfiles {
 "src/lsocket.nobj.lua",
 },
 
---
--- standalone functions.
---
-c_function "errno" {
-	c_call "int" "l_errno" {},
-},
-
 }
 

@@ -95,8 +95,6 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 */
 LSocketFD l_socket_open(int domain, int type, int protocol, int flags);
 
-int l_errno();
-
 ]]
 local C = ffi.load("llnet")
 
@@ -165,7 +163,7 @@ local sock_mt = {}
 sock_mt.__index = sock_mt
 
 local function push_perror()
-	return nil, Errors[C.l_errno()]
+	return nil, Errors[ffi.errno()]
 end
 
 local function wrap_llnet_sock(fd, family, stype)

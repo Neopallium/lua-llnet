@@ -6,7 +6,3 @@
 #include "llnet.h"
 #include <errno.h>
 
-int l_errno() {
-	return errno;
-}
-

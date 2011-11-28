@@ -7,6 +7,4 @@
 
 #include "lcommon.h"
 
-L_LIB_API int l_errno();
-
 #endif /* __LLNET_H__ */
