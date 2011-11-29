@@ -48,7 +48,7 @@ typedef struct LSockAddr LSockAddr;
 	${this} = &addr;
 ]],
 		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr[1]");
+	${this} = ffi.new("LSockAddr");
 ]],
 		c_method_call "int" "l_sockaddr_init" {},
 	},
@@ -58,7 +58,7 @@ typedef struct LSockAddr LSockAddr;
 	${this} = &addr;
 ]],
 		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr[1]");
+	${this} = ffi.new("LSockAddr");
 ]],
 		c_method_call "int" "l_sockaddr_init" {},
 		c_method_call "int" "l_sockaddr_set_ip_port" { "const char *", "ip", "int", "port" },
@@ -69,7 +69,7 @@ typedef struct LSockAddr LSockAddr;
 	${this} = &addr;
 ]],
 		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr[1]");
+	${this} = ffi.new("LSockAddr");
 ]],
 		c_method_call "int" "l_sockaddr_init" {},
 		c_method_call "int" "l_sockaddr_set_unix" { "const char *", "unix" },
@@ -80,7 +80,7 @@ typedef struct LSockAddr LSockAddr;
 	${this} = &addr;
 ]],
 		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr[1]");
+	${this} = ffi.new("LSockAddr");
 ]],
 		c_method_call "int" "l_sockaddr_init" {},
 		c_method_call "int" "l_sockaddr_set_family" { "sa_family_t", "family" },

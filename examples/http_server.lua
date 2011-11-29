@@ -22,8 +22,6 @@ local lhp = require 'http.parser'
 
 local epoller = require"examples.epoller"
 
-local socks = {}
-
 local poll = epoller.new()
 
 local function new_acceptor(host, port, family, cb)

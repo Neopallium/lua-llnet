@@ -24,13 +24,9 @@ set_variable_format "%s%d"
 c_module "llnet" {
 -- module settings.
 use_globals = false,
-hide_meta_info = true,
+hide_meta_info = false,
 luajit_ffi = true,
-
-ffi_load {
-"llnet", -- default lib name.
-Windows = "libllnet",
-},
+luajit_ffi_load_cmodule = true,
 
 subfiles {
 "src/error.nobj.lua",

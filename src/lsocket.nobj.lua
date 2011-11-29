@@ -245,7 +245,6 @@ export_definitions "Options" {
 "TCP_MD5SIG",	-- TCP MD5 Signature (RFC2385) 
 
 }
--- TODO: try custom push/check/delete ffi functions.
 object "LSocketFD" {
 	userdata_type = 'simple',
 	sys_include "sys/socket.h",
@@ -273,6 +272,19 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 	},
 	destructor "close" {
 		c_method_call "void" "l_socket_close_internal" {},
+	},
+	method "__tostring" {
+		var_out{ "const char *", "str", },
+		c_source "pre" [[
+	char tmp[1024];
+]],
+		c_source[[
+	${str} = tmp;
+	snprintf(tmp, 1024, "LSocketFD: fd=%d\n", ${this});
+]],
+		ffi_source[[
+	${str} = string.format("LSocketFD: fd=%i\n", ${this})
+]],
 	},
 	method "shutdown" {
 		c_method_call "int" "l_socket_shutdown" { "int", "how" },

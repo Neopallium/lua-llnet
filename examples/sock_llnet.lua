@@ -146,7 +146,7 @@ end
 
 function sock_mt:close()
 	local fd = self.fd
-	if fd == nil then return true end
+	if not fd then return true end
 	self.fd = nil
 	return fd:close()
 end

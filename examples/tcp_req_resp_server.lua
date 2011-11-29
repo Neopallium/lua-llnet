@@ -39,20 +39,12 @@ local function sock_close(sock)
 	sock:close()
 end
 
-local RESPONSE =
-  "HTTP/1.0 200 OK\r\n" ..
-  "Content-Type: text/plain\r\n" ..
-  "Content-Length: 13\r\n" ..
-	"Connection: keep-alive\r\n" ..
-  "\r\n" ..
-  "Hello,world!\n"
-
 local READ_LEN = 2 * 1024
 
-local function http_parse(sock)
+local function data_parse(sock)
 	local data, err = sock:recv(READ_LEN)
 	if data then
-		sock:send(RESPONSE)
+		sock:send(data)
 	else
 		if err ~= 'EAGAIN' then
 			sock_close(sock)
@@ -68,9 +60,9 @@ local function new_client(server)
 		local sock, err = server:accept(nil, sock_flags)
 		if not sock then return end
 		-- register callback for read events.
-		sock.on_io_event = http_parse
+		sock.on_io_event = data_parse
 		-- read first request.
-		if http_parse(sock) then
+		if data_parse(sock) then
 			-- add socket to poller.
 			poll:add(sock, epoller.EPOLLIN)
 		end
@@ -87,7 +79,7 @@ for i=1,#arg do
 end
 
 if #arg == 0 then
-	new_server("1080")
+	new_server("2080")
 end
 
 --local luatrace = require"luatrace"

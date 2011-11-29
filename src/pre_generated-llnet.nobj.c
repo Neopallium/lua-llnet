@@ -12,9 +12,9 @@
 
 #define REG_PACKAGE_IS_CONSTRUCTOR 0
 #define REG_OBJECTS_AS_GLOBALS 0
-#define OBJ_DATA_HIDDEN_METATABLE 1
-#define LUAJIT_FFI 1
+#define OBJ_DATA_HIDDEN_METATABLE 0
 #define USE_FIELD_GET_SET_METHODS 0
+#define LUAJIT_FFI 1
 #define _GNU_SOURCE 1
 #define L_PROTO_MAX_BUF 4096
 #define _GNU_SOURCE 1
@@ -215,6 +215,7 @@ typedef struct ffi_export_symbol {
 #endif
 
 
+
 typedef int errno_rc;
 
 static void error_code__errno_rc__push(lua_State *L, errno_rc err);
@@ -242,6 +243,95 @@ static obj_type obj_types[] = {
   {NULL, -1, 0, NULL},
 };
 
+
+#if LUAJIT_FFI
+static int nobj_udata_new_ffi(lua_State *L) {
+	size_t size = luaL_checkinteger(L, 1);
+	luaL_checktype(L, 2, LUA_TTABLE);
+	lua_settop(L, 2);
+	/* create userdata. */
+	lua_newuserdata(L, size);
+	lua_replace(L, 1);
+	/* set userdata's metatable. */
+	lua_setmetatable(L, 1);
+	return 1;
+}
+
+static const char nobj_ffi_support_key[] = "LuaNativeObject_FFI_SUPPORT";
+static const char nobj_check_ffi_support_code[] =
+"local stat, ffi=pcall(require,\"ffi\")\n" /* try loading LuaJIT`s FFI module. */
+"if not stat then return false end\n"
+"return true\n";
+
+static int nobj_check_ffi_support(lua_State *L) {
+	int rc;
+	int err;
+
+	/* check if ffi test has already been done. */
+	lua_pushstring(L, nobj_ffi_support_key);
+	lua_rawget(L, LUA_REGISTRYINDEX);
+	if(!lua_isnil(L, -1)) {
+		rc = lua_toboolean(L, -1);
+		lua_pop(L, 1);
+		return rc; /* return results of previous check. */
+	}
+	lua_pop(L, 1); /* pop nil. */
+
+	err = luaL_loadbuffer(L, nobj_check_ffi_support_code,
+		sizeof(nobj_check_ffi_support_code) - 1, nobj_ffi_support_key);
+	if(0 == err) {
+		err = lua_pcall(L, 0, 1, 0);
+	}
+	if(err) {
+		const char *msg = "<err not a string>";
+		if(lua_isstring(L, -1)) {
+			msg = lua_tostring(L, -1);
+		}
+		printf("Error when checking for FFI-support: %s\n", msg);
+		lua_pop(L, 1); /* pop error message. */
+		return 0;
+	}
+	/* check results of test. */
+	rc = lua_toboolean(L, -1);
+	lua_pop(L, 1); /* pop results. */
+		/* cache results. */
+	lua_pushstring(L, nobj_ffi_support_key);
+	lua_pushboolean(L, rc);
+	lua_rawset(L, LUA_REGISTRYINDEX);
+	return rc;
+}
+
+static int nobj_try_loading_ffi(lua_State *L, const char *ffi_mod_name,
+		const char *ffi_init_code, const ffi_export_symbol *ffi_exports, int priv_table)
+{
+	int err;
+
+	/* export symbols to priv_table. */
+	while(ffi_exports->name != NULL) {
+		lua_pushstring(L, ffi_exports->name);
+		lua_pushlightuserdata(L, ffi_exports->sym);
+		lua_settable(L, priv_table);
+		ffi_exports++;
+	}
+	err = luaL_loadbuffer(L, ffi_init_code, strlen(ffi_init_code), ffi_mod_name);
+	if(0 == err) {
+		lua_pushvalue(L, -2); /* dup C module's table. */
+		lua_pushvalue(L, priv_table); /* move priv_table to top of stack. */
+		lua_remove(L, priv_table);
+		lua_pushcfunction(L, nobj_udata_new_ffi);
+		err = lua_pcall(L, 3, 0, 0);
+	}
+	if(err) {
+		const char *msg = "<err not a string>";
+		if(lua_isstring(L, -1)) {
+			msg = lua_tostring(L, -1);
+		}
+		printf("Failed to install FFI-based bindings: %s\n", msg);
+		lua_pop(L, 1); /* pop error message. */
+	}
+	return err;
+}
+#endif
 
 #ifndef REG_PACKAGE_IS_CONSTRUCTOR
 #define REG_PACKAGE_IS_CONSTRUCTOR 1
@@ -514,10 +604,9 @@ static FUNC_UNUSED void * obj_simple_udata_luaoptional(lua_State *L, int _index,
 	return obj_simple_udata_luacheck(L, _index, type);
 }
 
-static FUNC_UNUSED void * obj_simple_udata_luadelete(lua_State *L, int _index, obj_type *type, int *flags) {
+static FUNC_UNUSED void * obj_simple_udata_luadelete(lua_State *L, int _index, obj_type *type) {
 	void *obj;
 	obj = obj_simple_udata_luacheck(L, _index, type);
-	*flags = OBJ_UDATA_FLAG_OWN;
 	/* clear the metatable to invalidate userdata. */
 	lua_pushnil(L);
 	lua_setmetatable(L, _index);
@@ -719,14 +808,10 @@ static void obj_type_register(lua_State *L, const reg_sub_module *type_reg, int 
 	lua_pushvalue(L, -2); /* dup metatable. */
 	lua_rawset(L, LUA_REGISTRYINDEX);    /* REGISTRY[type] = metatable */
 
-#if LUAJIT_FFI
 	/* add metatable to 'priv_table' */
 	lua_pushstring(L, type->name);
 	lua_pushvalue(L, -2); /* dup metatable. */
 	lua_rawset(L, priv_table);    /* priv_table["<object_name>"] = metatable */
-#else
-	(void)priv_table;
-#endif
 
 	luaL_register(L, NULL, type_reg->metas); /* fill metatable */
 
@@ -751,89 +836,59 @@ static void obj_type_register(lua_State *L, const reg_sub_module *type_reg, int 
 	lua_pop(L, 2);                      /* drop metatable & methods */
 }
 
-static FUNC_UNUSED int lua_checktype_ref(lua_State *L, int _index, int _type) {
-	luaL_checktype(L,_index,_type);
-	lua_pushvalue(L,_index);
-	return luaL_ref(L, LUA_REGISTRYINDEX);
-}
-
-#if LUAJIT_FFI
-static int nobj_udata_new_ffi(lua_State *L) {
-	size_t size = luaL_checkinteger(L, 1);
-	luaL_checktype(L, 2, LUA_TTABLE);
-	lua_settop(L, 2);
-	/* create userdata. */
-	lua_newuserdata(L, size);
-	lua_replace(L, 1);
-	/* set userdata's metatable. */
-	lua_setmetatable(L, 1);
-	return 1;
-}
-
-static int nobj_try_loading_ffi(lua_State *L, const char *ffi_mod_name,
-		const char *ffi_init_code, const ffi_export_symbol *ffi_exports, int priv_table)
-{
-	int err;
-
-	/* export symbols to priv_table. */
-	while(ffi_exports->name != NULL) {
-		lua_pushstring(L, ffi_exports->name);
-		lua_pushlightuserdata(L, ffi_exports->sym);
-		lua_settable(L, priv_table);
-		ffi_exports++;
-	}
-	err = luaL_loadbuffer(L, ffi_init_code, strlen(ffi_init_code), ffi_mod_name);
-	if(0 == err) {
-		lua_pushvalue(L, -2); /* dup C module's table. */
-		lua_pushvalue(L, priv_table); /* move priv_table to top of stack. */
-		lua_remove(L, priv_table);
-		lua_pushcfunction(L, nobj_udata_new_ffi);
-		err = lua_pcall(L, 3, 0, 0);
-	}
-	if(err) {
-		const char *msg = "<err not a string>";
-		if(lua_isstring(L, -1)) {
-			msg = lua_tostring(L, -1);
-		}
-		printf("Failed to install FFI-based bindings: %s\n", msg);
-		lua_pop(L, 1); /* pop error message. */
-	}
-	return err;
-}
-#endif
 
 
 #define obj_type_LSockAddr_check(L, _index) \
 	(LSockAddr *)obj_simple_udata_luacheck(L, _index, &(obj_type_LSockAddr))
 #define obj_type_LSockAddr_optional(L, _index) \
 	(LSockAddr *)obj_simple_udata_luaoptional(L, _index, &(obj_type_LSockAddr))
-#define obj_type_LSockAddr_delete(L, _index, flags) \
-	(LSockAddr *)obj_simple_udata_luadelete(L, _index, &(obj_type_LSockAddr), flags)
-#define obj_type_LSockAddr_push(L, obj, flags) \
+#define obj_type_LSockAddr_delete(L, _index) \
+	(LSockAddr *)obj_simple_udata_luadelete(L, _index, &(obj_type_LSockAddr))
+#define obj_type_LSockAddr_push(L, obj) \
 	obj_simple_udata_luapush(L, obj, sizeof(LSockAddr), &(obj_type_LSockAddr))
 
 #define obj_type_LSocketFD_check(L, _index) \
 	*((LSocketFD *)obj_simple_udata_luacheck(L, _index, &(obj_type_LSocketFD)))
 #define obj_type_LSocketFD_optional(L, _index) \
 	*((LSocketFD *)obj_simple_udata_luaoptional(L, _index, &(obj_type_LSocketFD)))
-#define obj_type_LSocketFD_delete(L, _index, flags) \
-	*((LSocketFD *)obj_simple_udata_luadelete(L, _index, &(obj_type_LSocketFD), flags))
-#define obj_type_LSocketFD_push(L, obj, flags) \
+#define obj_type_LSocketFD_delete(L, _index) \
+	*((LSocketFD *)obj_simple_udata_luadelete(L, _index, &(obj_type_LSocketFD)))
+#define obj_type_LSocketFD_push(L, obj) \
 	obj_simple_udata_luapush(L, &(obj), sizeof(LSocketFD), &(obj_type_LSocketFD))
 
 
 
 
-static const char llnet_ffi_lua_code[] = "local error = error\n"
+static const char llnet_ffi_lua_code[] = "local ffi=require\"ffi\"\n"
+"local function ffi_safe_load(name, global)\n"
+"	local stat, C = pcall(ffi.load, name, global)\n"
+"	if not stat then return nil, C end\n"
+"	return C\n"
+"end\n"
+"\n"
+"local error = error\n"
 "local type = type\n"
 "local tonumber = tonumber\n"
 "local tostring = tostring\n"
 "local rawset = rawset\n"
+"local p_config = package.config\n"
+"local p_cpath = package.cpath\n"
 "\n"
-"-- try loading luajit's ffi\n"
-"local stat, ffi=pcall(require,\"ffi\")\n"
-"if not stat then\n"
-"	return\n"
+"local function ffi_load_cmodule(name)\n"
+"	local dir_sep = p_config:sub(1,1)\n"
+"	local path_sep = p_config:sub(3,3)\n"
+"	local path_mark = p_config:sub(5,5)\n"
+"	local path_match = \"([^\" .. path_sep .. \"]*)\" .. path_sep\n"
+"	-- convert dotted name to directory path.\n"
+"	name = name:gsub('%.', dir_sep)\n"
+"	-- try each path in search path.\n"
+"	for path in p_cpath:gmatch(path_match) do\n"
+"		local fname = path:gsub(path_mark, name)\n"
+"		local C, err = ffi_safe_load(fname)\n"
+"		-- return opened library\n"
+"		if C then return C end\n"
+"	end\n"
+"	return nil, \"Failed to find: \" .. name\n"
 "end\n"
 "\n"
 "local _M, _priv, udata_new = ...\n"
@@ -884,6 +939,8 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "	void     *obj;\n"
 "	uint32_t flags;  /**< lua_own:1bit */\n"
 "} obj_udata;\n"
+"\n"
+"int memcmp(const void *s1, const void *s2, size_t n);\n"
 "\n"
 "]])\n"
 "\n"
@@ -1021,7 +1078,6 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "local function obj_simple_udata_luadelete(ud_obj, type_mt)\n"
 "	-- invalid userdata, by setting the metatable to nil.\n"
 "	d_setmetatable(ud_obj, nil)\n"
-"	return OBJ_UDATA_FLAG_OWN\n"
 "end\n"
 "\n"
 "local function obj_simple_udata_luapush(c_obj, size, type_mt)\n"
@@ -1035,6 +1091,21 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "\n"
 "	return ud_obj, cdata\n"
 "end\n"
+"\n"
+"local function register_default_constructor(_pub, obj_name, constructor)\n"
+"	local pub_constructor = _pub[obj_name]\n"
+"	if type(pub_constructor) == 'table' then\n"
+"		d_setmetatable(pub_constructor, { __call = function(t,...)\n"
+"			return constructor(...)\n"
+"		end,\n"
+"		__metatable = false,\n"
+"		})\n"
+"	else\n"
+"		_pub[obj_name] = constructor\n"
+"	end\n"
+"end\n"
+"-- Load C module\n"
+"local C = assert(ffi_load_cmodule(\"llnet\"))\n"
 "\n"
 "ffi.cdef[[\n"
 "typedef int errno_rc;\n"
@@ -1120,28 +1191,29 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "local obj_type_LSockAddr_push\n"
 "\n"
 "do\n"
-"local LSockAddr_mt = _priv.LSockAddr\n"
-"local LSockAddr_objects = setmetatable({}, { __mode = \"k\",\n"
-"__index = function(objects, ud_obj)\n"
-"	return obj_embed_udata_to_cdata(objects, ud_obj, \"LSockAddr *\", LSockAddr_mt)\n"
-"end,\n"
-"})\n"
-"function obj_type_LSockAddr_check(ud_obj)\n"
-"	return LSockAddr_objects[ud_obj]\n"
-"end\n"
+"	local LSockAddr_mt = _priv.LSockAddr\n"
+"	local LSockAddr_sizeof = ffi.sizeof\"LSockAddr\"\n"
 "\n"
-"function obj_type_LSockAddr_delete(ud_obj)\n"
-"	local c_obj = LSockAddr_objects[ud_obj]\n"
-"	LSockAddr_objects[ud_obj] = nil\n"
-"	return c_obj, obj_simple_udata_luadelete(ud_obj, LSockAddr_mt)\n"
-"end\n"
+"	function obj_type_LSockAddr_check(obj)\n"
+"		return obj\n"
+"	end\n"
 "\n"
-"local LSockAddr_sizeof = ffi.sizeof\"LSockAddr\"\n"
-"function obj_type_LSockAddr_push(c_obj)\n"
-"	local ud_obj, cdata = obj_simple_udata_luapush(c_obj, LSockAddr_sizeof, LSockAddr_mt)\n"
-"	LSockAddr_objects[ud_obj] = cdata\n"
-"	return ud_obj\n"
-"end\n"
+"	function obj_type_LSockAddr_delete(obj)\n"
+"		return obj\n"
+"	end\n"
+"\n"
+"	function obj_type_LSockAddr_push(obj)\n"
+"		return obj\n"
+"	end\n"
+"\n"
+"	function LSockAddr_mt:__tostring()\n"
+"		return \"LSockAddr: \" .. tostring(ffi.cast('void *', self))\n"
+"	end\n"
+"\n"
+"	function LSockAddr_mt.__eq(val1, val2)\n"
+"		if not ffi.istype(\"LSockAddr\", val2) then return false end\n"
+"		return (C.memcmp(val1, val2, LSockAddr_sizeof) == 0)\n"
+"	end\n"
 "end\n"
 "\n"
 "\n"
@@ -1150,36 +1222,41 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "local obj_type_LSocketFD_push\n"
 "\n"
 "do\n"
-"local LSocketFD_mt = _priv.LSocketFD\n"
-"local LSocketFD_objects = setmetatable({}, { __mode = \"k\",\n"
-"__index = function(objects, ud_obj)\n"
-"	return obj_simple_udata_to_cdata(objects, ud_obj, \"LSocketFD *\", LSocketFD_mt)\n"
-"end,\n"
-"})\n"
-"function obj_type_LSocketFD_check(ud_obj)\n"
-"	return LSocketFD_objects[ud_obj]\n"
+"	local LSocketFD_mt = _priv.LSocketFD\n"
+"	ffi_safe_cdef(\"LSocketFD_simple_wrapper\", [=[\n"
+"		struct LSocketFD_t {\n"
+"			LSocketFD _wrapped_val;\n"
+"		};\n"
+"		typedef struct LSocketFD_t LSocketFD_t;\n"
+"	]=])\n"
+"	local LSocketFD_sizeof = ffi.sizeof\"LSocketFD_t\"\n"
+"\n"
+"	function obj_type_LSocketFD_check(wrap_obj)\n"
+"		return wrap_obj._wrapped_val\n"
+"	end\n"
+"\n"
+"	function obj_type_LSocketFD_delete(wrap_obj)\n"
+"		local this = wrap_obj._wrapped_val\n"
+"		ffi.fill(wrap_obj, LSocketFD_sizeof, 0)\n"
+"		return this\n"
+"	end\n"
+"\n"
+"	function obj_type_LSocketFD_push(this)\n"
+"		local wrap_obj = ffi.new(\"LSocketFD_t\")\n"
+"		wrap_obj._wrapped_val = this\n"
+"		return wrap_obj\n"
+"	end\n"
+"\n"
+"	function LSocketFD_mt:__tostring()\n"
+"		return \"LSocketFD: \" .. tostring(self._wrapped_val)\n"
+"	end\n"
+"\n"
+"	function LSocketFD_mt.__eq(val1, val2)\n"
+"		if not ffi.istype(\"LSocketFD_t\", val2) then return false end\n"
+"		return (val1._wrapped_val == val2._wrapped_val)\n"
+"	end\n"
 "end\n"
 "\n"
-"function obj_type_LSocketFD_delete(ud_obj)\n"
-"	local c_obj = LSocketFD_objects[ud_obj]\n"
-"	LSocketFD_objects[ud_obj] = nil\n"
-"	return c_obj, obj_simple_udata_luadelete(ud_obj, LSocketFD_mt)\n"
-"end\n"
-"\n"
-"local LSocketFD_sizeof = ffi.sizeof\"LSocketFD\"\n"
-"function obj_type_LSocketFD_push(c_obj)\n"
-"	local tmp_obj = ffi.new(\"LSocketFD[1]\", c_obj)\n"
-"	local ud_obj, cdata = obj_simple_udata_luapush(tmp_obj, LSocketFD_sizeof, LSocketFD_mt)\n"
-"	LSocketFD_objects[ud_obj] = ffi.new(\"LSocketFD *\", cdata)[0]\n"
-"	return ud_obj\n"
-"end\n"
-"end\n"
-"\n"
-"\n"
-"local os_lib_table = {\n"
-"	[\"Windows\"] = \"libllnet\",\n"
-"}\n"
-"local C = ffi.load(os_lib_table[ffi.os] or \"llnet\")\n"
 "\n"
 "\n"
 "-- Start \"Errors\" FFI interface\n"
@@ -1209,30 +1286,29 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "-- Start \"LSockAddr\" FFI interface\n"
 "-- method: new\n"
 "function _pub.LSockAddr.new()\n"
-"  local this_flags1 = OBJ_UDATA_FLAG_OWN\n"
 "  local this1\n"
 "  local rc_l_sockaddr_init2\n"
-"	this1 = ffi.new(\"LSockAddr[1]\");\n"
+"	this1 = ffi.new(\"LSockAddr\");\n"
 "\n"
 "  rc_l_sockaddr_init2 = C.l_sockaddr_init(this1)\n"
-"  this1 =   obj_type_LSockAddr_push(this1, this_flags1)\n"
+"  this1 =   obj_type_LSockAddr_push(this1)\n"
 "  rc_l_sockaddr_init2 = rc_l_sockaddr_init2\n"
 "  return this1, rc_l_sockaddr_init2\n"
 "end\n"
 "\n"
+"register_default_constructor(_pub,\"LSockAddr\",_pub.LSockAddr.new)\n"
 "-- method: ip_port\n"
 "function _pub.LSockAddr.ip_port(ip1, port2)\n"
 "  local ip_len1 = #ip1\n"
 "  \n"
-"  local this_flags1 = OBJ_UDATA_FLAG_OWN\n"
 "  local this1\n"
 "  local rc_l_sockaddr_init2\n"
 "  local rc_l_sockaddr_set_ip_port3\n"
-"	this1 = ffi.new(\"LSockAddr[1]\");\n"
+"	this1 = ffi.new(\"LSockAddr\");\n"
 "\n"
 "  rc_l_sockaddr_init2 = C.l_sockaddr_init(this1)\n"
 "  rc_l_sockaddr_set_ip_port3 = C.l_sockaddr_set_ip_port(this1, ip1, port2)\n"
-"  this1 =   obj_type_LSockAddr_push(this1, this_flags1)\n"
+"  this1 =   obj_type_LSockAddr_push(this1)\n"
 "  rc_l_sockaddr_init2 = rc_l_sockaddr_init2\n"
 "  rc_l_sockaddr_set_ip_port3 = rc_l_sockaddr_set_ip_port3\n"
 "  return this1, rc_l_sockaddr_init2, rc_l_sockaddr_set_ip_port3\n"
@@ -1241,15 +1317,14 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "-- method: unix\n"
 "function _pub.LSockAddr.unix(unix1)\n"
 "  local unix_len1 = #unix1\n"
-"  local this_flags1 = OBJ_UDATA_FLAG_OWN\n"
 "  local this1\n"
 "  local rc_l_sockaddr_init2\n"
 "  local rc_l_sockaddr_set_unix3\n"
-"	this1 = ffi.new(\"LSockAddr[1]\");\n"
+"	this1 = ffi.new(\"LSockAddr\");\n"
 "\n"
 "  rc_l_sockaddr_init2 = C.l_sockaddr_init(this1)\n"
 "  rc_l_sockaddr_set_unix3 = C.l_sockaddr_set_unix(this1, unix1)\n"
-"  this1 =   obj_type_LSockAddr_push(this1, this_flags1)\n"
+"  this1 =   obj_type_LSockAddr_push(this1)\n"
 "  rc_l_sockaddr_init2 = rc_l_sockaddr_init2\n"
 "  rc_l_sockaddr_set_unix3 = rc_l_sockaddr_set_unix3\n"
 "  return this1, rc_l_sockaddr_init2, rc_l_sockaddr_set_unix3\n"
@@ -1258,15 +1333,14 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "-- method: family\n"
 "function _pub.LSockAddr.family(family1)\n"
 "  \n"
-"  local this_flags1 = OBJ_UDATA_FLAG_OWN\n"
 "  local this1\n"
 "  local rc_l_sockaddr_init2\n"
 "  local rc_l_sockaddr_set_family3\n"
-"	this1 = ffi.new(\"LSockAddr[1]\");\n"
+"	this1 = ffi.new(\"LSockAddr\");\n"
 "\n"
 "  rc_l_sockaddr_init2 = C.l_sockaddr_init(this1)\n"
 "  rc_l_sockaddr_set_family3 = C.l_sockaddr_set_family(this1, family1)\n"
-"  this1 =   obj_type_LSockAddr_push(this1, this_flags1)\n"
+"  this1 =   obj_type_LSockAddr_push(this1)\n"
 "  rc_l_sockaddr_init2 = rc_l_sockaddr_init2\n"
 "  rc_l_sockaddr_set_family3 = rc_l_sockaddr_set_family3\n"
 "  return this1, rc_l_sockaddr_init2, rc_l_sockaddr_set_family3\n"
@@ -1274,8 +1348,7 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "\n"
 "-- method: __gc\n"
 "function _priv.LSockAddr.__gc(self)\n"
-"  local this1,this_flags1 = obj_type_LSockAddr_delete(self)\n"
-"  if(band(this_flags1,OBJ_UDATA_FLAG_OWN) == 0) then return end\n"
+"  local this1 = obj_type_LSockAddr_delete(self)\n"
 "  C.l_sockaddr_cleanup(this1)\n"
 "  return \n"
 "end\n"
@@ -1336,6 +1409,7 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "  return rc_l_sockaddr_get_addrlen1\n"
 "end\n"
 "\n"
+"ffi.metatype(\"LSockAddr\", _priv.LSockAddr)\n"
 "-- End \"LSockAddr\" FFI interface\n"
 "\n"
 "\n"
@@ -1350,30 +1424,38 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "  \n"
 "  \n"
 "  \n"
-"  local this_flags1 = OBJ_UDATA_FLAG_OWN\n"
 "  local this1\n"
 "  this1 = C.l_socket_open(domain1, type2, protocol3, flags4)\n"
-"  this1 =   obj_type_LSocketFD_push(this1, this_flags1)\n"
+"  this1 =   obj_type_LSocketFD_push(this1)\n"
 "  return this1\n"
 "end\n"
 "\n"
+"register_default_constructor(_pub,\"LSocketFD\",_pub.LSocketFD.new)\n"
 "-- method: fd\n"
 "function _pub.LSocketFD.fd(fd1)\n"
 "  \n"
-"  local this_flags1 = OBJ_UDATA_FLAG_OWN\n"
 "  local this1\n"
 "	this1 = fd1\n"
 "\n"
-"  this1 =   obj_type_LSocketFD_push(this1, this_flags1)\n"
+"  this1 =   obj_type_LSocketFD_push(this1)\n"
 "  return this1\n"
 "end\n"
 "\n"
 "-- method: close\n"
 "function _meth.LSocketFD.close(self)\n"
-"  local this1,this_flags1 = obj_type_LSocketFD_delete(self)\n"
-"  if(band(this_flags1,OBJ_UDATA_FLAG_OWN) == 0) then return end\n"
+"  local this1 = obj_type_LSocketFD_delete(self)\n"
 "  C.l_socket_close_internal(this1)\n"
 "  return \n"
+"end\n"
+"\n"
+"-- method: __tostring\n"
+"function _priv.LSocketFD.__tostring(self)\n"
+"  local this1 = obj_type_LSocketFD_check(self)\n"
+"  local str1\n"
+"	str1 = string.format(\"LSocketFD: fd=%i\\n\", this1)\n"
+"\n"
+"  str1 = ((nil ~= str1) and ffi.string(str1))\n"
+"  return str1\n"
 "end\n"
 "\n"
 "-- method: shutdown\n"
@@ -1512,7 +1594,7 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "	client1 = rc2;\n"
 "\n"
 "  if not (-1 == rc2) then\n"
-"    client1 =   obj_type_LSocketFD_push(client1, 0)\n"
+"    client1 =   obj_type_LSocketFD_push(client1)\n"
 "  else\n"
 "    client1 = nil\n"
 "  end\n"
@@ -1565,10 +1647,11 @@ static const char llnet_ffi_lua_code[] = "local error = error\n"
 "  return data1, rc2\n"
 "end\n"
 "\n"
+"ffi.metatype(\"LSocketFD_t\", _priv.LSocketFD)\n"
 "-- End \"LSocketFD\" FFI interface\n"
 "\n"
+"_priv.LSocketFD.__gc = _meth.LSocketFD.LSocketFD__close__meth\n"
 "";
-
 static char *llnet_Errors_key = "llnet_Errors_key";
 
 typedef struct sockaddr sockaddr;
@@ -1811,14 +1894,13 @@ static int Services____index__meth(lua_State *L) {
 
 /* method: new */
 static int LSockAddr__new__meth(lua_State *L) {
-  int this_flags1 = OBJ_UDATA_FLAG_OWN;
   LSockAddr * this1;
   int rc_l_sockaddr_init2 = 0;
 	LSockAddr addr;
 	this1 = &addr;
 
   rc_l_sockaddr_init2 = l_sockaddr_init(this1);
-  obj_type_LSockAddr_push(L, this1, this_flags1);
+  obj_type_LSockAddr_push(L, this1);
   lua_pushinteger(L, rc_l_sockaddr_init2);
   return 2;
 }
@@ -1828,7 +1910,6 @@ static int LSockAddr__ip_port__meth(lua_State *L) {
   size_t ip_len1;
   const char * ip1 = luaL_checklstring(L,1,&(ip_len1));
   int port2 = luaL_checkinteger(L,2);
-  int this_flags1 = OBJ_UDATA_FLAG_OWN;
   LSockAddr * this1;
   int rc_l_sockaddr_init2 = 0;
   int rc_l_sockaddr_set_ip_port3 = 0;
@@ -1837,7 +1918,7 @@ static int LSockAddr__ip_port__meth(lua_State *L) {
 
   rc_l_sockaddr_init2 = l_sockaddr_init(this1);
   rc_l_sockaddr_set_ip_port3 = l_sockaddr_set_ip_port(this1, ip1, port2);
-  obj_type_LSockAddr_push(L, this1, this_flags1);
+  obj_type_LSockAddr_push(L, this1);
   lua_pushinteger(L, rc_l_sockaddr_init2);
   lua_pushinteger(L, rc_l_sockaddr_set_ip_port3);
   return 3;
@@ -1847,7 +1928,6 @@ static int LSockAddr__ip_port__meth(lua_State *L) {
 static int LSockAddr__unix__meth(lua_State *L) {
   size_t unix_len1;
   const char * unix1 = luaL_checklstring(L,1,&(unix_len1));
-  int this_flags1 = OBJ_UDATA_FLAG_OWN;
   LSockAddr * this1;
   int rc_l_sockaddr_init2 = 0;
   int rc_l_sockaddr_set_unix3 = 0;
@@ -1856,7 +1936,7 @@ static int LSockAddr__unix__meth(lua_State *L) {
 
   rc_l_sockaddr_init2 = l_sockaddr_init(this1);
   rc_l_sockaddr_set_unix3 = l_sockaddr_set_unix(this1, unix1);
-  obj_type_LSockAddr_push(L, this1, this_flags1);
+  obj_type_LSockAddr_push(L, this1);
   lua_pushinteger(L, rc_l_sockaddr_init2);
   lua_pushinteger(L, rc_l_sockaddr_set_unix3);
   return 3;
@@ -1865,7 +1945,6 @@ static int LSockAddr__unix__meth(lua_State *L) {
 /* method: family */
 static int LSockAddr__family__meth(lua_State *L) {
   sa_family_t family1 = luaL_checkinteger(L,1);
-  int this_flags1 = OBJ_UDATA_FLAG_OWN;
   LSockAddr * this1;
   int rc_l_sockaddr_init2 = 0;
   int rc_l_sockaddr_set_family3 = 0;
@@ -1874,7 +1953,7 @@ static int LSockAddr__family__meth(lua_State *L) {
 
   rc_l_sockaddr_init2 = l_sockaddr_init(this1);
   rc_l_sockaddr_set_family3 = l_sockaddr_set_family(this1, family1);
-  obj_type_LSockAddr_push(L, this1, this_flags1);
+  obj_type_LSockAddr_push(L, this1);
   lua_pushinteger(L, rc_l_sockaddr_init2);
   lua_pushinteger(L, rc_l_sockaddr_set_family3);
   return 3;
@@ -1882,9 +1961,7 @@ static int LSockAddr__family__meth(lua_State *L) {
 
 /* method: delete */
 static int LSockAddr__delete__meth(lua_State *L) {
-  int this_flags1 = 0;
-  LSockAddr * this1 = obj_type_LSockAddr_delete(L,1,&(this_flags1));
-  if(!(this_flags1 & OBJ_UDATA_FLAG_OWN)) { return 0; }
+  LSockAddr * this1 = obj_type_LSockAddr_delete(L,1);
   l_sockaddr_cleanup(this1);
   return 0;
 }
@@ -1953,31 +2030,40 @@ static int LSocketFD__new__meth(lua_State *L) {
   int type2 = luaL_checkinteger(L,2);
   int protocol3 = luaL_checkinteger(L,3);
   int flags4 = luaL_checkinteger(L,4);
-  int this_flags1 = OBJ_UDATA_FLAG_OWN;
   LSocketFD this1;
   this1 = l_socket_open(domain1, type2, protocol3, flags4);
-  obj_type_LSocketFD_push(L, this1, this_flags1);
+  obj_type_LSocketFD_push(L, this1);
   return 1;
 }
 
 /* method: fd */
 static int LSocketFD__fd__meth(lua_State *L) {
   int fd1 = luaL_checkinteger(L,1);
-  int this_flags1 = OBJ_UDATA_FLAG_OWN;
   LSocketFD this1;
 	this1 = fd1;
 
-  obj_type_LSocketFD_push(L, this1, this_flags1);
+  obj_type_LSocketFD_push(L, this1);
   return 1;
 }
 
 /* method: close */
 static int LSocketFD__close__meth(lua_State *L) {
-  int this_flags1 = 0;
-  LSocketFD this1 = obj_type_LSocketFD_delete(L,1,&(this_flags1));
-  if(!(this_flags1 & OBJ_UDATA_FLAG_OWN)) { return 0; }
+  LSocketFD this1 = obj_type_LSocketFD_delete(L,1);
   l_socket_close_internal(this1);
   return 0;
+}
+
+/* method: __tostring */
+static int LSocketFD____tostring__meth(lua_State *L) {
+  LSocketFD this1 = obj_type_LSocketFD_check(L,1);
+  const char * str1 = NULL;
+	char tmp[1024];
+
+	str1 = tmp;
+	snprintf(tmp, 1024, "LSocketFD: fd=%d\n", this1);
+
+  lua_pushstring(L, str1);
+  return 1;
 }
 
 /* method: shutdown */
@@ -2146,7 +2232,7 @@ static int LSocketFD__accept__meth(lua_State *L) {
 	client1 = rc2;
 
   if(!(-1 == rc2)) {
-    obj_type_LSocketFD_push(L, client1, 0);
+    obj_type_LSocketFD_push(L, client1);
   } else {
     lua_pushnil(L);
   }
@@ -3176,7 +3262,7 @@ static const luaL_reg obj_LSocketFD_methods[] = {
 
 static const luaL_reg obj_LSocketFD_metas[] = {
   {"__gc", LSocketFD__close__meth},
-  {"__tostring", obj_simple_udata_default_tostring},
+  {"__tostring", LSocketFD____tostring__meth},
   {"__eq", obj_simple_udata_default_equal},
   {NULL, NULL}
 };
@@ -3249,10 +3335,6 @@ static const obj_const llnet_constants[] = {
   {NULL, NULL, 0.0 , 0}
 };
 
-static const ffi_export_symbol llnet_ffi_export[] = {
-  {NULL, NULL}
-};
-
 
 
 static const reg_sub_module reg_sub_modules[] = {
@@ -3267,6 +3349,11 @@ static const reg_sub_module reg_sub_modules[] = {
 
 
 
+
+
+static const ffi_export_symbol llnet_ffi_export[] = {
+  {NULL, NULL}
+};
 
 
 
@@ -3301,11 +3388,9 @@ LUA_NOBJ_API int luaopen_llnet(lua_State *L) {
 	const luaL_Reg *submodules = submodule_libs;
 	int priv_table = -1;
 
-#if LUAJIT_FFI
 	/* private table to hold reference to object metatables. */
 	lua_newtable(L);
 	priv_table = lua_gettop(L);
-#endif
 
 	/* create object cache. */
 	create_object_instance_cache(L);
@@ -3334,6 +3419,13 @@ LUA_NOBJ_API int luaopen_llnet(lua_State *L) {
 		obj_type_register(L, reg, priv_table);
 	}
 
+#if LUAJIT_FFI
+	if(nobj_check_ffi_support(L)) {
+		nobj_try_loading_ffi(L, "llnet", llnet_ffi_lua_code,
+			llnet_ffi_export, priv_table);
+	}
+#endif
+
 	/* Cache reference to llnet.Errors table for errno->string convertion. */
 	lua_pushlightuserdata(L, llnet_Errors_key);
 	lua_getfield(L, -2, "Errors");
@@ -3341,10 +3433,6 @@ LUA_NOBJ_API int luaopen_llnet(lua_State *L) {
 
 
 
-#if LUAJIT_FFI
-	nobj_try_loading_ffi(L, "llnet", llnet_ffi_lua_code,
-		llnet_ffi_export, priv_table);
-#endif
 	return 1;
 }
 
