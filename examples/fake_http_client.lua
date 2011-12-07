@@ -120,17 +120,12 @@ __index = function(tab, resp)
 		local errno, err, errmsg = http_parser:error()
 		resp_parsed.errno = errno
 		resp_parsed.errmsg = errmsg
-		-- need to re-create parser.
-		http_parser = create_parser()
 	end
 	-- get keep alive flag.
-	local keep_alive = http_parser:should_keep_alive()
-	resp_parsed.keep_alive = keep_alive
-	if not keep_alive then
-		-- need to re-create parser.
-		http_parser = create_parser()
-	end
+	resp_parsed.keep_alive = http_parser:should_keep_alive()
 	rawset(tab, resp, resp_parsed)
+	-- need to re-create parser.
+	http_parser = create_parser()
 	return resp_parsed
 end
 })
@@ -262,7 +257,7 @@ if profile then
 	local luatrace = require"luatrace"
 	luatrace.tron()
 	print("poll:start():", pcall(function()
-		poll:start()
+		return poll:start()
 	end))
 	luatrace.troff()
 else
