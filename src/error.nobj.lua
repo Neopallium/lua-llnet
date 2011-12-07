@@ -204,7 +204,7 @@ local Error_names = _M.Errors
 ]]
 
 c_source "extra_code" [[
-static char *llnet_Errors_key = "llnet_Errors_key";
+static char llnet_Errors_key[] = "llnet_Errors_key";
 ]]
 
 c_source "module_init_src" [[
