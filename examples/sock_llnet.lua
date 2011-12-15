@@ -23,6 +23,8 @@ local print = print
 local assert = assert
 
 local llnet = require"llnet"
+local get_opt = llnet.GetSocketOption
+local set_opt = llnet.SetSocketOption
 local new_socket = llnet.LSocketFD
 local AF_UNIX = llnet.AF_UNIX
 local AF_INET = llnet.AF_INET
@@ -52,9 +54,8 @@ end,
 local level_opts_mt = {
 __index = function(tab, opt)
 	local name = tab._prefix .. opt:upper()
-	local id = Options[name]
-	rawset(tab, opt, id)
-	return id
+	rawset(tab, opt, name)
+	return name
 end,
 }
 local function new_level_opts(level, prefix)
@@ -122,12 +123,14 @@ end
 
 function sock_mt:getopt(level, option)
 	local opts = Levels[level]
-	return self.fd:get_int_option(opts._level, opts[option])
+	local name = opts[option]
+	return get_opt[name](self.fd)
 end
 
 function sock_mt:setopt(level, option, value)
 	local opts = Levels[level]
-	return self.fd:set_int_option(opts._level, opts[option], value)
+	local name = opts[option]
+	return set_opt[name](self.fd, value)
 end
 
 function sock_mt:setblocking(blocking)

@@ -93,7 +93,7 @@ end
 --local luatrace = require"luatrace"
 --luatrace.tron()
 --print(pcall(function()
-return poll:start()
+poll:start()
 --end))
 --luatrace.troff()
 
