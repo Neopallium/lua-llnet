@@ -62,10 +62,6 @@ export_definitions {
 
 }
 
-subfiles {
-	"socket_options.nobj.lua",
-}
-
 object "LSocketFD" {
 	userdata_type = 'simple',
 	sys_include "sys/socket.h",
@@ -173,5 +169,32 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 ]],
 	},
 
+	method "send_buf" {
+		c_method_call "errno_rc" "l_socket_send"
+			{ "const void *", "data", "size_t", "len", "int", "flags?" },
+	},
+	method "recv_buf" {
+		var_in{"void *", "data"},
+		var_in{"size_t", "len"},
+		var_in{"int", "flags?"},
+		var_out{"int", "data_len"},
+		var_out{"errno_rc", "rc"},
+		c_source[[
+	${rc} = l_socket_recv(${this}, ${data}, ${len}, ${flags});
+	/* ${rc} == 0, then socket is closed. */
+	if(${rc} == 0) {
+		lua_pushnil(L);
+		lua_pushliteral(L, "CLOSED");
+		return 2;
+	}
+	${data_len} = ${rc};
+]],
+		ffi_source[[
+	${rc} = C.l_socket_recv(${this}, ${data}, ${len}, ${flags});
+	-- ${rc} == 0, then socket is closed.
+	if ${rc} == 0 then return nil, "CLOSED" end
+	${data_len} = ${rc};
+]],
+	},
 }
 

@@ -33,6 +33,7 @@ subfiles {
 "src/protocols.nobj.lua",
 "src/services.nobj.lua",
 "src/lsockaddr.nobj.lua",
+"src/socket_options.nobj.lua",
 "src/lsocket.nobj.lua",
 },
 

@@ -1387,6 +1387,7 @@ static const char llnet_ffi_lua_code[] = "local ffi=require\"ffi\"\n"
 "\n"
 "errno_rc l_socket_send(LSocketFD, const char *, size_t, int);\n"
 "\n"
+"errno_rc l_socket_send1(LSocketFD, const void *, size_t, int) asm(\"l_socket_send\");\n"
 "\n"
 "]]\n"
 "\n"
@@ -3855,6 +3856,38 @@ static const char llnet_ffi_lua_code[] = "local ffi=require\"ffi\"\n"
 "    return nil,error_code__errno_rc__push(rc2)\n"
 "  end\n"
 "  return ((nil ~= data1) and ffi.string(data1,data_len1))\n"
+"end\n"
+"-- method: send_buf\n"
+"function _meth.LSocketFD.send_buf(self, data2, len3, flags4)\n"
+"  self = self._wrapped_val\n"
+"  \n"
+"  \n"
+"    flags4 = flags4 or 0\n"
+"  local rc_l_socket_send1 = 0\n"
+"  rc_l_socket_send1 = C.l_socket_send1(self, data2, len3, flags4)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_l_socket_send1) then\n"
+"    return nil, error_code__errno_rc__push(rc_l_socket_send1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"-- method: recv_buf\n"
+"function _meth.LSocketFD.recv_buf(self, data2, len3, flags4)\n"
+"  self = self._wrapped_val\n"
+"  \n"
+"  \n"
+"    flags4 = flags4 or 0\n"
+"  local data_len1 = 0\n"
+"  local rc2 = 0\n"
+"	rc2 = C.l_socket_recv(self, data2, len3, flags4);\n"
+"	-- rc2 == 0, then socket is closed.\n"
+"	if rc2 == 0 then return nil, \"CLOSED\" end\n"
+"	data_len1 = rc2;\n"
+"\n"
+"  if (-1 == rc2) then\n"
+"    return nil,error_code__errno_rc__push(rc2)\n"
+"  end\n"
+"  return data_len1\n"
 "end\n"
 "ffi.metatype(\"LSocketFD_t\", _priv.LSocketFD)\n"
 "-- End \"LSocketFD\" FFI interface\n"
@@ -7796,6 +7829,51 @@ static int LSocketFD__recv__meth(lua_State *L) {
   return 2;
 }
 
+/* method: send_buf */
+static int LSocketFD__send_buf__meth(lua_State *L) {
+  LSocketFD this1 = obj_type_LSocketFD_check(L,1);
+  const void * data2 = lua_touserdata(L,2);
+  size_t len3 = luaL_checkinteger(L,3);
+  int flags4 = luaL_optinteger(L,4,0);
+  errno_rc rc_l_socket_send1 = 0;
+  rc_l_socket_send1 = l_socket_send(this1, data2, len3, flags4);
+  /* check for error. */
+  if((-1 == rc_l_socket_send1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_l_socket_send1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+
+/* method: recv_buf */
+static int LSocketFD__recv_buf__meth(lua_State *L) {
+  LSocketFD this1 = obj_type_LSocketFD_check(L,1);
+  void * data2 = lua_touserdata(L,2);
+  size_t len3 = luaL_checkinteger(L,3);
+  int flags4 = luaL_optinteger(L,4,0);
+  int data_len1 = 0;
+  errno_rc rc2 = 0;
+	rc2 = l_socket_recv(this1, data2, len3, flags4);
+	/* rc2 == 0, then socket is closed. */
+	if(rc2 == 0) {
+		lua_pushnil(L);
+		lua_pushliteral(L, "CLOSED");
+		return 2;
+	}
+	data_len1 = rc2;
+
+  if(!(-1 == rc2)) {
+    lua_pushinteger(L, data_len1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc2);
+  return 2;
+}
+
 
 
 static const luaL_reg obj_Errors_pub_funcs[] = {
@@ -9021,6 +9099,8 @@ static const luaL_reg obj_LSocketFD_methods[] = {
   {"accept", LSocketFD__accept__meth},
   {"send", LSocketFD__send__meth},
   {"recv", LSocketFD__recv__meth},
+  {"send_buf", LSocketFD__send_buf__meth},
+  {"recv_buf", LSocketFD__recv_buf__meth},
   {NULL, NULL}
 };
 
