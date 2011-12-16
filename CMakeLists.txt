@@ -85,6 +85,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src
                     ${LUA_INCLUDE_DIR})
 
 ## LuaBuffer
+set(LUA_LLNET_NOBJ_SRC
+	llnet.nobj.lua
+)
 set(LUA_LLNET_SRC
 	src/lsockaddr.c
 	src/lsockaddr.h
@@ -92,15 +95,15 @@ set(LUA_LLNET_SRC
 	src/lsocket.h
 	src/llnet.c
 	src/llnet.h
-	llnet.nobj.lua
 )
 
 if(${USE_PRE_GENERATED_BINDINGS})
-	set(LUA_LLNET_SRC src/pre_generated-llnet.nobj.c)
+	set(LUA_LLNET_NOBJ_SRC src/pre_generated-llnet.nobj.c)
 else()
 	# Generate Lua bindings.
-	GenLuaNativeObjects(LUA_LLNET_SRC)
+	GenLuaNativeObjects(LUA_LLNET_NOBJ_SRC)
 endif()
+set(LUA_LLNET_SRC ${LUA_LLNET_SRC} ${LUA_LLNET_NOBJ_SRC})
 
 add_library(lua-llnet MODULE ${LUA_LLNET_SRC})
 target_link_libraries(lua-llnet ${COMMON_LIBS})
