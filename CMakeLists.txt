@@ -93,8 +93,6 @@ set(LUA_LLNET_SRC
 	src/lsockaddr.h
 	src/lsocket.c
 	src/lsocket.h
-	src/llnet.c
-	src/llnet.h
 )
 
 if(${USE_PRE_GENERATED_BINDINGS})
