@@ -15,7 +15,11 @@ build = {
 	type = "builtin",
 	modules = {
 		llnet = {
-			sources = {"src/pre_generated-llnet.nobj.c"},
+			sources = {
+				"src/lsockaddr.c",
+				"src/lsocket.c",
+				"src/pre_generated-llnet.nobj.c",
+			},
 		}
 	}
 }
