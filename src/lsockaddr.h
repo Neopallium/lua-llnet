@@ -8,7 +8,7 @@
 #include "lcommon.h"
 
 #ifdef __WINDOWS__
-typedef unsigned __int32 socklen_t;
+#include <ws2tcpip.h>
 typedef unsigned short int sa_family_t;
 #else
 #include <sys/socket.h>

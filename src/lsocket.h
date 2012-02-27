@@ -9,9 +9,19 @@
 #include "lsockaddr.h"
 
 #ifdef __WINDOWS__
+#include <winsock2.h>
 typedef SOCKET LSocketFD;
+#define SOCK_NONBLOCK 1
 #else
 typedef int LSocketFD;
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#ifdef HAVE_IPV6
+#include <netinet/ip6.h>
+#endif
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 #endif
 
 L_LIB_API int l_socket_set_nonblock(LSocketFD sock, bool val);

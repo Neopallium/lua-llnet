@@ -70,7 +70,7 @@ LSocketFD l_socket_open(int domain, int type, int protocol, int flags) {
 	return socket(domain, type, protocol);
 }
 
-int l_socket_close_internal(LSocketFD sock) {
+LSocketFD l_socket_close_internal(LSocketFD sock) {
 #ifdef __WINDOWS__
 	return closesocket(sock);
 #else
