@@ -10,8 +10,21 @@
 
 #ifdef __WINDOWS__
 #include <winsock2.h>
+#include <ws2def.h>
 typedef SOCKET LSocketFD;
 #define SOCK_NONBLOCK 1
+#ifndef SOL_IP
+#define SOL_IP IPPROTO_IP
+#endif
+#ifndef SOL_IPV6
+#define SOL_IPV6 IPPROTO_IPV6
+#endif
+#ifndef SOL_TCP
+#define SOL_TCP IPPROTO_TCP
+#endif
+#ifndef SOL_UDP
+#define SOL_UDP IPPROTO_UDP
+#endif
 #else
 typedef int LSocketFD;
 #include <sys/socket.h>
