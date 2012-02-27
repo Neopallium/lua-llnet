@@ -71,7 +71,11 @@ LSocketFD l_socket_open(int domain, int type, int protocol, int flags) {
 }
 
 int l_socket_close_internal(LSocketFD sock) {
+#ifdef __WINDOWS__
+	return closesocket(sock);
+#else
 	return close(sock);
+#endif
 }
 
 int l_socket_shutdown(LSocketFD sock, int how) {
@@ -91,11 +95,28 @@ int l_socket_listen(LSocketFD sock, int backlog) {
 }
 
 LSocketFD l_socket_accept(LSocketFD sock, LSockAddr *peer, int flags) {
+#ifdef __WINDOWS__
+	LSocketFD rc;
+	if(peer != NULL) {
+		socklen_t peerlen = l_sockaddr_get_addrlen(peer);
+		rc = accept(sock, l_sockaddr_get_addr(peer), &peerlen);
+	} else {
+		rc = accept(sock, NULL, NULL);
+	}
+	if(rc == INVALID_SOCKET) {
+		return rc;
+	}
+	if((flags & SOCK_NONBLOCK) == SOCK_NONBLOCK) {
+		l_socket_set_nonblock(rc, 1);
+	}
+	return rc;
+#else
 	if(peer != NULL) {
 		socklen_t peerlen = l_sockaddr_get_addrlen(peer);
 		return accept4(sock, l_sockaddr_get_addr(peer), &peerlen, flags);
 	}
 	return accept4(sock, NULL, NULL, flags);
+#endif
 }
 
 int l_socket_send(LSocketFD sock, const void *buf, size_t len, int flags) {

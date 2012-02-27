@@ -16,9 +16,7 @@
 #define OBJ_DATA_HIDDEN_METATABLE 0
 #define USE_FIELD_GET_SET_METHODS 0
 #define LUAJIT_FFI 1
-#define _GNU_SOURCE 1
 #define L_PROTO_MAX_BUF 4096
-#define _GNU_SOURCE 1
 #define L_SERV_MAX_BUF 4096
 
 
@@ -4328,6 +4326,14 @@ static const char llnet_ffi_lua_code[] = "local ffi=require\"ffi\"\n"
 "\n"
 "";
 static char llnet_Errors_key[] = "llnet_Errors_key";
+
+#ifndef __WINDOWS__
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+#include <netdb.h>
+#endif
+
 
 typedef struct sockaddr sockaddr;
 

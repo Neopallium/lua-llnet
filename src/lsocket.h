@@ -8,7 +8,11 @@
 #include "lcommon.h"
 #include "lsockaddr.h"
 
+#ifdef __WINDOWS__
+typedef SOCKET LSocketFD;
+#else
 typedef int LSocketFD;
+#endif
 
 L_LIB_API int l_socket_set_nonblock(LSocketFD sock, bool val);
 
