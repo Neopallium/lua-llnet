@@ -140,7 +140,7 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 		c_source "pre" [[
 #define BUF_LEN 8192
 	char buf[BUF_LEN];
-	int buf_len = BUF_LEN;
+	size_t buf_len = BUF_LEN;
 ]],
 		c_source[[
 	if(buf_len > ${len}) { buf_len = ${len}; }
