@@ -4356,6 +4356,20 @@ static char llnet_Errors_key[] = "llnet_Errors_key";
 
 typedef struct sockaddr sockaddr;
 
+#ifdef __WINDOWS__
+static void lsock_init_winsock2(lua_State *L) {
+	WSADATA wsaData;
+	int err;
+
+	err = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if(err != 0) {
+		luaL_error(L, "winsock2 failed with error: %d\n", err);
+	}
+}
+#else
+#define lsock_init_winsock2(L)
+#endif
+
 #ifdef IP_RECVOPTS
 errno_rc lsocket_opt_set_IP_RECVOPTS(LSocketFD sock, int value) {
 	return l_socket_set_int_option(sock, SOL_IP, IP_RECVOPTS, value);
@@ -9778,6 +9792,8 @@ LUA_NOBJ_API int luaopen_llnet(lua_State *L) {
 			llnet_ffi_export, priv_table);
 	}
 #endif
+
+	lsock_init_winsock2(L);
 
 	/* Cache reference to llnet.Errors table for errno->string convertion. */
 	lua_pushlightuserdata(L, llnet_Errors_key);

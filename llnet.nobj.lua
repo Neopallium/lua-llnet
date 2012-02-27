@@ -28,6 +28,25 @@ hide_meta_info = false,
 luajit_ffi = true,
 luajit_ffi_load_cmodule = true,
 
+c_source [[
+#ifdef __WINDOWS__
+static void lsock_init_winsock2(lua_State *L) {
+	WSADATA wsaData;
+	int err;
+
+	err = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if(err != 0) {
+		luaL_error(L, "winsock2 failed with error: %d\n", err);
+	}
+}
+#else
+#define lsock_init_winsock2(L)
+#endif
+]],
+c_source "module_init_src" [[
+	lsock_init_winsock2(L);
+]],
+
 subfiles {
 "src/error.nobj.lua",
 "src/protocols.nobj.lua",
