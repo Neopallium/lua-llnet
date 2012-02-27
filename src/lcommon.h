@@ -22,6 +22,10 @@
 
 #ifdef __WINDOWS__
 
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
+
 /* for MinGW32 compiler need to include <stdint.h> */
 #ifdef __GNUC__
 #include <stdint.h>
