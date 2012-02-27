@@ -35,8 +35,8 @@ typedef int socklen_t;
 typedef int sa_family_t;
 
 struct LSockAddr {
-	struct sockaddr  *addr;
-	socklen_t        addrlen;
+	struct sockaddr  *_addr;
+	socklen_t        _addrlen;
 };
 
 typedef struct LSockAddr LSockAddr;
