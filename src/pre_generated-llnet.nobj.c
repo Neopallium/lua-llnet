@@ -5054,6 +5054,8 @@ errno_rc lsocket_opt_get_TCP_KEEPINTVL(LSocketFD sock, int *value) {
 /* method: description */
 static int Errors__description__meth(lua_State *L) {
   const char * msg1 = NULL;
+#define BUF_LEN 1024
+	char buf[BUF_LEN];
 	int err_type;
 	int err_num = -1;
 
@@ -5075,7 +5077,10 @@ static int Errors__description__meth(lua_State *L) {
 		lua_pushliteral(L, "UNKNOWN ERROR");
 		return 2;
 	}
-	msg1 = strerror(err_num);
+	if(strerror_r(err_num, buf, BUF_LEN-1) == 0) {
+		msg1 = buf;
+	}
+#undef BUF_LEN
 
   lua_pushstring(L, msg1);
   return 1;
@@ -8266,7 +8271,7 @@ static int LSocketFD__recv__meth(lua_State *L) {
   errno_rc rc2 = 0;
 #define BUF_LEN 8192
 	char buf[BUF_LEN];
-	int buf_len = BUF_LEN;
+	size_t buf_len = BUF_LEN;
 
 	if(buf_len > len2) { buf_len = len2; }
 	rc2 = l_socket_recv(this1, buf, buf_len, flags3);
