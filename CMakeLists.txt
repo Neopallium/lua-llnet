@@ -55,6 +55,7 @@ check_c_source_compiles("
 ## check for system features.
 if(MSVC)
 	set(CMAKE_REQUIRED_LIBRARIES ws2_32.lib)
+	set(COMMON_LIBS "${COMMON_LIBS};ws2_32.lib")
 endif()
 check_c_source_compiles("
 	#ifdef _MSC_VER
