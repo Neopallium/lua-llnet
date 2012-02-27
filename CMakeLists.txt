@@ -53,15 +53,33 @@ check_c_source_compiles("
 	}" HAVE_getprotobynumber_r)
 
 ## check for system features.
+if(MSVC)
+	set(CMAKE_REQUIRED_LIBRARIES ws2_32.lib)
+endif()
 check_c_source_compiles("
+	#ifdef _MSC_VER
+	#define __WINDOWS__
+	#else
+	#if defined(_WIN32)
+	#define __WINDOWS__
+	#endif
+	#endif
+
+	#ifdef __WINDOWS__
+	#include <winsock2.h>
+	#include <in6addr.h>
+	#include <Ws2ipdef.h>
+	#else
 	#include <sys/types.h>
 	#include <sys/socket.h>
 	#include <netinet/in.h>
+	#endif
 	int main() {
 		struct sockaddr_in6 addr;
+		int fd;
 		addr.sin6_family = AF_INET6;
 		addr.sin6_addr = in6addr_any;
-		int fd = socket(AF_INET6, SOCK_STREAM, 0);
+		fd = socket(AF_INET6, SOCK_STREAM, 0);
 		return bind(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6));
 	}" HAVE_IPV6)
 
@@ -86,7 +104,11 @@ include(LuaNativeObjects)
 ## generate config.h
 configure_file(${CMAKE_SOURCE_DIR}/config.h.cmake
 				${CMAKE_BINARY_DIR}/build/config.h)
-set(COMMON_CFLAGS "${COMMON_CFLAGS} -include ${CMAKE_BINARY_DIR}/build/config.h")
+if(MSVC)
+	set(COMMON_CFLAGS "${COMMON_CFLAGS} -FI ${CMAKE_BINARY_DIR}/build/config.h")
+else()
+	set(COMMON_CFLAGS "${COMMON_CFLAGS} -include ${CMAKE_BINARY_DIR}/build/config.h")
+endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src
                     ${CMAKE_CURRENT_BINARY_DIR}

@@ -64,11 +64,6 @@ export_definitions {
 
 object "LSocketFD" {
 	userdata_type = 'simple',
-	sys_include "sys/socket.h",
-	sys_include "netinet/in.h",
-	sys_include "netinet/ip.h",
-	sys_include "netinet/tcp.h",
-	sys_include "netinet/udp.h",
 	include "lsocket.h",
 	ffi_type = "int",
 	ffi_cdef[[

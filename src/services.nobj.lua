@@ -19,8 +19,6 @@
 -- THE SOFTWARE.
 
 meta_object "Services" {
-	define "_GNU_SOURCE" "1",
-	sys_include "netdb.h",
 	define "L_SERV_MAX_BUF" "4096",
 	c_function "byname" {
 		var_in{ "const char *", "name"},

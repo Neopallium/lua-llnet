@@ -6,7 +6,13 @@
 #define __L_SOCKADDR_H__
 
 #include "lcommon.h"
+
+#ifdef __WINDOWS__
+typedef unsigned __int32 socklen_t;
+typedef unsigned short int sa_family_t;
+#else
 #include <sys/socket.h>
+#endif
 
 #define L_SOCKADDR_MAX_LEN 256
 

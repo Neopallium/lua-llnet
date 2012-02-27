@@ -19,8 +19,15 @@
 -- THE SOFTWARE.
 
 meta_object "Protocols" {
-	define "_GNU_SOURCE" "1",
-	sys_include "netdb.h",
+	c_source [[
+#ifndef __WINDOWS__
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+#include <netdb.h>
+#endif
+
+]],
 	define "L_PROTO_MAX_BUF" "4096",
 	method "__index" {
 		var_in{ "<any>", "key"},

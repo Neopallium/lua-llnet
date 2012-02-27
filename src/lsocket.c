@@ -4,14 +4,22 @@
  ***************************************************************************/
 
 #include "lsocket.h"
+#ifdef __WINDOWS__
+#include <winsock2.h>
+#else
 #include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#endif
+#include <fcntl.h>
+#include <stdio.h>
 #include <errno.h>
 
 int l_socket_set_nonblock(LSocketFD sock, bool val) {
+#ifdef __WINDOWS__
+	unsigned long flag = val;
+	return ioctlsocket(sock, FIONBIO, &flag);
+#else
 	int flags;
 	flags = fcntl(sock, F_GETFL);
 	if(flags < 0) return flags;
@@ -21,9 +29,13 @@ int l_socket_set_nonblock(LSocketFD sock, bool val) {
 		flags &= ~(O_NONBLOCK);
 	}
 	return fcntl(sock, F_SETFL, flags);
+#endif
 }
 
 int l_socket_set_close_on_exec(LSocketFD sock, bool val) {
+#ifdef __WINDOWS__
+	return 0;
+#else
 	int flags;
 	flags = fcntl(sock, F_GETFD);
 	if(flags < 0) return flags;
@@ -33,6 +45,7 @@ int l_socket_set_close_on_exec(LSocketFD sock, bool val) {
 		flags &= ~(FD_CLOEXEC);
 	}
 	return fcntl(sock, F_SETFD, flags);
+#endif
 }
 
 int l_socket_get_option(LSocketFD sock, int level, int opt, void *val, socklen_t *len) {

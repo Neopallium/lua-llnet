@@ -3,14 +3,22 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "lsockaddr.h"
+
+#ifdef __WINDOWS__
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#ifdef HAVE_IPV6
+#include <in6addr.h>
+#endif
+#else
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "lsockaddr.h"
 
 static int l_sockaddr_set_internal(LSockAddr *addr, sa_family_t family, socklen_t addrlen) {
 	if(addrlen < sizeof(struct sockaddr)) {
@@ -30,7 +38,11 @@ int l_sockaddr_init(LSockAddr *addr) {
 }
 
 int l_sockaddr_set_ip_port(LSockAddr *addr, const char *ip, int port) {
+#ifdef HAVE_IPV6
 	unsigned char buf[sizeof(struct in6_addr)];
+#else
+	unsigned char buf[sizeof(struct in_addr)];
+#endif
 	sa_family_t family;
 	int rc;
 
@@ -38,9 +50,11 @@ int l_sockaddr_set_ip_port(LSockAddr *addr, const char *ip, int port) {
 	family = PF_INET;
 	rc = inet_pton(family, ip, buf);
 	if(rc <= 0) {
+#ifdef HAVE_IPV6
 		/* try ipv6. */
 		family = PF_INET6;
 		rc = inet_pton(family, ip, buf);
+#endif
 		if(rc == 0) {
 			return -1;
 		} else if(rc < 0) {
@@ -59,6 +73,7 @@ int l_sockaddr_set_ip_port(LSockAddr *addr, const char *ip, int port) {
 		memcpy(&(addr_in->sin_addr), buf, sizeof(struct in_addr));
 		break;
 	}
+#ifdef HAVE_IPV6
 	case PF_INET6: {
 		struct sockaddr_in6 *addr_in;
 		l_sockaddr_set_internal(addr, family, sizeof(*addr_in));
@@ -69,6 +84,7 @@ int l_sockaddr_set_ip_port(LSockAddr *addr, const char *ip, int port) {
 		addr_in->sin6_scope_id = 0;
 		break;
 	}
+#endif
 	default:
 		break;
 	}
@@ -77,6 +93,9 @@ int l_sockaddr_set_ip_port(LSockAddr *addr, const char *ip, int port) {
 }
 
 int l_sockaddr_set_unix(LSockAddr *addr, const char *path) {
+#ifdef __WINDOWS__
+	return -1;
+#else
 	struct sockaddr_un *addr_un;
 
 	l_sockaddr_set_internal(addr, PF_LOCAL, sizeof(struct sockaddr_un));
@@ -84,6 +103,7 @@ int l_sockaddr_set_unix(LSockAddr *addr, const char *path) {
 	strncpy(addr_un->sun_path, path, sizeof(addr_un->sun_path));
 
 	return 0;
+#endif
 }
 
 int l_sockaddr_set_family(LSockAddr *addr, sa_family_t family) {
@@ -91,10 +111,12 @@ int l_sockaddr_set_family(LSockAddr *addr, sa_family_t family) {
 
 	/* resize to minimal family size. */
 	switch(family) {
+#ifndef __WINDOWS__
 	/* local/file/unix */
 	case PF_LOCAL:
 		addrlen = sizeof(struct sockaddr_un);
 		break;
+#endif
 	case PF_INET:
 		addrlen = sizeof(struct sockaddr_in);
 		break;
