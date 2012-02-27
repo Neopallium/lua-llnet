@@ -39,6 +39,8 @@ L_LIB_API int l_sockaddr_set_family(LSockAddr *addr, sa_family_t family);
 
 L_LIB_API void l_sockaddr_clear(LSockAddr *addr);
 
+L_LIB_API void l_sockaddr_cleanup(LSockAddr *addr);
+
 L_LIB_API void l_sockaddr_resize(LSockAddr *addr, socklen_t addrlen);
 
 L_LIB_API void l_sockaddr_fill(LSockAddr *addr, const struct sockaddr *saddr, socklen_t addrlen);
