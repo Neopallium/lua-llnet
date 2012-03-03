@@ -1476,6 +1476,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_KEEPINTVL(LSocketFD, int*);\n"
 "\n"
+"int l_socket_send(LSocketFD sock, const void *buf, size_t len, int flags);\n"
 "int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);\n"
 "\n"
 "LSocketFD l_socket_open(int, int, int, int);\n"
@@ -1494,9 +1495,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "errno_rc l_socket_accept(LSocketFD, LSockAddr *, int);\n"
 "\n"
-"errno_rc l_socket_send(LSocketFD, const char *, size_t, int);\n"
-"\n"
-"errno_rc l_socket_send1(LSocketFD, const void *, size_t, int) asm(\"l_socket_send\");\n"
 "\n"
 "]]\n"
 "\n"
@@ -1524,10 +1522,10 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "local obj_type_LSockAddr_check\n"
 "local obj_type_LSockAddr_delete\n"
 "local obj_type_LSockAddr_push\n"
-"\n", /* ----- CUT ----- */
+"\n"
 "do\n"
 "	local obj_mt = _priv.LSockAddr\n"
-"	local obj_type = obj_mt['.type']\n"
+"	local obj_type = obj_mt['.type']\n", /* ----- CUT ----- */
 "	local obj_ctype = ffi.typeof(\"LSockAddr\")\n"
 "	_ctypes.LSockAddr = obj_ctype\n"
 "	_type_names.LSockAddr = tostring(obj_ctype)\n"
@@ -1593,7 +1591,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "	end\n"
 "\n"
 "	function obj_type_LSocketFD_delete(obj)\n"
-"		local id = obj_to_id(obj._wrapped_val)\n"
+"		local id = obj_to_id(obj)\n"
 "		local valid = nobj_obj_flags[id]\n"
 "		if not valid then return nil end\n"
 "		local val = obj._wrapped_val\n"
@@ -1603,7 +1601,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "	function obj_type_LSocketFD_push(val)\n"
 "		local obj = obj_ctype(val)\n"
-"		local id = obj_to_id(obj._wrapped_val)\n"
+"		local id = obj_to_id(obj)\n"
 "		nobj_obj_flags[id] = true\n"
 "		return obj\n"
 "	end\n"
@@ -2045,11 +2043,11 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  return true\n"
 "end\n"
 "end\n"
-"\n", /* ----- CUT ----- */
+"\n"
 "-- method: IP_MULTICAST_LOOP\n"
 "if (_M.Options.IP_MULTICAST_LOOP) then\n"
 "function _pub.SetSocketOption.IP_MULTICAST_LOOP(sock1, value2)\n"
-"  sock1 = sock1._wrapped_val\n"
+"  sock1 = sock1._wrapped_val\n", /* ----- CUT ----- */
 "  \n"
 "  local rc_lsocket_opt_set_IP_MULTICAST_LOOP1 = 0\n"
 "  rc_lsocket_opt_set_IP_MULTICAST_LOOP1 = C.lsocket_opt_set_IP_MULTICAST_LOOP(sock1, value2)\n"
@@ -2504,7 +2502,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local rc_lsocket_opt_set_SO_BINDTODEVICE1 = 0\n"
 "  rc_lsocket_opt_set_SO_BINDTODEVICE1 = C.lsocket_opt_set_SO_BINDTODEVICE(sock1, value2, value_len2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_BINDTODEVICE1) then\n", /* ----- CUT ----- */
+"  if (-1 == rc_lsocket_opt_set_SO_BINDTODEVICE1) then\n"
 "    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_BINDTODEVICE1)\n"
 "  end\n"
 "  return true\n"
@@ -2512,7 +2510,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "-- method: SO_DONTROUTE\n"
-"if (_M.Options.SO_DONTROUTE) then\n"
+"if (_M.Options.SO_DONTROUTE) then\n", /* ----- CUT ----- */
 "function _pub.SetSocketOption.SO_DONTROUTE(sock1, value2)\n"
 "  sock1 = sock1._wrapped_val\n"
 "  \n"
@@ -2986,7 +2984,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local value1 = IP_MULTICAST_TTL_value_tmp\n"
 "  local rc_lsocket_opt_get_IP_MULTICAST_TTL2 = 0\n"
 "  rc_lsocket_opt_get_IP_MULTICAST_TTL2 = C.lsocket_opt_get_IP_MULTICAST_TTL(sock1, value1)\n"
-"  if (-1 == rc_lsocket_opt_get_IP_MULTICAST_TTL2) then\n", /* ----- CUT ----- */
+"  if (-1 == rc_lsocket_opt_get_IP_MULTICAST_TTL2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MULTICAST_TTL2)\n"
 "  end\n"
 "  return value1[0]\n"
@@ -2996,7 +2994,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "do\n"
 "  local IP_RECVTTL_value_tmp = ffi.new(\"int[1]\")\n"
-"-- method: IP_RECVTTL\n"
+"-- method: IP_RECVTTL\n", /* ----- CUT ----- */
 "if (_M.Options.IP_RECVTTL) then\n"
 "function _pub.GetSocketOption.IP_RECVTTL(sock1)\n"
 "  sock1 = sock1._wrapped_val\n"
@@ -3440,7 +3438,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local value1 = IPV6_RECVTCLASS_value_tmp\n"
 "  local rc_lsocket_opt_get_IPV6_RECVTCLASS2 = 0\n"
 "  rc_lsocket_opt_get_IPV6_RECVTCLASS2 = C.lsocket_opt_get_IPV6_RECVTCLASS(sock1, value1)\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_RECVTCLASS2) then\n", /* ----- CUT ----- */
+"  if (-1 == rc_lsocket_opt_get_IPV6_RECVTCLASS2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVTCLASS2)\n"
 "  end\n"
 "  return value1[0]\n"
@@ -3449,7 +3447,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IPV6_RECVHOPOPTS_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IPV6_RECVHOPOPTS_value_tmp = ffi.new(\"int[1]\")\n", /* ----- CUT ----- */
 "-- method: IPV6_RECVHOPOPTS\n"
 "if (_M.Options.IPV6_RECVHOPOPTS) then\n"
 "function _pub.GetSocketOption.IPV6_RECVHOPOPTS(sock1)\n"
@@ -3912,9 +3910,9 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _pub.GetSocketOption.SO_DEBUG(sock1)\n"
 "  sock1 = sock1._wrapped_val\n"
 "  local value1 = SO_DEBUG_value_tmp\n"
-"  local rc_lsocket_opt_get_SO_DEBUG2 = 0\n", /* ----- CUT ----- */
+"  local rc_lsocket_opt_get_SO_DEBUG2 = 0\n"
 "  rc_lsocket_opt_get_SO_DEBUG2 = C.lsocket_opt_get_SO_DEBUG(sock1, value1)\n"
-"  if (-1 == rc_lsocket_opt_get_SO_DEBUG2) then\n"
+"  if (-1 == rc_lsocket_opt_get_SO_DEBUG2) then\n", /* ----- CUT ----- */
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DEBUG2)\n"
 "  end\n"
 "  return value1[0]\n"
@@ -4273,11 +4271,14 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  self = self._wrapped_val\n"
 "  local data_len2 = #data2\n"
 "    flags3 = flags3 or 0\n"
-"  local rc_l_socket_send1 = 0\n"
-"  rc_l_socket_send1 = C.l_socket_send(self, data2, data_len2, flags3)\n"
+"  local rc1 = 0\n"
+"	rc1 = C.l_socket_send(self, data2, data_len2, flags3)\n"
+"	-- rc1 >= 0, then return number of bytes sent.\n"
+"	if rc1 >= 0 then return rc1 end\n"
+"\n"
 "  -- check for error.\n"
-"  if (-1 == rc_l_socket_send1) then\n"
-"    return nil, error_code__errno_rc__push(rc_l_socket_send1)\n"
+"  if (-1 == rc1) then\n"
+"    return nil, error_code__errno_rc__push(rc1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -4312,11 +4313,14 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  \n"
 "  \n"
 "    flags4 = flags4 or 0\n"
-"  local rc_l_socket_send1 = 0\n"
-"  rc_l_socket_send1 = C.l_socket_send1(self, data2, len3, flags4)\n"
+"  local rc1 = 0\n"
+"	rc1 = C.l_socket_send(self, data2, len3, flags4)\n"
+"	-- rc1 >= 0, then return number of bytes sent.\n"
+"	if rc1 >= 0 then return rc1 end\n"
+"\n"
 "  -- check for error.\n"
-"  if (-1 == rc_l_socket_send1) then\n"
-"    return nil, error_code__errno_rc__push(rc_l_socket_send1)\n"
+"  if (-1 == rc1) then\n"
+"    return nil, error_code__errno_rc__push(rc1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -8262,12 +8266,18 @@ static int LSocketFD__send__meth(lua_State *L) {
   size_t data_len2;
   const char * data2 = luaL_checklstring(L,2,&(data_len2));
   int flags3 = luaL_optinteger(L,3,0);
-  errno_rc rc_l_socket_send1 = 0;
-  rc_l_socket_send1 = l_socket_send(this1, data2, data_len2, flags3);
+  errno_rc rc1 = 0;
+	rc1 = l_socket_send(this1, data2, data_len2, flags3);
+	/* rc1 >= 0, then return number of bytes sent. */
+	if(rc1 >= 0) {
+		lua_pushinteger(L, rc1);
+		return 1;
+	}
+
   /* check for error. */
-  if((-1 == rc_l_socket_send1)) {
+  if((-1 == rc1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_l_socket_send1);
+      error_code__errno_rc__push(L, rc1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8313,12 +8323,18 @@ static int LSocketFD__send_buf__meth(lua_State *L) {
   const void * data2 = lua_touserdata(L,2);
   size_t len3 = luaL_checkinteger(L,3);
   int flags4 = luaL_optinteger(L,4,0);
-  errno_rc rc_l_socket_send1 = 0;
-  rc_l_socket_send1 = l_socket_send(this1, data2, len3, flags4);
+  errno_rc rc1 = 0;
+	rc1 = l_socket_send(this1, data2, len3, flags4);
+	/* rc1 >= 0, then return number of bytes sent. */
+	if(rc1 >= 0) {
+		lua_pushinteger(L, rc1);
+		return 1;
+	}
+
   /* check for error. */
-  if((-1 == rc_l_socket_send1)) {
+  if((-1 == rc1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_l_socket_send1);
+      error_code__errno_rc__push(L, rc1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);

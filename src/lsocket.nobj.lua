@@ -67,6 +67,7 @@ object "LSocketFD" {
 	include "lsocket.h",
 	ffi_type = "int",
 	ffi_cdef[[
+int l_socket_send(LSocketFD sock, const void *buf, size_t len, int flags);
 int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 ]],
 	constructor {
@@ -125,8 +126,22 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 ]],
 	},
 	method "send" {
-		c_method_call "errno_rc" "l_socket_send"
-			{ "const char *", "data", "size_t", "#data", "int", "flags?" },
+		var_in{"const char *", "data"},
+		var_in{"int", "flags?"},
+		var_out{"errno_rc", "rc"},
+		c_source[[
+	${rc} = l_socket_send(${this}, ${data}, ${data_len}, ${flags});
+	/* ${rc} >= 0, then return number of bytes sent. */
+	if(${rc} >= 0) {
+		lua_pushinteger(L, ${rc});
+		return 1;
+	}
+]],
+		ffi_source[[
+	${rc} = C.l_socket_send(${this}, ${data}, ${data_len}, ${flags})
+	-- ${rc} >= 0, then return number of bytes sent.
+	if ${rc} >= 0 then return ${rc} end
+]],
 	},
 	ffi_source[[
 local tmp_buf_len = 8192
@@ -165,8 +180,23 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 	},
 
 	method "send_buf" {
-		c_method_call "errno_rc" "l_socket_send"
-			{ "const void *", "data", "size_t", "len", "int", "flags?" },
+		var_in{"const void *", "data"},
+		var_in{"size_t", "len"},
+		var_in{"int", "flags?"},
+		var_out{"errno_rc", "rc"},
+		c_source[[
+	${rc} = l_socket_send(${this}, ${data}, ${len}, ${flags});
+	/* ${rc} >= 0, then return number of bytes sent. */
+	if(${rc} >= 0) {
+		lua_pushinteger(L, ${rc});
+		return 1;
+	}
+]],
+		ffi_source[[
+	${rc} = C.l_socket_send(${this}, ${data}, ${len}, ${flags})
+	-- ${rc} >= 0, then return number of bytes sent.
+	if ${rc} >= 0 then return ${rc} end
+]],
 	},
 	method "recv_buf" {
 		var_in{"void *", "data"},

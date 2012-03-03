@@ -98,7 +98,6 @@ if(APPLE)
 	set(COMMON_LDFLAGS "${COMMON_LDFLAGS} -undefined dynamic_lookup")
 endif()
 
-
 ## LuaNativeObjects
 include(LuaNativeObjects)
 
