@@ -72,7 +72,7 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 ]],
 	constructor {
 		c_call "LSocketFD" "l_socket_open"
-			{ "int", "domain", "int", "type", "int", "protocol", "int", "flags" },
+			{ "int", "domain", "int", "type", "int", "protocol?", "int", "flags?" },
 	},
 	constructor "fd" {
 		var_in{"int", "fd"},

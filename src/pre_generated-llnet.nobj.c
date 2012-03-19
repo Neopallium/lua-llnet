@@ -324,6 +324,7 @@ static const char *nobj_lua_Reader(lua_State *L, void *data, size_t *size) {
 	nobj_reader_state *state = (nobj_reader_state *)data;
 	const char *ptr;
 
+	(void)L;
 	ptr = state->ffi_init_code[state->offset];
 	if(ptr != NULL) {
 		*size = strlen(ptr);
@@ -4147,8 +4148,8 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _pub.LSocketFD.new(domain1, type2, protocol3, flags4)\n"
 "  \n"
 "  \n"
-"  \n"
-"  \n"
+"    protocol3 = protocol3 or 0\n"
+"    flags4 = flags4 or 0\n"
 "  local self\n"
 "  self = C.l_socket_open(domain1, type2, protocol3, flags4)\n"
 "  return obj_type_LSocketFD_push(self)\n"
@@ -8117,8 +8118,8 @@ static int GetSocketOption__TCP_KEEPINTVL__func(lua_State *L) {
 static int LSocketFD__new__meth(lua_State *L) {
   int domain1 = luaL_checkinteger(L,1);
   int type2 = luaL_checkinteger(L,2);
-  int protocol3 = luaL_checkinteger(L,3);
-  int flags4 = luaL_checkinteger(L,4);
+  int protocol3 = luaL_optinteger(L,3,0);
+  int flags4 = luaL_optinteger(L,4,0);
   LSocketFD this1;
   this1 = l_socket_open(domain1, type2, protocol3, flags4);
   obj_type_LSocketFD_push(L, this1);
