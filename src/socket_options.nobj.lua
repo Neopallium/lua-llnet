@@ -293,7 +293,7 @@ for lvl,opts in pairs(option_info) do
 						args[5] = "socklen_t"
 						args[6] = "#value"
 					end
-					add(options_set_list, c_function(opt) { if_defs = opt, ffi_defs_table = "Options",
+					add(options_set_list, c_function(opt) { if_defs = opt,
 						c_call "errno_rc" ("lsocket_opt_set_" .. opt) (args),
 					})
 					code = code .. ctype.set_opt
@@ -309,7 +309,7 @@ for lvl,opts in pairs(option_info) do
 						args = { "LSocketFD", "sock", ctype.ctype, "value" }
 						val_out = { ctype.ctype, "value" }
 					end
-					add(options_get_list, c_function(opt) { if_defs = opt, ffi_defs_table = "Options",
+					add(options_get_list, c_function(opt) { if_defs = opt,
 						var_out(val_out),
 						c_call "errno_rc" ("lsocket_opt_get_" .. opt) (args),
 					})
