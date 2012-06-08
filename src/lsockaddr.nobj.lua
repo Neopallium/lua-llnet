@@ -100,11 +100,25 @@ typedef struct LSockAddr LSockAddr;
 	method "get_family" {
 		c_method_call "sa_family_t" "l_sockaddr_get_family" {},
 	},
+	method "get_port" {
+		c_method_call "void" "l_sockaddr_get_port" { "int", "&port>1" },
+	},
 	method "addr" {
 		c_method_call "sockaddr *" "l_sockaddr_get_addr" {},
 	},
 	method "addrlen" {
 		c_method_call "socklen_t" "l_sockaddr_get_addrlen" {},
+	},
+	method "__tostring" {
+		var_out{ "const char *", "str", },
+		c_source "pre" [[
+#define LSOCKADDR_BUF_LEN 1024
+	char tmp[LSOCKADDR_BUF_LEN];
+]],
+		c_source[[
+	${str} = tmp;
+	l_sockaddr_tostring(${this}, tmp, LSOCKADDR_BUF_LEN);
+]],
 	},
 }
 

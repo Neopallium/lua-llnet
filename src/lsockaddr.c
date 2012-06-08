@@ -157,11 +157,73 @@ sa_family_t l_sockaddr_get_family(LSockAddr *addr) {
 	return addr->addr->sa_family;
 }
 
+void l_sockaddr_get_port(LSockAddr *addr, int *port) {
+	switch(addr->addr->sa_family) {
+	case PF_INET: {
+		struct sockaddr_in *addr_in;
+
+		addr_in = (struct sockaddr_in *)addr->addr;
+		*port = ntohs(addr_in->sin_port);
+		return;
+	}
+	case PF_INET6: {
+		struct sockaddr_in6 *addr_in;
+
+		addr_in = (struct sockaddr_in6 *)addr->addr;
+		*port = ntohs(addr_in->sin6_port);
+		return;
+	}
+	default:
+		break;
+	}
+	*port = -1;
+}
+
 struct sockaddr *l_sockaddr_get_addr(LSockAddr *addr) {
 	return addr->addr;
 }
 
 socklen_t l_sockaddr_get_addrlen(LSockAddr *addr) {
 	return addr->addrlen;
+}
+
+int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buflen) {
+	sa_family_t family;
+	family = addr->addr->sa_family;
+	switch(family) {
+	/* local/file/unix */
+	case PF_LOCAL: {
+		struct sockaddr_un *addr_un;
+		addr_un = (struct sockaddr_un *)addr->addr;
+		return snprintf(buf, buflen, "%s", addr_un->sun_path);
+	}
+	case PF_INET: {
+		struct sockaddr_in *addr_in;
+		char str_addr[INET_ADDRSTRLEN];
+		int port;
+
+		addr_in = (struct sockaddr_in *)addr->addr;
+		port = ntohs(addr_in->sin_port);
+		if(inet_ntop(family, &(addr_in->sin_addr), str_addr, INET_ADDRSTRLEN) != NULL) {
+			return snprintf(buf, buflen, "%s:%d", str_addr, port);
+		}
+		break;
+	}
+	case PF_INET6: {
+		struct sockaddr_in6 *addr_in;
+		char str_addr[INET6_ADDRSTRLEN];
+		int port;
+
+		addr_in = (struct sockaddr_in6 *)addr->addr;
+		port = ntohs(addr_in->sin6_port);
+		if(inet_ntop(family, &(addr_in->sin6_addr), str_addr, INET6_ADDRSTRLEN) != NULL) {
+			return snprintf(buf, buflen, "[%s]:%d", str_addr, port);
+		}
+		break;
+	}
+	default:
+		return snprintf(buf, buflen, "Un-supported sockaddr family %d", family);
+	}
+	return 0;
 }
 
