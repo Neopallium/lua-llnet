@@ -27,14 +27,8 @@ local ffi = require"ffi"
 ffi.cdef[[
 /* LSockAddr */
 
-/*
 typedef int socklen_t;
 typedef int sa_family_t;
-
-struct LSockAddr {
-	struct sockaddr  *addr;
-	socklen_t        addrlen;
-};
 
 typedef struct LSockAddr LSockAddr;
 
@@ -57,11 +51,9 @@ sa_family_t l_sockaddr_get_family(LSockAddr *addr);
 struct sockaddr *l_sockaddr_get_addr(LSockAddr *addr);
 
 socklen_t l_sockaddr_get_addrlen(LSockAddr *addr);
-*/
 
 /* LSocketFD */
 typedef int LSocketFD;
-/*
 
 int l_socket_set_nonblock(LSocketFD sock, bool val);
 
@@ -92,11 +84,11 @@ LSocketFD l_socket_accept(LSocketFD sock, LSockAddr *peer, int flags);
 int l_socket_send(LSocketFD sock, const void *buf, size_t len, int flags);
 
 int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
-*/
+
 LSocketFD l_socket_open(int domain, int type, int protocol, int flags);
 
 ]]
-local C = ffi.load("llnet")
+local C = ffi.load("./llnet.so")
 
 local llnet = require"llnet"
 local new_socket = llnet.LSocketFD
