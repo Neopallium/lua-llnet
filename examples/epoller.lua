@@ -73,6 +73,10 @@ function poll_mt:stop()
 	self.is_running = false
 end
 
+function poll_mt:close()
+	return self.epoll:close()
+end
+
 module(...)
 
 for k,v in pairs(epoll) do
