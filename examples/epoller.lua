@@ -56,7 +56,12 @@ local function _loop_step_cb(epoll, event_cb, timeout)
 end
 
 function poll_mt:step(timeout)
-	assert(self.epoll:wait_callback(self.event_cb, timeout or -1))
+	local rc, err = self.epoll:wait_callback(self.event_cb, timeout or -1)
+	if rc then return rc end
+	if err ~= 'EINTR' then
+		error(err)
+	end
+	return 0
 end
 
 function poll_mt:start()
