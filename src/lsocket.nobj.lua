@@ -89,10 +89,10 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 ]],
 		c_source[[
 	${str} = tmp;
-	snprintf(tmp, 64, "LSocketFD: fd=%d\n", ${this});
+	snprintf(tmp, 64, "LSocketFD: fd=%d", ${this});
 ]],
 		ffi_source[[
-	${str} = string.format("LSocketFD: fd=%i\n", ${this})
+	${str} = string.format("LSocketFD: fd=%i", ${this})
 ]],
 	},
 	method "shutdown" {
