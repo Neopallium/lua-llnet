@@ -18,6 +18,8 @@ local sock = require("examples.sock_" .. backend)
 local new_sock = sock.new
 local sock_flags = sock.NONBLOCK + sock.CLOEXEC
 
+local lbuf = require"buf"
+
 local epoller = require"examples.epoller"
 
 local poll = epoller.new()
@@ -41,17 +43,35 @@ end
 
 local READ_LEN = 2 * 1024
 
-local function data_parse(sock)
-	local data, err = sock:recv(READ_LEN)
-	if data then
-		sock:send(data)
-	else
-		if err ~= 'EAGAIN' then
-			sock_close(sock)
-			return false
+local data_parse
+if backend ~= 'nixio' then
+	local tmp_buf = lbuf.new(READ_LEN)
+	local tmp_data = tmp_buf:data_ptr()
+	function data_parse(sock)
+		local len, err = sock:recv_buf(tmp_data, READ_LEN)
+		if len then
+			sock:send_buf(tmp_data, len)
+		else
+			if err ~= 'EAGAIN' then
+				sock_close(sock)
+				return false
+			end
 		end
+		return true
 	end
-	return true
+else
+	function data_parse(sock)
+		local data, err = sock:recv(READ_LEN)
+		if data then
+			sock:send(data)
+		else
+			if err ~= 'EAGAIN' then
+				sock_close(sock)
+				return false
+			end
+		end
+		return true
+	end
 end
 
 local MAX_ACCEPT = 100

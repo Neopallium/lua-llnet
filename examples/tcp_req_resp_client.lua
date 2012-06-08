@@ -76,6 +76,8 @@ local sock = require("examples.sock_" .. backend)
 local new_sock = sock.new
 local sock_flags = sock.NONBLOCK + sock.CLOEXEC
 
+local lbuf = require"buf"
+
 local epoller = require"examples.epoller"
 
 local poll = epoller.new()
@@ -120,15 +122,34 @@ local function print_progress()
 	stdout:write(sformat("progress: %i%% done\n", percent))
 end
 
+local READ_LEN = 2 * 1024
+local tmp_buf = lbuf.new(READ_LEN)
+local tmp_data = tmp_buf:data_ptr()
+
+local data_read
+if backend ~= 'nixio' then
+	function data_read(sock)
+		return sock:recv_buf(tmp_data, READ_LEN)
+	end
+else
+	function data_read(sock)
+		local data, err = sock:recv(READ_LEN)
+		if data then
+			return #data, err
+		end
+		return nil, err
+	end
+end
+
 local function data_parse(sock)
-	local data, err = sock:recv(1024)
-	if data then
+	local len, err = data_read(sock)
+	if len then
 		done = done + 1
 		if (done % checkpoint) == 0 then
 			print_progress()
 		end
 		-- check resp.
-		if data == REQUEST then
+		if len == #REQUEST then
 			succeeded = succeeded + 1
 		else
 			failed = failed + 1
