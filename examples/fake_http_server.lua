@@ -18,6 +18,8 @@ local sock = require("examples.sock_" .. backend)
 local new_sock = sock.new
 local sock_flags = sock.NONBLOCK + sock.CLOEXEC
 
+local lbuf = require"buf"
+
 local epoller = require"examples.epoller"
 
 local poll = epoller.new()
@@ -25,7 +27,7 @@ local poll = epoller.new()
 local function new_acceptor(host, port, family, cb)
 	local sock = new_sock(family or 'inet', 'stream', 0, sock_flags)
 	assert(sock:setopt('socket', 'reuseaddr', 1))
-	assert(sock:setopt('tcp', 'defer_accept', 1))
+	assert(sock:setopt('tcp', 'defer_accept', 15))
 	assert(sock:bind(host, port))
 	assert(sock:listen(30000))
 	-- register callback for read events.
@@ -48,18 +50,37 @@ local RESPONSE =
   "Hello,world!\n"
 
 local READ_LEN = 2 * 1024
+local tmp_buf = lbuf.new(READ_LEN)
+local tmp_data = tmp_buf:data_ptr()
 
-local function http_parse(sock)
-	local data, err = sock:recv(READ_LEN)
-	if data then
-		sock:send(RESPONSE)
-	else
-		if err ~= 'EAGAIN' then
-			sock_close(sock)
-			return false
+local http_parse
+
+if backend ~= 'nixio' then
+	function http_parse(sock)
+		local len, err = sock:recv_buf(tmp_data, READ_LEN)
+		if len then
+			sock:send(RESPONSE)
+		else
+			if err ~= 'EAGAIN' then
+				sock_close(sock)
+				return false
+			end
 		end
+		return true
 	end
-	return true
+else
+	function http_parse(sock)
+		local data, err = sock:recv(READ_LEN)
+		if data then
+			sock:send(RESPONSE)
+		else
+			if err ~= 'EAGAIN' then
+				sock_close(sock)
+				return false
+			end
+		end
+		return true
+	end
 end
 
 local MAX_ACCEPT = 100

@@ -80,6 +80,11 @@ local sock = require("examples.sock_" .. backend)
 local new_sock = sock.new
 local sock_flags = sock.NONBLOCK + sock.CLOEXEC
 
+-- zmq used for stopwatch timer.
+local zmq = require"zmq"
+
+local lbuf = require"buf"
+
 local epoller = require"examples.epoller"
 
 local poll = epoller.new()
@@ -101,8 +106,8 @@ local http_parser
 local function create_parser()
 	local parser
 	parser = lhp.response({
+	-- lua-http-parser needs 'on_body'
 	on_body = function(data)
-		resp_parsed.body = data
 	end,
 	on_message_complete = function()
 		resp_parsed.status = parser:status_code()
@@ -120,10 +125,11 @@ __index = function(tab, resp)
 		local errno, err, errmsg = http_parser:error()
 		resp_parsed.errno = errno
 		resp_parsed.errmsg = errmsg
+	else
+		-- get keep alive flag.
+		resp_parsed.keep_alive = http_parser:should_keep_alive()
+		rawset(tab, resp, resp_parsed)
 	end
-	-- get keep alive flag.
-	resp_parsed.keep_alive = http_parser:should_keep_alive()
-	rawset(tab, resp, resp_parsed)
 	-- need to re-create parser.
 	http_parser = create_parser()
 	return resp_parsed
@@ -137,7 +143,7 @@ local function sock_close(sock)
 	assert(clients >= 0, "Can't close more clients then we create.")
 	poll:del(sock)
 	sock:close()
-	if clients == 0 then
+	if done == requests then
 		-- we should be finished.
 		poll:stop()
 	end
@@ -151,33 +157,85 @@ local function next_request(sock)
 	end
 	started = started + 1
 	sock.request_active = true
-	sock:send(REQUEST)
+	local len, err = sock:send(REQUEST)
+	if not len then
+		print("socket write error:", err, sock.fd)
+		sock.request_active = false
+		sock_close(sock)
+		return
+	end
 end
 
 local progress_units = 10
 local checkpoint = math.floor(requests / progress_units)
 local percent = 0
+local progress_timer
+local last_done = 0
 local function print_progress()
+	local elapsed = progress_timer:stop()
+	if elapsed == 0 then elapsed = 1 end
+
+	local reqs = done - last_done
+	local throughput = reqs / (elapsed / 1000000)
+	last_done = done
+
 	percent = percent + progress_units
-	stdout:write(sformat("progress: %i%% done\n", percent))
+	stdout:write(sformat([[
+progress: %3i%% done, %7i requests, %5i open conns, %i.%03i%03i sec, %5i req/s
+]], percent, done, clients,
+(elapsed / 1000000), (elapsed / 1000) % 1000, (elapsed % 1000), throughput))
+	-- start another progress_timer
+	if percent < 100 then
+		progress_timer = zmq.stopwatch_start()
+	end
+end
+
+local READ_LEN = 2 * 1024
+local tmp_buf = lbuf.new(READ_LEN)
+local tmp_data = tmp_buf:data_ptr()
+
+local data_read
+if backend ~= 'nixio' then
+	function data_read(sock)
+		local len, err = sock:recv_buf(tmp_data, READ_LEN)
+		if len then
+			tmp_buf:set_length(len)
+			return tmp_buf:tostring()
+		end
+		return nil, err
+	end
+else
+	function data_read(sock)
+		return sock:recv(READ_LEN)
+	end
 end
 
 local function http_parse(sock)
-	local data, err = sock:recv(1024)
+	local data, err = data_read(sock)
 	if data then
-		done = done + 1
-		if (done % checkpoint) == 0 then
-			print_progress()
+		-- check if socket has some partial data.
+		if sock.buf_data then
+			data = sock.buf_data .. data
+			sock.buf_data = nil
 		end
 		-- check resp.
 		local resp = parsed_resps[data]
 		if resp.status == 200 then
 			succeeded = succeeded + 1
+		elseif resp.status == nil then
+			-- got partial response.
+			sock.buf_data = data
+			return
 		else
 			failed = failed + 1
 		end
+		-- the request is finished.
+		done = done + 1
+		if (done % checkpoint) == 0 then
+			print_progress()
+		end
 		-- check if we should close the connection.
-		if not resp_parsed.keep_alive or not keep_alive then
+		if not resp.keep_alive or not keep_alive then
 			sock_close(sock)
 			-- create a new client if we are not done.
 			if clients < concurrent then
@@ -201,7 +259,7 @@ local function http_parse(sock)
 					started = started - 1
 					new_client()
 				else
-					print("socket read error with active request:", err)
+					print("socket read error with active request:", err, sock.fd)
 				end
 			end
 			sock_close(sock)
@@ -219,6 +277,7 @@ end
 new_client = function ()
 	local sock = assert(new_sock(family, 'stream', 0, sock_flags))
 	connections = connections + 1
+	clients = clients + 1
 	local stat, err = sock:connect(host, port)
 	if not stat then
 		if err == 'EINPROGRESS' then
@@ -235,8 +294,6 @@ new_client = function ()
 		-- send first request
 		next_request(sock)
 	end
-	-- register callback for read events.
-	clients = clients + 1
 	return sock
 end
 
@@ -244,8 +301,7 @@ end
 -- Create clients.
 --
 
-local zmq = require"zmq"
-
+progress_timer = zmq.stopwatch_start()
 local timer = zmq.stopwatch_start()
 
 for i=1,concurrent do
@@ -279,4 +335,6 @@ connections: %i total, %i concurrent
 requests, started, done, succeeded, failed, errored, parsed,
 connections, concurrent
 ))
+
+poll:close()
 
