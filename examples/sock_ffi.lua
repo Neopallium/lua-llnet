@@ -264,6 +264,22 @@ function sock_mt:recv(len)
 	return ffi.string(tmp_buf, rc)
 end
 
+function sock_mt:send_buf(data, len, flags)
+	local rc = C.l_socket_send(self.fd, data, len, flags or 0)
+	if rc == -1 then return push_perror() end
+	return rc
+end
+
+function sock_mt:recv_buf(data, len, flags)
+	local rc = C.l_socket_recv(self.fd, data, len, flags or 0)
+	if rc <= 0 then
+		-- rc == 0, then socket is closed.
+		if rc == 0 then return nil, "CLOSED" end
+		return push_perror()
+	end
+	return rc
+end
+
 module(...)
 
 NONBLOCK = llnet.SOCK_NONBLOCK
