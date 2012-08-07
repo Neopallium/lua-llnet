@@ -123,13 +123,13 @@ local function print_progress()
 end
 
 local READ_LEN = 2 * 1024
-local tmp_buf = lbuf.new(READ_LEN)
-local tmp_data = tmp_buf:data_ptr()
+local tmp_buf
 
 local data_read
 if backend ~= 'nixio' then
+	tmp_buf = lbuf.new(READ_LEN)
 	function data_read(sock)
-		return sock:recv_buf(tmp_data, READ_LEN)
+		return sock:recv_buf(tmp_buf:data_ptr(), 0, READ_LEN)
 	end
 else
 	function data_read(sock)

@@ -180,11 +180,13 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 	},
 
 	method "send_buf" {
-		var_in{"const void *", "data"},
-		var_in{"size_t", "len"},
+		var_in{"const uint8_t *", "data"},
+		var_in{"size_t", "off?", default = 0 },
+		var_in{"size_t", "len?", default = 0 },
 		var_in{"int", "flags?"},
 		var_out{"errno_rc", "rc"},
 		c_source[[
+	${data} += ${off};
 	${rc} = l_socket_send(${this}, ${data}, ${len}, ${flags});
 	/* ${rc} >= 0, then return number of bytes sent. */
 	if(${rc} >= 0) {
@@ -193,18 +195,21 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 	}
 ]],
 		ffi_source[[
+	${data} = ffi.cast("uint8_t *",${data}) + ${off}
 	${rc} = C.l_socket_send(${this}, ${data}, ${len}, ${flags})
 	-- ${rc} >= 0, then return number of bytes sent.
 	if ${rc} >= 0 then return ${rc} end
 ]],
 	},
 	method "recv_buf" {
-		var_in{"void *", "data"},
-		var_in{"size_t", "len"},
+		var_in{"uint8_t *", "data"},
+		var_in{"size_t", "off?", default = 0 },
+		var_in{"size_t", "len?", default = 4 * 1024 },
 		var_in{"int", "flags?"},
 		var_out{"int", "data_len"},
 		var_out{"errno_rc", "rc"},
 		c_source[[
+	${data} += ${off};
 	${rc} = l_socket_recv(${this}, ${data}, ${len}, ${flags});
 	/* ${rc} == 0, then socket is closed. */
 	if(${rc} == 0) {
@@ -215,10 +220,11 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 	${data_len} = ${rc};
 ]],
 		ffi_source[[
-	${rc} = C.l_socket_recv(${this}, ${data}, ${len}, ${flags});
+	${data} = ffi.cast("uint8_t *",${data}) + ${off}
+	${rc} = C.l_socket_recv(${this}, ${data}, ${len}, ${flags})
 	-- ${rc} == 0, then socket is closed.
 	if ${rc} == 0 then return nil, "CLOSED" end
-	${data_len} = ${rc};
+	${data_len} = ${rc}
 ]],
 	},
 }

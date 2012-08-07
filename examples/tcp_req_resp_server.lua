@@ -46,11 +46,11 @@ local READ_LEN = 2 * 1024
 local data_parse
 if backend ~= 'nixio' then
 	local tmp_buf = lbuf.new(READ_LEN)
-	local tmp_data = tmp_buf:data_ptr()
 	function data_parse(sock)
-		local len, err = sock:recv_buf(tmp_data, READ_LEN)
+		local len, err = sock:recv_buf(tmp_buf:data_ptr(), 0, READ_LEN)
 		if len then
-			sock:send_buf(tmp_data, len)
+			tmp_buf:set_length(len)
+			sock:send_buf(tmp_buf:data_ptr(), 0, len)
 		else
 			if err ~= 'EAGAIN' then
 				sock_close(sock)
