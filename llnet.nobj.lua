@@ -54,6 +54,9 @@ subfiles {
 "src/lsockaddr.nobj.lua",
 "src/socket_options.nobj.lua",
 "src/lsocket.nobj.lua",
+
+-- IO Buffer
+"src/liobuffer.nobj.lua",
 },
 
 }

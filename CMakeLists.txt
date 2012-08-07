@@ -119,6 +119,9 @@ set(LUA_LLNET_SRC
 	src/lsockaddr.h
 	src/lsocket.c
 	src/lsocket.h
+	## IO Buffer
+	src/liobuffer.c
+	src/liobuffer.h
 )
 
 if(${USE_PRE_GENERATED_BINDINGS})
