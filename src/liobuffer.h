@@ -11,8 +11,8 @@ typedef struct LIOBuffer LIOBuffer;
 
 struct LIOBuffer {
 	uint8_t *buf;     /**< buffer. */
-	size_t  size;     /**< size of data in buffer. */
-	size_t  capacity; /**< memory size of buffer. */
+	size_t  _size;     /**< size of data in buffer. */
+	size_t  _capacity; /**< memory size of buffer. */
 };
 
 L_LIB_API void l_iobuffer_init(LIOBuffer *buf, const uint8_t *data, size_t size);

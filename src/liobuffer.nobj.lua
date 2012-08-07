@@ -26,7 +26,7 @@ object "LIOBuffer" {
 			get_field = "buf"
 		},
 		implement_method "get_size" {
-			get_field = "size"
+			get_field = "_size"
 		},
 	},
 	implements "MutableBuffer" {
@@ -34,7 +34,7 @@ object "LIOBuffer" {
 			get_field = "buf"
 		},
 		implement_method "get_size" {
-			get_field = "capacity"
+			get_field = "_capacity"
 		},
 	},
 
@@ -44,8 +44,8 @@ typedef struct LIOBuffer LIOBuffer;
 
 struct LIOBuffer {
 	uint8_t *buf;     /**< buffer. */
-	size_t  size;     /**< size of data in buffer. */
-	size_t  capacity; /**< memory size of buffer. */
+	size_t  _size;     /**< size of data in buffer. */
+	size_t  _capacity; /**< memory size of buffer. */
 };
 
 void l_iobuffer_init(LIOBuffer *buf, const uint8_t *data, size_t size);
@@ -54,9 +54,6 @@ void l_iobuffer_init_cap(LIOBuffer *buf, size_t capacity);
 
 bool l_iobuffer_set_capacity(LIOBuffer *buf, size_t capacity);
 
-]],
-	ffi_source[[
-local LIOBuffer_tmp = ffi.new("LIOBuffer")
 ]],
 	constructor {
 		var_in{ "<any>", "size_or_data"},
@@ -81,7 +78,6 @@ local LIOBuffer_tmp = ffi.new("LIOBuffer")
 	local len
 	local ltype = type(${size_or_data})
 
-	${this} = LIOBuffer_tmp
 	if ltype == 'string' then
 		data = ${size_or_data}
 		len = #data
@@ -98,13 +94,13 @@ local LIOBuffer_tmp = ffi.new("LIOBuffer")
 	},
 	method "__tostring" {
 		var_out{ "const char *", "data", has_length = true},
-		c_source[[ ${data} = ${this}->buf; ${data_len} = ${this}->size; ]],
-		ffi_source[[ ${data} = ${this}.buf; ${data_len} = ${this}.size; ]],
+		c_source[[ ${data} = ${this}->buf; ${data_len} = ${this}->_size; ]],
+		ffi_source[[ ${data} = ${this}.buf; ${data_len} = ${this}._size; ]],
 	},
 	method "tostring" {
 		var_out{ "const char *", "data", has_length = true},
-		c_source[[ ${data} = ${this}->buf; ${data_len} = ${this}->size; ]],
-		ffi_source[[ ${data} = ${this}.buf; ${data_len} = ${this}.size; ]],
+		c_source[[ ${data} = ${this}->buf; ${data_len} = ${this}->_size; ]],
+		ffi_source[[ ${data} = ${this}.buf; ${data_len} = ${this}._size; ]],
 	},
 
 	method "get_byte" {
@@ -112,14 +108,14 @@ local LIOBuffer_tmp = ffi.new("LIOBuffer")
 		var_out{ "unsigned int", "val"},
 		c_source[[
 	/* check offset. */
-	if(${offset} >= ${this}->size) {
+	if(${offset} >= ${this}->_size) {
 		return luaL_argerror(L, ${offset::idx}, "Offset out-of-bounds.");
 	}
 	${val} = ${this}->buf[${offset}];
 ]],
 		ffi_source[[
 	-- check offset.
-	if(${offset} >= ${this}.size) then
+	if(${offset} >= ${this}._size or ${offset} < 0) then
 		return error("Offset out-of-bounds.")
 	end
 	${val} = tonumber(${this}.buf[${offset}])
@@ -131,14 +127,14 @@ local LIOBuffer_tmp = ffi.new("LIOBuffer")
 		var_in{ "unsigned int", "val"},
 		c_source[[
 	/* check offset. */
-	if(${offset} >= ${this}->size) {
+	if(${offset} >= ${this}->_size) {
 		return luaL_argerror(L, ${offset::idx}, "Offset out-of-bounds.");
 	}
 	${this}->buf[${offset}] = ${val};
 ]],
 		ffi_source[[
 	-- check offset.
-	if(${offset} >= ${this}.size) then
+	if(${offset} >= ${this}._size or ${offset} < 0) then
 		return error("Offset out-of-bounds.")
 	end
 	${this}.buf[${offset}] = ${val}
@@ -163,7 +159,7 @@ end
 	const uint8_t *data;
 ]],
 		c_source[[
-	data_len = ${this}->size;
+	data_len = ${this}->_size;
 	data = ${this}->buf;
 	/* apply offset. */
 	if(${offset} > 0) {
@@ -187,11 +183,11 @@ end
 	return data_len;
 ]],
 		ffi_source[[
-	local data_len = ${this}.size
+	local data_len = ${this}._size
 	local data = ${this}.buf
 	-- apply offset.
 	if(${offset} ~= 0) then
-		if(${offset} >= data_len) then
+		if(${offset} >= data_len or ${offset} < 0) then
 			return error("Offset out-of-bounds.")
 		end
 		data = data + ${offset}
@@ -199,7 +195,7 @@ end
 	end
 	-- apply length.
 	if(${length} ~= 0) then
-		if(${length} > data_len) then
+		if(${length} > data_len or ${length} < 0) then
 			return error("Length out-of-bounds.")
 		end
 		data_len = ${length}
@@ -215,7 +211,7 @@ end
 		var_in{ "size_t", "length?"},
 		var_out{ "const char *", "data", has_length = true},
 		c_source[[
-	${data_len} = ${this}->size;
+	${data_len} = ${this}->_size;
 	${data} = ${this}->buf;
 	/* apply offset. */
 	if(${offset} > 0) {
@@ -234,11 +230,11 @@ end
 	}
 ]],
 		ffi_source[[
-	${data_len} = ${this}.size
+	${data_len} = ${this}._size
 	${data} = ${this}.buf
 	-- apply offset.
 	if(${offset} ~= 0) then
-		if(${offset} >= ${data_len}) then
+		if(${offset} >= ${data_len} or ${offset} < 0) then
 			return error("Offset out-of-bounds.")
 		end
 		${data} = data + ${offset}
@@ -246,7 +242,7 @@ end
 	end
 	-- apply length.
 	if(${length} ~= 0) then
-		if(${length} > ${data_len}) then
+		if(${length} > ${data_len} or ${length} < 0) then
 			return error("Length out-of-bounds.")
 		end
 		${data_len} = ${length}
@@ -258,46 +254,110 @@ end
 		var_in{ "const char *", "data"},
 		c_source[[
 	/* check capacity */
-	if(${data_len} > ${this}->capacity) {
+	if(${data_len} > ${this}->_capacity) {
 		if(!l_iobuffer_set_capacity(${this}, ${data_len})) {
 			return luaL_argerror(L, ${data::idx}, "Can't grow buffer, not enough space.");
 		}
 	}
 	memcpy(${this}->buf, ${data}, ${data_len});
-	${this}->size = ${data_len};
+	${this}->_size = ${data_len};
 ]],
 		ffi_source[[
 	-- check capacity
-	if(${data_len} > ${this}.capacity) then
+	if(${data_len} > ${this}._capacity) then
 		if(C.l_iobuffer_set_capacity(${this}, ${data_len}) == 0) then
 			return error("Can't grow buffer, not enough space.");
 		end
 	end
 	ffi.copy(${this}.buf, ${data}, ${data_len});
-	${this}.size = ${data_len};
+	${this}._size = ${data_len};
 ]],
 	},
 
+	method "copy_buffer" {
+		var_in{"Buffer", "src"},
+		var_in{"size_t", "offset?", default = 0 },
+		var_in{"size_t", "length?", default = 0 },
+		-- temp. vars
+		c_source "pre" [[
+	size_t data_len;
+	const uint8_t *data;
+]],
+		c_source[[
+	data_len = ${src}_if->get_size(${src});
+	data = ${src}_if->const_data(${src});
+	/* apply offset. */
+	if(${offset} > 0) {
+		if(${offset} >= data_len) {
+			luaL_argerror(L, ${offset::idx}, "Offset out-of-bounds.");
+		}
+		data += ${offset};
+		data_len -= ${offset};
+	}
+	/* apply length. */
+	if(${length} > 0) {
+		if(${length} > data_len) {
+			luaL_argerror(L, ${length::idx}, "Length out-of-bounds.");
+		}
+		data_len = ${length};
+	}
+	/* check capacity */
+	if(data_len > ${this}->_capacity) {
+		if(!l_iobuffer_set_capacity(${this}, data_len)) {
+			return luaL_argerror(L, ${src::idx}, "Can't grow buffer, not enough space.");
+		}
+	}
+	memcpy(${this}->buf, data, data_len);
+	${this}->_size = data_len;
+]],
+		ffi_source[[
+	local data_len = ${src}_if.get_size(${src})
+	local data = ${src}_if.const_data(${src})
+	-- apply offset.
+	if(${offset} ~= 0) then
+		if(${offset} >= data_len or ${offset} < 0) then
+			error("Offset out-of-bounds.");
+		end
+		data = data + ${offset};
+		data_len = data_len - ${offset};
+	end
+	-- apply length.
+	if(${length} ~= 0) then
+		if(${length} > data_len or ${length} < 0) then
+			error("Length out-of-bounds.");
+		end
+		data_len = ${length};
+	end
+	-- check capacity
+	if(data_len > ${this}._capacity) then
+		if(C.l_iobuffer_set_capacity(${this}, data_len) == 0) then
+			return error("Can't grow buffer, not enough space.");
+		end
+	end
+	ffi.copy(${this}.buf, data, data_len)
+	${this}._size = data_len
+]],
+	},
 	method "reset" {
 		c_method_call "void" "l_iobuffer_reset" {}
 	},
 	method "__len" {
 		var_out{ "size_t", "size", ffi_wrap = "tonumber"},
-		c_source[[${size} = ${this}->size; ]],
-		ffi_source[[${size} = ${this}.size; ]],
+		c_source[[${size} = ${this}->_size; ]],
+		ffi_source[[${size} = ${this}._size; ]],
 	},
 	method "size" {
 		var_out{ "size_t", "size", ffi_wrap = "tonumber"},
-		c_source[[${size} = ${this}->size; ]],
-		ffi_source[[${size} = ${this}.size; ]],
+		c_source[[${size} = ${this}->_size; ]],
+		ffi_source[[${size} = ${this}._size; ]],
 	},
 	method "set_size" {
 		c_method_call "bool" "l_iobuffer_set_size" { "size_t", "size" }
 	},
 	method "capacity" {
 		var_out{ "size_t", "capacity", ffi_wrap = "tonumber"},
-		c_source[[${capacity} = ${this}->capacity; ]],
-		ffi_source[[${capacity} = ${this}.capacity; ]],
+		c_source[[${capacity} = ${this}->_capacity; ]],
+		ffi_source[[${capacity} = ${this}._capacity; ]],
 	},
 	method "set_capacity" {
 		c_method_call "bool" "l_iobuffer_set_capacity" { "size_t", "capacity" }
