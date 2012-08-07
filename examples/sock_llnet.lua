@@ -162,12 +162,20 @@ function sock_mt:recv(len)
 	return self.fd:recv(len, 0)
 end
 
-function sock_mt:send_buf(buf, len, flags)
-	return self.fd:send_buf(buf, len, flags or 0)
+function sock_mt:send_buf(buf, off, len, flags)
+	return self.fd:send_buf(buf, off, len, flags or 0)
 end
 
-function sock_mt:recv_buf(buf, len, flags)
-	return self.fd:recv_buf(buf, len, flags or 0)
+function sock_mt:recv_buf(buf, off, len, flags)
+	return self.fd:recv_buf(buf, off, len, flags or 0)
+end
+
+function sock_mt:send_buffer(buf, off, len, flags)
+	return self.fd:send_buffer(buf, off, len, flags or 0)
+end
+
+function sock_mt:recv_buffer(buf, off, len, flags)
+	return self.fd:recv_buffer(buf, off, len, flags or 0)
 end
 
 module(...)
