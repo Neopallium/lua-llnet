@@ -117,6 +117,8 @@ set(LUA_LLNET_NOBJ_SRC
 set(LUA_LLNET_SRC
 	src/lsockaddr.c
 	src/lsockaddr.h
+	src/laddrinfo.c
+	src/laddrinfo.h
 	src/lsocket.c
 	src/lsocket.h
 	## IO Buffer

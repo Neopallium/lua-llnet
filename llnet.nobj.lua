@@ -49,9 +49,11 @@ c_source "module_init_src" [[
 
 subfiles {
 "src/error.nobj.lua",
+"src/eai_error.nobj.lua",
 "src/protocols.nobj.lua",
 "src/services.nobj.lua",
 "src/lsockaddr.nobj.lua",
+"src/laddrinfo.nobj.lua",
 "src/socket_options.nobj.lua",
 "src/lsocket.nobj.lua",
 
