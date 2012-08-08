@@ -41,6 +41,9 @@ struct LSockAddr {
 
 typedef struct LSockAddr LSockAddr;
 
+int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buf_len);
+
+
 ]],
 	constructor {
 		c_method_call "int" "l_sockaddr_init" {},
@@ -85,14 +88,12 @@ typedef struct LSockAddr LSockAddr;
 		c_method_call "socklen_t" "l_sockaddr_get_addrlen" {},
 	},
 	method "__tostring" {
-		var_out{ "const char *", "str", },
-		c_source "pre" [[
-#define LSOCKADDR_BUF_LEN 1024
-	char tmp[LSOCKADDR_BUF_LEN];
-]],
+		var_out{ "char *", "str", need_buffer = 1024 },
 		c_source[[
-	${str} = tmp;
-	l_sockaddr_tostring(${this}, tmp, LSOCKADDR_BUF_LEN);
+	${str_len} = l_sockaddr_tostring(${this}, ${str}, ${str_len});
+]],
+		ffi_source[[
+	${str_len} = C.l_sockaddr_tostring(${this}, ${str}, ${str_len})
 ]],
 	},
 }

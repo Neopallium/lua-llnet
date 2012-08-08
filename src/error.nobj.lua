@@ -164,10 +164,8 @@ meta_object "Errors" {
 
 	method "description" {
 		var_in{ "<any>", "err" },
-		var_out{ "const char *", "msg" },
+		var_out{ "char *", "msg", need_buffer = 1024 },
 		c_source "pre" [[
-#define BUF_LEN 1024
-	char buf[BUF_LEN];
 	int err_type;
 	int err_num = -1;
 ]],
@@ -190,10 +188,8 @@ meta_object "Errors" {
 		lua_pushliteral(L, "UNKNOWN ERROR");
 		return 2;
 	}
-	if(strerror_r(err_num, buf, BUF_LEN-1) == 0) {
-		${msg} = buf;
-	}
-#undef BUF_LEN
+	strerror_r(err_num, ${msg}, ${msg_len});
+	${msg_len} = strlen(${msg});
 ]],
 	},
 }
