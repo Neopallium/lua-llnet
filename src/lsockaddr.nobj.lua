@@ -72,8 +72,11 @@ typedef struct LSockAddr LSockAddr;
 	method "get_family" {
 		c_method_call "sa_family_t" "l_sockaddr_get_family" {},
 	},
+	method "set_port" {
+		c_method_call "int" "l_sockaddr_set_port" { "int", "port" },
+	},
 	method "get_port" {
-		c_method_call "void" "l_sockaddr_get_port" { "int", "&port>1" },
+		c_method_call "int" "l_sockaddr_get_port" {},
 	},
 	method "addr" {
 		c_method_call "sockaddr *" "l_sockaddr_get_addr" {},

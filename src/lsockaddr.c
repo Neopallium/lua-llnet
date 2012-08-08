@@ -157,26 +157,46 @@ sa_family_t l_sockaddr_get_family(LSockAddr *addr) {
 	return addr->addr->sa_family;
 }
 
-void l_sockaddr_get_port(LSockAddr *addr, int *port) {
+int l_sockaddr_set_port(LSockAddr *addr, int port) {
 	switch(addr->addr->sa_family) {
 	case PF_INET: {
 		struct sockaddr_in *addr_in;
 
 		addr_in = (struct sockaddr_in *)addr->addr;
-		*port = ntohs(addr_in->sin_port);
-		return;
+		addr_in->sin_port = port;
+		return 0;
 	}
 	case PF_INET6: {
 		struct sockaddr_in6 *addr_in;
 
 		addr_in = (struct sockaddr_in6 *)addr->addr;
-		*port = ntohs(addr_in->sin6_port);
-		return;
+		addr_in->sin6_port = port;
+		return 0;
 	}
 	default:
 		break;
 	}
-	*port = -1;
+	return -1;
+}
+
+int l_sockaddr_get_port(LSockAddr *addr) {
+	switch(addr->addr->sa_family) {
+	case PF_INET: {
+		struct sockaddr_in *addr_in;
+
+		addr_in = (struct sockaddr_in *)addr->addr;
+		return ntohs(addr_in->sin_port);
+	}
+	case PF_INET6: {
+		struct sockaddr_in6 *addr_in;
+
+		addr_in = (struct sockaddr_in6 *)addr->addr;
+		return ntohs(addr_in->sin6_port);
+	}
+	default:
+		break;
+	}
+	return -1;
 }
 
 struct sockaddr *l_sockaddr_get_addr(LSockAddr *addr) {

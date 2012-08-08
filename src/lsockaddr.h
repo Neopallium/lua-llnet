@@ -47,7 +47,9 @@ L_LIB_API void l_sockaddr_fill(LSockAddr *addr, const struct sockaddr *saddr, so
 
 L_LIB_API sa_family_t l_sockaddr_get_family(LSockAddr *addr);
 
-L_LIB_API void l_sockaddr_get_port(LSockAddr *addr, int *port);
+L_LIB_API int l_sockaddr_set_port(LSockAddr *addr, int port);
+
+L_LIB_API int l_sockaddr_get_port(LSockAddr *addr);
 
 L_LIB_API struct sockaddr *l_sockaddr_get_addr(LSockAddr *addr);
 
