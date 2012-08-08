@@ -43,45 +43,17 @@ typedef struct LSockAddr LSockAddr;
 
 ]],
 	constructor {
-		c_source "pre" [[
-	LSockAddr addr;
-	${this} = &addr;
-]],
-		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr");
-]],
 		c_method_call "int" "l_sockaddr_init" {},
 	},
 	constructor "ip_port" {
-		c_source "pre" [[
-	LSockAddr addr;
-	${this} = &addr;
-]],
-		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr");
-]],
 		c_method_call "int" "l_sockaddr_init" {},
 		c_method_call "int" "l_sockaddr_set_ip_port" { "const char *", "ip", "int", "port" },
 	},
 	constructor "unix" {
-		c_source "pre" [[
-	LSockAddr addr;
-	${this} = &addr;
-]],
-		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr");
-]],
 		c_method_call "int" "l_sockaddr_init" {},
 		c_method_call "int" "l_sockaddr_set_unix" { "const char *", "unix" },
 	},
 	constructor "family" {
-		c_source "pre" [[
-	LSockAddr addr;
-	${this} = &addr;
-]],
-		ffi_source "ffi_pre" [[
-	${this} = ffi.new("LSockAddr");
-]],
 		c_method_call "int" "l_sockaddr_init" {},
 		c_method_call "int" "l_sockaddr_set_family" { "sa_family_t", "family" },
 	},

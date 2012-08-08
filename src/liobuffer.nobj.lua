@@ -58,12 +58,10 @@ bool l_iobuffer_set_capacity(LIOBuffer *buf, size_t capacity);
 	constructor {
 		var_in{ "<any>", "size_or_data"},
 		c_source[[
-	LIOBuffer buf;
 	const uint8_t *data = NULL;
 	size_t len = 0;
 	int ltype = lua_type(L, ${size_or_data::idx});
 
-	${this} = &buf;
 	if(ltype == LUA_TSTRING) {
 		data = lua_tolstring(L, ${size_or_data::idx}, &len);
 		l_iobuffer_init(${this}, data, len);
