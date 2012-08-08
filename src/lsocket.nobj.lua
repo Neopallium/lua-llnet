@@ -20,6 +20,7 @@
 
 export_definitions {
 -- address families
+"AF_UNSPEC",
 "AF_UNIX",
 "AF_INET",
 "AF_INET6",
