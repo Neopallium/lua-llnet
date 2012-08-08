@@ -38,7 +38,10 @@ int l_addrinfo_init_full(LAddrInfo *info, const char *node, const char *service,
 	hints.ai_flags = ai_flags;
 
 	rc = getaddrinfo(node, service, &hints, &(info->res));
-	if(rc != 0) {
+	if(rc == 0) {
+		/* start at first results. */
+		info->cur = info->res;
+	} else {
 		/* error. */
 		info->res = NULL;
 	}
