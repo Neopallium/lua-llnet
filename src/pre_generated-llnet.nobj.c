@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include "lsockaddr.h"
+#include "laddrinfo.h"
 #include "lsocket.h"
 #include "liobuffer.h"
 
@@ -234,36 +235,45 @@ typedef struct ffi_export_symbol {
 typedef int errno_rc;
 
 static void error_code__errno_rc__push(lua_State *L, errno_rc err);
+typedef int eai_rc;
+
+static void error_code__eai_rc__push(lua_State *L, eai_rc err);
 
 
 static obj_type obj_types[] = {
 #define obj_type_id_Errors 0
 #define obj_type_Errors (obj_types[obj_type_id_Errors])
   { NULL, 0, OBJ_TYPE_FLAG_WEAK_REF, "Errors" },
-#define obj_type_id_Protocols 1
+#define obj_type_id_EAI_Errors 1
+#define obj_type_EAI_Errors (obj_types[obj_type_id_EAI_Errors])
+  { NULL, 1, OBJ_TYPE_FLAG_WEAK_REF, "EAI_Errors" },
+#define obj_type_id_Protocols 2
 #define obj_type_Protocols (obj_types[obj_type_id_Protocols])
-  { NULL, 1, OBJ_TYPE_FLAG_WEAK_REF, "Protocols" },
-#define obj_type_id_Services 2
+  { NULL, 2, OBJ_TYPE_FLAG_WEAK_REF, "Protocols" },
+#define obj_type_id_Services 3
 #define obj_type_Services (obj_types[obj_type_id_Services])
-  { NULL, 2, OBJ_TYPE_FLAG_WEAK_REF, "Services" },
-#define obj_type_id_LSockAddr 3
+  { NULL, 3, OBJ_TYPE_FLAG_WEAK_REF, "Services" },
+#define obj_type_id_LSockAddr 4
 #define obj_type_LSockAddr (obj_types[obj_type_id_LSockAddr])
-  { NULL, 3, OBJ_TYPE_SIMPLE, "LSockAddr" },
-#define obj_type_id_Options 4
+  { NULL, 4, OBJ_TYPE_SIMPLE, "LSockAddr" },
+#define obj_type_id_LAddrInfo 5
+#define obj_type_LAddrInfo (obj_types[obj_type_id_LAddrInfo])
+  { NULL, 5, OBJ_TYPE_SIMPLE, "LAddrInfo" },
+#define obj_type_id_Options 6
 #define obj_type_Options (obj_types[obj_type_id_Options])
-  { NULL, 4, OBJ_TYPE_FLAG_WEAK_REF, "Options" },
-#define obj_type_id_SetSocketOption 5
+  { NULL, 6, OBJ_TYPE_FLAG_WEAK_REF, "Options" },
+#define obj_type_id_SetSocketOption 7
 #define obj_type_SetSocketOption (obj_types[obj_type_id_SetSocketOption])
-  { NULL, 5, OBJ_TYPE_FLAG_WEAK_REF, "SetSocketOption" },
-#define obj_type_id_GetSocketOption 6
+  { NULL, 7, OBJ_TYPE_FLAG_WEAK_REF, "SetSocketOption" },
+#define obj_type_id_GetSocketOption 8
 #define obj_type_GetSocketOption (obj_types[obj_type_id_GetSocketOption])
-  { NULL, 6, OBJ_TYPE_FLAG_WEAK_REF, "GetSocketOption" },
-#define obj_type_id_LSocketFD 7
+  { NULL, 8, OBJ_TYPE_FLAG_WEAK_REF, "GetSocketOption" },
+#define obj_type_id_LSocketFD 9
 #define obj_type_LSocketFD (obj_types[obj_type_id_LSocketFD])
-  { NULL, 7, OBJ_TYPE_SIMPLE, "LSocketFD" },
-#define obj_type_id_LIOBuffer 8
+  { NULL, 9, OBJ_TYPE_SIMPLE, "LSocketFD" },
+#define obj_type_id_LIOBuffer 10
 #define obj_type_LIOBuffer (obj_types[obj_type_id_LIOBuffer])
-  { NULL, 8, OBJ_TYPE_SIMPLE, "LIOBuffer" },
+  { NULL, 10, OBJ_TYPE_SIMPLE, "LIOBuffer" },
   {NULL, -1, 0, NULL},
 };
 
@@ -1239,7 +1249,7 @@ static const uint8_t * LIOBuffer_Buffer_const_data(void *this_v) {
  */
 static size_t LIOBuffer_Buffer_get_size(void *this_v) {
   LIOBuffer * this_p = this_v;
-  return this_p->size;
+  return this_p->_size;
 }
 
 static const BufferIF LIOBuffer_Buffer = {
@@ -1262,7 +1272,7 @@ static uint8_t * LIOBuffer_MutableBuffer_data(void *this_v) {
  */
 static size_t LIOBuffer_MutableBuffer_get_size(void *this_v) {
   LIOBuffer * this_p = this_v;
-  return this_p->capacity;
+  return this_p->_capacity;
 }
 
 static const MutableBufferIF LIOBuffer_MutableBuffer = {
@@ -1280,6 +1290,15 @@ static const MutableBufferIF LIOBuffer_MutableBuffer = {
 	(LSockAddr *)obj_simple_udata_luadelete(L, _index, &(obj_type_LSockAddr))
 #define obj_type_LSockAddr_push(L, obj) \
 	obj_simple_udata_luapush(L, obj, sizeof(LSockAddr), &(obj_type_LSockAddr))
+
+#define obj_type_LAddrInfo_check(L, _index) \
+	(LAddrInfo *)obj_simple_udata_luacheck(L, _index, &(obj_type_LAddrInfo))
+#define obj_type_LAddrInfo_optional(L, _index) \
+	(LAddrInfo *)obj_simple_udata_luaoptional(L, _index, &(obj_type_LAddrInfo))
+#define obj_type_LAddrInfo_delete(L, _index) \
+	(LAddrInfo *)obj_simple_udata_luadelete(L, _index, &(obj_type_LAddrInfo))
+#define obj_type_LAddrInfo_push(L, obj) \
+	obj_simple_udata_luapush(L, obj, sizeof(LAddrInfo), &(obj_type_LAddrInfo))
 
 #define obj_type_LSocketFD_check(L, _index) \
 	*((LSocketFD *)obj_simple_udata_luacheck(L, _index, &(obj_type_LSocketFD)))
@@ -1477,7 +1496,10 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "ffi.cdef[[\n"
 "typedef int errno_rc;\n"
 "\n"
+"typedef int eai_rc;\n"
+"\n"
 "typedef struct LSockAddr LSockAddr;\n"
+"typedef struct LAddrInfo LAddrInfo;\n"
 "typedef int LSocketFD;\n"
 "typedef struct LIOBuffer LIOBuffer;\n"
 "\n"
@@ -1495,6 +1517,9 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "typedef struct LSockAddr LSockAddr;\n"
 "\n"
+"int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buf_len);\n"
+"\n"
+"\n"
 "\n"
 "int l_sockaddr_init(LSockAddr *);\n"
 "\n"
@@ -1510,11 +1535,46 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "sa_family_t l_sockaddr_get_family(LSockAddr *);\n"
 "\n"
-"void l_sockaddr_get_port(LSockAddr *, int*);\n"
+"int l_sockaddr_set_port(LSockAddr *, int);\n"
+"\n"
+"int l_sockaddr_get_port(LSockAddr *);\n"
 "\n"
 "sockaddr * l_sockaddr_get_addr(LSockAddr *);\n"
 "\n"
 "socklen_t l_sockaddr_get_addrlen(LSockAddr *);\n"
+"\n"
+"eai_rc l_sockaddr_lookup_full(LSockAddr *, const char *, const char *, int, int, int, int);\n"
+"\n"
+"struct LAddrInfo {\n"
+"	struct addrinfo  *_res;\n"
+"	struct addrinfo  *_cur;\n"
+"};\n"
+"\n"
+"typedef struct LAddrInfo LAddrInfo;\n"
+"\n"
+"eai_rc l_addrinfo_init_ip(LAddrInfo *, const char *, const char *);\n"
+"\n"
+"eai_rc l_addrinfo_init_ipv4(LAddrInfo *, const char *, const char *);\n"
+"\n"
+"eai_rc l_addrinfo_init_ipv6(LAddrInfo *, const char *, const char *);\n"
+"\n"
+"eai_rc l_addrinfo_init_full(LAddrInfo *, const char *, const char *, int, int, int, int);\n"
+"\n"
+"void l_addrinfo_cleanup(LAddrInfo *);\n"
+"\n"
+"bool l_addrinfo_first(LAddrInfo *);\n"
+"\n"
+"int l_addrinfo_get_addr(LAddrInfo *, LSockAddr *);\n"
+"\n"
+"const char * l_addrinfo_get_canonname(LAddrInfo *);\n"
+"\n"
+"int l_addrinfo_get_family(LAddrInfo *);\n"
+"\n"
+"int l_addrinfo_get_socktype(LAddrInfo *);\n"
+"\n"
+"int l_addrinfo_get_protocol(LAddrInfo *);\n"
+"\n"
+"bool l_addrinfo_next(LAddrInfo *);\n"
 "\n"
 "errno_rc lsocket_opt_set_IP_RECVOPTS(LSocketFD, int);\n"
 "\n"
@@ -1797,7 +1857,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "errno_rc lsocket_opt_get_TCP_CONGESTION(LSocketFD, char *, socklen_t*);\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_WINDOW_CLAMP(LSocketFD, int*);\n"
-"\n"
+"\n", /* ----- CUT ----- */
 "errno_rc lsocket_opt_get_TCP_DEFER_ACCEPT(LSocketFD, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_MAXSEG(LSocketFD, int*);\n"
@@ -1834,9 +1894,9 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "typedef struct LIOBuffer LIOBuffer;\n"
 "\n"
 "struct LIOBuffer {\n"
-"	uint8_t *buf;     /**< buffer. */\n", /* ----- CUT ----- */
-"	size_t  size;     /**< size of data in buffer. */\n"
-"	size_t  capacity; /**< memory size of buffer. */\n"
+"	uint8_t *buf;     /**< buffer. */\n"
+"	size_t  _size;     /**< size of data in buffer. */\n"
+"	size_t  _capacity; /**< memory size of buffer. */\n"
 "};\n"
 "\n"
 "void l_iobuffer_init(LIOBuffer *buf, const uint8_t *data, size_t size);\n"
@@ -2021,6 +2081,51 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "\n"
+"local obj_type_LAddrInfo_check\n"
+"local obj_type_LAddrInfo_delete\n"
+"local obj_type_LAddrInfo_push\n"
+"\n"
+"do\n"
+"	local obj_mt, obj_type, obj_ctype = obj_register_ctype(\"LAddrInfo\", \"LAddrInfo\")\n"
+"	local LAddrInfo_sizeof = ffi.sizeof\"LAddrInfo\"\n"
+"\n"
+"	function obj_type_LAddrInfo_check(obj)\n"
+"		return obj\n"
+"	end\n"
+"\n"
+"	function obj_type_LAddrInfo_delete(obj)\n"
+"		return obj\n"
+"	end\n"
+"\n"
+"	function obj_type_LAddrInfo_push(obj)\n"
+"		return obj\n"
+"	end\n"
+"\n"
+"	function obj_mt:__tostring()\n"
+"		return sformat(\"LAddrInfo: %p\", self)\n"
+"	end\n"
+"\n"
+"	function obj_mt.__eq(val1, val2)\n"
+"		if not ffi.istype(obj_type, val2) then return false end\n"
+"		assert(ffi.istype(obj_type, val1), \"expected LAddrInfo\")\n"
+"		return (C.memcmp(val1, val2, LAddrInfo_sizeof) == 0)\n"
+"	end\n"
+"\n"
+"	-- type checking function for C API.\n"
+"	_priv[obj_type] = function(obj)\n"
+"		if ffi.istype(obj_type, obj) then return obj end\n"
+"		return nil\n"
+"	end\n"
+"	-- push function for C API.\n"
+"	reg_table[obj_type] = function(ptr)\n"
+"		local obj = obj_ctype()\n"
+"		ffi.copy(obj, ptr, LAddrInfo_sizeof);\n"
+"		return obj\n"
+"	end\n"
+"\n"
+"end\n"
+"\n"
+"\n"
 "local obj_type_LSocketFD_check\n"
 "local obj_type_LSocketFD_delete\n"
 "local obj_type_LSocketFD_push\n"
@@ -2145,6 +2250,22 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "\n"
+"-- Start \"EAI_Errors\" FFI interface\n"
+"-- End \"EAI_Errors\" FFI interface\n"
+"\n"
+"-- get EAI_Errors table to map errno to error name.\n"
+"local EAI_Error_names = _M.EAI_Errors\n"
+"\n"
+"local function error_code__eai_rc__push(err)\n"
+"  local err_str\n"
+"	if(0 ~= err) then\n"
+"		err_str = EAI_Error_names[err]\n"
+"	end\n"
+"\n"
+"	return err_str\n"
+"end\n"
+"\n"
+"\n"
 "-- Start \"Protocols\" FFI interface\n"
 "-- End \"Protocols\" FFI interface\n"
 "\n"
@@ -2158,8 +2279,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _pub.LSockAddr.new()\n"
 "  local self = ffi.new(\"LSockAddr\")\n"
 "  local rc_l_sockaddr_init2 = 0\n"
-"	self = ffi.new(\"LSockAddr\");\n"
-"\n"
 "  rc_l_sockaddr_init2 = C.l_sockaddr_init(self)\n"
 "  return obj_type_LSockAddr_push(self), rc_l_sockaddr_init2\n"
 "end\n"
@@ -2172,8 +2291,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local self = ffi.new(\"LSockAddr\")\n"
 "  local rc_l_sockaddr_init2 = 0\n"
 "  local rc_l_sockaddr_set_ip_port3 = 0\n"
-"	self = ffi.new(\"LSockAddr\");\n"
-"\n"
 "  rc_l_sockaddr_init2 = C.l_sockaddr_init(self)\n"
 "  rc_l_sockaddr_set_ip_port3 = C.l_sockaddr_set_ip_port(self, ip1, port2)\n"
 "  return obj_type_LSockAddr_push(self), rc_l_sockaddr_init2, rc_l_sockaddr_set_ip_port3\n"
@@ -2185,8 +2302,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local self = ffi.new(\"LSockAddr\")\n"
 "  local rc_l_sockaddr_init2 = 0\n"
 "  local rc_l_sockaddr_set_unix3 = 0\n"
-"	self = ffi.new(\"LSockAddr\");\n"
-"\n"
 "  rc_l_sockaddr_init2 = C.l_sockaddr_init(self)\n"
 "  rc_l_sockaddr_set_unix3 = C.l_sockaddr_set_unix(self, unix1)\n"
 "  return obj_type_LSockAddr_push(self), rc_l_sockaddr_init2, rc_l_sockaddr_set_unix3\n"
@@ -2198,8 +2313,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local self = ffi.new(\"LSockAddr\")\n"
 "  local rc_l_sockaddr_init2 = 0\n"
 "  local rc_l_sockaddr_set_family3 = 0\n"
-"	self = ffi.new(\"LSockAddr\");\n"
-"\n"
 "  rc_l_sockaddr_init2 = C.l_sockaddr_init(self)\n"
 "  rc_l_sockaddr_set_family3 = C.l_sockaddr_set_family(self, family1)\n"
 "  return obj_type_LSockAddr_push(self), rc_l_sockaddr_init2, rc_l_sockaddr_set_family3\n"
@@ -2248,15 +2361,21 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  return rc_l_sockaddr_get_family1\n"
 "end\n"
 "\n"
-"do\n"
-"  local get_port_port_tmp = ffi.new(\"int[1]\")\n"
+"-- method: set_port\n"
+"function _meth.LSockAddr.set_port(self, port2)\n"
+"  \n"
+"  \n"
+"  local rc_l_sockaddr_set_port1 = 0\n"
+"  rc_l_sockaddr_set_port1 = C.l_sockaddr_set_port(self, port2)\n"
+"  return rc_l_sockaddr_set_port1\n"
+"end\n"
+"\n"
 "-- method: get_port\n"
 "function _meth.LSockAddr.get_port(self)\n"
 "  \n"
-"  local port1 = get_port_port_tmp\n"
-"  C.l_sockaddr_get_port(self, port1)\n"
-"  return port1[0]\n"
-"end\n"
+"  local rc_l_sockaddr_get_port1 = 0\n"
+"  rc_l_sockaddr_get_port1 = C.l_sockaddr_get_port(self)\n"
+"  return rc_l_sockaddr_get_port1\n"
 "end\n"
 "\n"
 "-- method: addr\n"
@@ -2275,9 +2394,170 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  return rc_l_sockaddr_get_addrlen1\n"
 "end\n"
 "\n"
+"-- method: __tostring\n"
+"function _priv.LSockAddr.__tostring(self)\n"
+"  \n"
+"  local str_len1 = 1023\n"
+"  local str1 = ffi.new(\"char[?]\", 1024)\n"
+"	str_len1 = C.l_sockaddr_tostring(self, str1, str_len1)\n"
+"\n"
+"  return ffi_string_len(str1,str_len1)\n"
+"end\n"
+"\n"
+"-- method: lookup_full\n"
+"function _meth.LSockAddr.lookup_full(self, host2, port3, ai_family4, ai_socktype5, ai_protocol6, ai_flags7)\n"
+"  \n"
+"  local host_len2 = #host2\n"
+"  port3 = tostring(port3)\n"
+"  local port_len3 = port3 and #port3 or 0\n"
+"  ai_family4 = ai_family4 or 0\n"
+"  ai_socktype5 = ai_socktype5 or 0\n"
+"  ai_protocol6 = ai_protocol6 or 0\n"
+"  ai_flags7 = ai_flags7 or 0\n"
+"  local rc_l_sockaddr_lookup_full1 = 0\n"
+"  rc_l_sockaddr_lookup_full1 = C.l_sockaddr_lookup_full(self, host2, port3, ai_family4, ai_socktype5, ai_protocol6, ai_flags7)\n"
+"  -- check for error.\n"
+"  if (0 ~= rc_l_sockaddr_lookup_full1) then\n"
+"    return nil, error_code__eai_rc__push(rc_l_sockaddr_lookup_full1)\n"
+"  end\n"
+"  return true\n", /* ----- CUT ----- */
+"end\n"
+"\n"
 "_push.LSockAddr = obj_type_LSockAddr_push\n"
 "ffi.metatype(\"LSockAddr\", _priv.LSockAddr)\n"
 "-- End \"LSockAddr\" FFI interface\n"
+"\n"
+"\n"
+"-- Start \"LAddrInfo\" FFI interface\n"
+"-- method: new\n"
+"function _pub.LAddrInfo.new(host1, port2)\n"
+"  local host_len1 = #host1\n"
+"  port2 = tostring(port2)\n"
+"  local port_len2 = port2 and #port2 or 0\n"
+"  local self = ffi.new(\"LAddrInfo\")\n"
+"  local rc_l_addrinfo_init_ip2 = 0\n"
+"  rc_l_addrinfo_init_ip2 = C.l_addrinfo_init_ip(self, host1, port2)\n"
+"  if (0 ~= rc_l_addrinfo_init_ip2) then\n"
+"    return nil,error_code__eai_rc__push(rc_l_addrinfo_init_ip2)\n"
+"  end\n"
+"  return obj_type_LAddrInfo_push(self)\n"
+"end\n"
+"register_default_constructor(_pub,\"LAddrInfo\",_pub.LAddrInfo.new)\n"
+"\n"
+"-- method: ipv4\n"
+"function _pub.LAddrInfo.ipv4(host1, port2)\n"
+"  local host_len1 = #host1\n"
+"  port2 = tostring(port2)\n"
+"  local port_len2 = port2 and #port2 or 0\n"
+"  local self = ffi.new(\"LAddrInfo\")\n"
+"  local rc_l_addrinfo_init_ipv42 = 0\n"
+"  rc_l_addrinfo_init_ipv42 = C.l_addrinfo_init_ipv4(self, host1, port2)\n"
+"  if (0 ~= rc_l_addrinfo_init_ipv42) then\n"
+"    return nil,error_code__eai_rc__push(rc_l_addrinfo_init_ipv42)\n"
+"  end\n"
+"  return obj_type_LAddrInfo_push(self)\n"
+"end\n"
+"\n"
+"-- method: ipv6\n"
+"function _pub.LAddrInfo.ipv6(host1, port2)\n"
+"  local host_len1 = #host1\n"
+"  port2 = tostring(port2)\n"
+"  local port_len2 = port2 and #port2 or 0\n"
+"  local self = ffi.new(\"LAddrInfo\")\n"
+"  local rc_l_addrinfo_init_ipv62 = 0\n"
+"  rc_l_addrinfo_init_ipv62 = C.l_addrinfo_init_ipv6(self, host1, port2)\n"
+"  if (0 ~= rc_l_addrinfo_init_ipv62) then\n"
+"    return nil,error_code__eai_rc__push(rc_l_addrinfo_init_ipv62)\n"
+"  end\n"
+"  return obj_type_LAddrInfo_push(self)\n"
+"end\n"
+"\n"
+"-- method: full\n"
+"function _pub.LAddrInfo.full(host1, port2, ai_family3, ai_socktype4, ai_protocol5, ai_flags6)\n"
+"  local host_len1 = #host1\n"
+"  port2 = tostring(port2)\n"
+"  local port_len2 = port2 and #port2 or 0\n"
+"  ai_family3 = ai_family3 or 0\n"
+"  ai_socktype4 = ai_socktype4 or 0\n"
+"  ai_protocol5 = ai_protocol5 or 0\n"
+"  ai_flags6 = ai_flags6 or 0\n"
+"  local self = ffi.new(\"LAddrInfo\")\n"
+"  local rc_l_addrinfo_init_full2 = 0\n"
+"  rc_l_addrinfo_init_full2 = C.l_addrinfo_init_full(self, host1, port2, ai_family3, ai_socktype4, ai_protocol5, ai_flags6)\n"
+"  if (0 ~= rc_l_addrinfo_init_full2) then\n"
+"    return nil,error_code__eai_rc__push(rc_l_addrinfo_init_full2)\n"
+"  end\n"
+"  return obj_type_LAddrInfo_push(self)\n"
+"end\n"
+"\n"
+"-- method: __gc\n"
+"function _priv.LAddrInfo.__gc(self)\n"
+"  local self = obj_type_LAddrInfo_delete(self)\n"
+"  if not self then return end\n"
+"  C.l_addrinfo_cleanup(self)\n"
+"  return \n"
+"end\n"
+"\n"
+"-- method: first\n"
+"function _meth.LAddrInfo.first(self)\n"
+"  \n"
+"  local rc_l_addrinfo_first1 = 0\n"
+"  rc_l_addrinfo_first1 = C.l_addrinfo_first(self)\n"
+"  return rc_l_addrinfo_first1\n"
+"end\n"
+"\n"
+"-- method: get_addr\n"
+"function _meth.LAddrInfo.get_addr(self, addr2)\n"
+"  \n"
+"  \n"
+"  local rc_l_addrinfo_get_addr1 = 0\n"
+"  rc_l_addrinfo_get_addr1 = C.l_addrinfo_get_addr(self, addr2)\n"
+"  return rc_l_addrinfo_get_addr1\n"
+"end\n"
+"\n"
+"-- method: get_canonname\n"
+"function _meth.LAddrInfo.get_canonname(self)\n"
+"  \n"
+"  local rc_l_addrinfo_get_canonname1\n"
+"  rc_l_addrinfo_get_canonname1 = C.l_addrinfo_get_canonname(self)\n"
+"  return ffi_string(rc_l_addrinfo_get_canonname1)\n"
+"end\n"
+"\n"
+"-- method: get_family\n"
+"function _meth.LAddrInfo.get_family(self)\n"
+"  \n"
+"  local rc_l_addrinfo_get_family1 = 0\n"
+"  rc_l_addrinfo_get_family1 = C.l_addrinfo_get_family(self)\n"
+"  return rc_l_addrinfo_get_family1\n"
+"end\n"
+"\n"
+"-- method: get_socktype\n"
+"function _meth.LAddrInfo.get_socktype(self)\n"
+"  \n"
+"  local rc_l_addrinfo_get_socktype1 = 0\n"
+"  rc_l_addrinfo_get_socktype1 = C.l_addrinfo_get_socktype(self)\n"
+"  return rc_l_addrinfo_get_socktype1\n"
+"end\n"
+"\n"
+"-- method: get_protocol\n"
+"function _meth.LAddrInfo.get_protocol(self)\n"
+"  \n"
+"  local rc_l_addrinfo_get_protocol1 = 0\n"
+"  rc_l_addrinfo_get_protocol1 = C.l_addrinfo_get_protocol(self)\n"
+"  return rc_l_addrinfo_get_protocol1\n"
+"end\n"
+"\n"
+"-- method: next\n"
+"function _meth.LAddrInfo.next(self)\n"
+"  \n"
+"  local rc_l_addrinfo_next1 = 0\n"
+"  rc_l_addrinfo_next1 = C.l_addrinfo_next(self)\n"
+"  return rc_l_addrinfo_next1\n"
+"end\n"
+"\n"
+"_push.LAddrInfo = obj_type_LAddrInfo_push\n"
+"ffi.metatype(\"LAddrInfo\", _priv.LAddrInfo)\n"
+"-- End \"LAddrInfo\" FFI interface\n"
 "\n"
 "\n"
 "-- Start \"Options\" FFI interface\n"
@@ -2388,7 +2668,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  end\n"
 "  return true\n"
 "end\n"
-"end\n", /* ----- CUT ----- */
+"end\n"
 "\n"
 "-- method: IP_MULTICAST_TTL\n"
 "if (_pub.SetSocketOption.IP_MULTICAST_TTL) then\n"
@@ -2616,7 +2896,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "-- method: IPV6_MULTICAST_LOOP\n"
-"if (_pub.SetSocketOption.IPV6_MULTICAST_LOOP) then\n"
+"if (_pub.SetSocketOption.IPV6_MULTICAST_LOOP) then\n", /* ----- CUT ----- */
 "function _pub.SetSocketOption.IPV6_MULTICAST_LOOP(sock1, value2)\n"
 "  sock1 = sock1._wrapped_val\n"
 "  \n"
@@ -2841,7 +3121,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "-- method: IPV6_RECVPKTINFO\n"
-"if (_pub.SetSocketOption.IPV6_RECVPKTINFO) then\n", /* ----- CUT ----- */
+"if (_pub.SetSocketOption.IPV6_RECVPKTINFO) then\n"
 "function _pub.SetSocketOption.IPV6_RECVPKTINFO(sock1, value2)\n"
 "  sock1 = sock1._wrapped_val\n"
 "  \n"
@@ -3072,7 +3352,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  \n"
 "  local rc_lsocket_opt_set_SO_OOBINLINE1 = 0\n"
 "  rc_lsocket_opt_set_SO_OOBINLINE1 = C.lsocket_opt_set_SO_OOBINLINE(sock1, value2)\n"
-"  -- check for error.\n"
+"  -- check for error.\n", /* ----- CUT ----- */
 "  if (-1 == rc_lsocket_opt_set_SO_OOBINLINE1) then\n"
 "    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_OOBINLINE1)\n"
 "  end\n"
@@ -3307,7 +3587,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "-- method: TCP_KEEPCNT\n"
 "if (_pub.SetSocketOption.TCP_KEEPCNT) then\n"
-"function _pub.SetSocketOption.TCP_KEEPCNT(sock1, value2)\n", /* ----- CUT ----- */
+"function _pub.SetSocketOption.TCP_KEEPCNT(sock1, value2)\n"
 "  sock1 = sock1._wrapped_val\n"
 "  \n"
 "  local rc_lsocket_opt_set_TCP_KEEPCNT1 = 0\n"
@@ -3546,7 +3826,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local value1 = IP_PKTINFO_value_tmp\n"
 "  local rc_lsocket_opt_get_IP_PKTINFO2 = 0\n"
 "  rc_lsocket_opt_get_IP_PKTINFO2 = C.lsocket_opt_get_IP_PKTINFO(sock1, value1)\n"
-"  if (-1 == rc_lsocket_opt_get_IP_PKTINFO2) then\n"
+"  if (-1 == rc_lsocket_opt_get_IP_PKTINFO2) then\n", /* ----- CUT ----- */
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_PKTINFO2)\n"
 "  end\n"
 "  return value1[0]\n"
@@ -3765,7 +4045,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local value1 = IPV6_MULTICAST_IF_value_tmp\n"
 "  local rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = 0\n"
 "  rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = C.lsocket_opt_get_IPV6_MULTICAST_IF(sock1, value1)\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_MULTICAST_IF2) then\n", /* ----- CUT ----- */
+"  if (-1 == rc_lsocket_opt_get_IPV6_MULTICAST_IF2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_MULTICAST_IF2)\n"
 "  end\n"
 "  return value1[0]\n"
@@ -3992,7 +4272,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IPV6_ROUTER_ALERT_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IPV6_ROUTER_ALERT_value_tmp = ffi.new(\"int[1]\")\n", /* ----- CUT ----- */
 "-- method: IPV6_ROUTER_ALERT\n"
 "if (_pub.GetSocketOption.IPV6_ROUTER_ALERT) then\n"
 "function _pub.GetSocketOption.IPV6_ROUTER_ALERT(sock1)\n"
@@ -4217,7 +4497,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _pub.GetSocketOption.SO_DONTROUTE(sock1)\n"
 "  sock1 = sock1._wrapped_val\n"
 "  local value1 = SO_DONTROUTE_value_tmp\n"
-"  local rc_lsocket_opt_get_SO_DONTROUTE2 = 0\n", /* ----- CUT ----- */
+"  local rc_lsocket_opt_get_SO_DONTROUTE2 = 0\n"
 "  rc_lsocket_opt_get_SO_DONTROUTE2 = C.lsocket_opt_get_SO_DONTROUTE(sock1, value1)\n"
 "  if (-1 == rc_lsocket_opt_get_SO_DONTROUTE2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DONTROUTE2)\n"
@@ -4455,7 +4735,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _pub.GetSocketOption.TCP_CORK(sock1)\n"
 "  sock1 = sock1._wrapped_val\n"
 "  local value1 = TCP_CORK_value_tmp\n"
-"  local rc_lsocket_opt_get_TCP_CORK2 = 0\n"
+"  local rc_lsocket_opt_get_TCP_CORK2 = 0\n", /* ----- CUT ----- */
 "  rc_lsocket_opt_get_TCP_CORK2 = C.lsocket_opt_get_TCP_CORK(sock1, value1)\n"
 "  if (-1 == rc_lsocket_opt_get_TCP_CORK2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_CORK2)\n"
@@ -4697,7 +4977,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  self = self._wrapped_val\n"
 "  \n"
 "  local rc_l_socket_shutdown1 = 0\n"
-"  rc_l_socket_shutdown1 = C.l_socket_shutdown(self, how2)\n", /* ----- CUT ----- */
+"  rc_l_socket_shutdown1 = C.l_socket_shutdown(self, how2)\n"
 "  return rc_l_socket_shutdown1\n"
 "end\n"
 "\n"
@@ -4938,8 +5218,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "\n"
 "-- Start \"LIOBuffer\" FFI interface\n"
-"local LIOBuffer_tmp = ffi.new(\"LIOBuffer\")\n"
-"\n"
 "-- method: new\n"
 "function _pub.LIOBuffer.new(size_or_data1)\n"
 "  local self = ffi.new(\"LIOBuffer\")\n"
@@ -4948,7 +5226,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "	local len\n"
 "	local ltype = type(size_or_data1)\n"
 "\n"
-"	self = LIOBuffer_tmp\n"
 "	if ltype == 'string' then\n"
 "		data = size_or_data1\n"
 "		len = #data\n"
@@ -4977,7 +5254,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  \n"
 "  local data_len1 = 0\n"
 "  local data1\n"
-" data1 = self.buf; data_len1 = self.size; \n"
+" data1 = self.buf; data_len1 = self._size; \n"
 "  return ffi_string_len(data1,data_len1)\n"
 "end\n"
 "\n"
@@ -4986,17 +5263,17 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  \n"
 "  local data_len1 = 0\n"
 "  local data1\n"
-" data1 = self.buf; data_len1 = self.size; \n"
+" data1 = self.buf; data_len1 = self._size; \n"
 "  return ffi_string_len(data1,data_len1)\n"
 "end\n"
 "\n"
 "-- method: get_byte\n"
 "function _meth.LIOBuffer.get_byte(self, offset2)\n"
-"  \n"
+"  \n", /* ----- CUT ----- */
 "  \n"
 "  local val1 = 0\n"
 "	-- check offset.\n"
-"	if(offset2 >= self.size) then\n"
+"	if(offset2 >= self._size or offset2 < 0) then\n"
 "		return error(\"Offset out-of-bounds.\")\n"
 "	end\n"
 "	val1 = tonumber(self.buf[offset2])\n"
@@ -5010,7 +5287,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  \n"
 "  \n"
 "	-- check offset.\n"
-"	if(offset2 >= self.size) then\n"
+"	if(offset2 >= self._size or offset2 < 0) then\n"
 "		return error(\"Offset out-of-bounds.\")\n"
 "	end\n"
 "	self.buf[offset2] = val3\n"
@@ -5030,11 +5307,11 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  \n"
 "  offset2 = offset2 or 0\n"
 "  length3 = length3 or 0\n"
-"	local data_len = self.size\n"
+"	local data_len = self._size\n"
 "	local data = self.buf\n"
 "	-- apply offset.\n"
 "	if(offset2 ~= 0) then\n"
-"		if(offset2 >= data_len) then\n"
+"		if(offset2 >= data_len or offset2 < 0) then\n"
 "			return error(\"Offset out-of-bounds.\")\n"
 "		end\n"
 "		data = data + offset2\n"
@@ -5042,7 +5319,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "	end\n"
 "	-- apply length.\n"
 "	if(length3 ~= 0) then\n"
-"		if(length3 > data_len) then\n"
+"		if(length3 > data_len or length3 < 0) then\n"
 "			return error(\"Length out-of-bounds.\")\n"
 "		end\n"
 "		data_len = length3\n"
@@ -5061,11 +5338,11 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  length3 = length3 or 0\n"
 "  local data_len1 = 0\n"
 "  local data1\n"
-"	data_len1 = self.size\n"
+"	data_len1 = self._size\n"
 "	data1 = self.buf\n"
 "	-- apply offset.\n"
 "	if(offset2 ~= 0) then\n"
-"		if(offset2 >= data_len1) then\n"
+"		if(offset2 >= data_len1 or offset2 < 0) then\n"
 "			return error(\"Offset out-of-bounds.\")\n"
 "		end\n"
 "		data1 = data + offset2\n"
@@ -5073,7 +5350,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "	end\n"
 "	-- apply length.\n"
 "	if(length3 ~= 0) then\n"
-"		if(length3 > data_len1) then\n"
+"		if(length3 > data_len1 or length3 < 0) then\n"
 "			return error(\"Length out-of-bounds.\")\n"
 "		end\n"
 "		data_len1 = length3\n"
@@ -5087,13 +5364,48 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  \n"
 "  local data_len2 = #data2\n"
 "	-- check capacity\n"
-"	if(data_len2 > self.capacity) then\n"
+"	if(data_len2 > self._capacity) then\n"
 "		if(C.l_iobuffer_set_capacity(self, data_len2) == 0) then\n"
 "			return error(\"Can't grow buffer, not enough space.\");\n"
 "		end\n"
 "	end\n"
 "	ffi.copy(self.buf, data2, data_len2);\n"
-"	self.size = data_len2;\n"
+"	self._size = data_len2;\n"
+"\n"
+"  return \n"
+"end\n"
+"\n"
+"-- method: copy_buffer\n"
+"function _meth.LIOBuffer.copy_buffer(self, src2, offset3, length4)\n"
+"  \n"
+"  src2_if = src2.NOBJ_get_BufferIF or obj_type_Buffer_check(src2)\n"
+"  offset3 = offset3 or 0\n"
+"  length4 = length4 or 0\n"
+"	local data_len = src2_if.get_size(src2)\n"
+"	local data = src2_if.const_data(src2)\n"
+"	-- apply offset.\n"
+"	if(offset3 ~= 0) then\n"
+"		if(offset3 >= data_len or offset3 < 0) then\n"
+"			error(\"Offset out-of-bounds.\");\n"
+"		end\n"
+"		data = data + offset3;\n"
+"		data_len = data_len - offset3;\n"
+"	end\n"
+"	-- apply length.\n"
+"	if(length4 ~= 0) then\n"
+"		if(length4 > data_len or length4 < 0) then\n"
+"			error(\"Length out-of-bounds.\");\n"
+"		end\n"
+"		data_len = length4;\n"
+"	end\n"
+"	-- check capacity\n"
+"	if(data_len > self._capacity) then\n"
+"		if(C.l_iobuffer_set_capacity(self, data_len) == 0) then\n"
+"			return error(\"Can't grow buffer, not enough space.\");\n"
+"		end\n"
+"	end\n"
+"	ffi.copy(self.buf, data, data_len)\n"
+"	self._size = data_len\n"
 "\n"
 "  return \n"
 "end\n"
@@ -5109,7 +5421,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _priv.LIOBuffer.__len(self)\n"
 "  \n"
 "  local size1 = 0\n"
-"size1 = self.size; \n"
+"size1 = self._size; \n"
 "  return tonumber(size1)\n"
 "end\n"
 "\n"
@@ -5117,7 +5429,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _meth.LIOBuffer.size(self)\n"
 "  \n"
 "  local size1 = 0\n"
-"size1 = self.size; \n"
+"size1 = self._size; \n"
 "  return tonumber(size1)\n"
 "end\n"
 "\n"
@@ -5134,7 +5446,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _meth.LIOBuffer.capacity(self)\n"
 "  \n"
 "  local capacity1 = 0\n"
-"capacity1 = self.capacity; \n"
+"capacity1 = self._capacity; \n"
 "  return tonumber(capacity1)\n"
 "end\n"
 "\n"
@@ -5156,7 +5468,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "-- Buffer interface method get_size\n"
 "function impl_meths.get_size(this_p)\n"
-"  return this_p.size\n"
+"  return this_p._size\n"
 "end\n"
 "end\n"
 "\n"
@@ -5169,7 +5481,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "-- MutableBuffer interface method get_size\n"
 "function impl_meths.get_size(this_p)\n"
-"  return this_p.capacity\n"
+"  return this_p._capacity\n"
 "end\n"
 "end\n"
 "\n"
@@ -5178,6 +5490,8 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "-- End \"LIOBuffer\" FFI interface\n"
 "\n", NULL };
 static char llnet_Errors_key[] = "llnet_Errors_key";
+
+static char llnet_EAI_Errors_key[] = "llnet_EAI_Errors_key";
 
 #ifndef __WINDOWS__
 #ifndef _GNU_SOURCE
@@ -5900,9 +6214,9 @@ errno_rc lsocket_opt_get_TCP_KEEPINTVL(LSocketFD sock, int *value) {
 
 /* method: description */
 static int Errors__description__meth(lua_State *L) {
-  const char * msg1 = NULL;
-#define BUF_LEN 1024
-	char buf[BUF_LEN];
+  size_t msg_len1 = 1023;
+  char msg1_buf[1024];
+  char * msg1 = msg1_buf;
 	int err_type;
 	int err_num = -1;
 
@@ -5924,12 +6238,10 @@ static int Errors__description__meth(lua_State *L) {
 		lua_pushliteral(L, "UNKNOWN ERROR");
 		return 2;
 	}
-	if(strerror_r(err_num, buf, BUF_LEN-1) == 0) {
-		msg1 = buf;
-	}
-#undef BUF_LEN
+	strerror_r(err_num, msg1, msg_len1);
+	msg_len1 = strlen(msg1);
 
-  lua_pushstring(L, msg1);
+  if(msg1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, msg1,msg_len1);
   return 1;
 }
 
@@ -5942,6 +6254,57 @@ static void error_code__errno_rc__push(lua_State *L, errno_rc err) {
 		/* convert errno to string. */
 		lua_rawgeti(L, -1, errno);
 		/* remove Errors table. */
+		lua_remove(L, -2);
+		if(!lua_isnil(L, -1)) {
+			/* found error. */
+			return;
+		}
+		/* Unknown error. */
+		lua_pop(L, 1);
+		err_str = "UNKNOWN ERROR";
+	}
+
+	if(err_str) {
+		lua_pushstring(L, err_str);
+	} else {
+		lua_pushnil(L);
+	}
+}
+
+/* method: description */
+static int EAI_Errors__description__meth(lua_State *L) {
+  const char * msg1 = NULL;
+	int err_type;
+	int err_num = -1;
+
+	err_type = lua_type(L, 2);
+	if(err_type == LUA_TSTRING) {
+		lua_pushvalue(L, 2);
+		lua_rawget(L, 1);
+		if(lua_isnumber(L, -1)) {
+			err_num = lua_tointeger(L, -1);
+		}
+		lua_pop(L, 1);
+	} else if(err_type == LUA_TNUMBER) {
+		err_num = lua_tointeger(L, 2);
+	} else {
+		return luaL_argerror(L, 2, "expected string/number");
+	}
+	msg1 = gai_strerror(err_num);
+
+  lua_pushstring(L, msg1);
+  return 1;
+}
+
+static void error_code__eai_rc__push(lua_State *L, eai_rc err) {
+  const char *err_str = NULL;
+	if(0 != err) {
+		/* get EAI_Errors table. */
+		lua_pushlightuserdata(L, llnet_EAI_Errors_key);
+		lua_rawget(L, LUA_REGISTRYINDEX);
+		/* convert error to string. */
+		lua_rawgeti(L, -1, err);
+		/* remove EAI_Errors table. */
 		lua_remove(L, -2);
 		if(!lua_isnil(L, -1)) {
 			/* found error. */
@@ -6146,9 +6509,6 @@ static int LSockAddr__new__meth(lua_State *L) {
   LSockAddr this1_store;
   LSockAddr * this1 = &(this1_store);
   int rc_l_sockaddr_init2 = 0;
-	LSockAddr addr;
-	this1 = &addr;
-
   rc_l_sockaddr_init2 = l_sockaddr_init(this1);
   obj_type_LSockAddr_push(L, this1);
   lua_pushinteger(L, rc_l_sockaddr_init2);
@@ -6164,9 +6524,6 @@ static int LSockAddr__ip_port__meth(lua_State *L) {
   LSockAddr * this1 = &(this1_store);
   int rc_l_sockaddr_init2 = 0;
   int rc_l_sockaddr_set_ip_port3 = 0;
-	LSockAddr addr;
-	this1 = &addr;
-
   ip1 = luaL_checklstring(L,1,&(ip_len1));
   port2 = luaL_checkinteger(L,2);
   rc_l_sockaddr_init2 = l_sockaddr_init(this1);
@@ -6185,9 +6542,6 @@ static int LSockAddr__unix__meth(lua_State *L) {
   LSockAddr * this1 = &(this1_store);
   int rc_l_sockaddr_init2 = 0;
   int rc_l_sockaddr_set_unix3 = 0;
-	LSockAddr addr;
-	this1 = &addr;
-
   unix1 = luaL_checklstring(L,1,&(unix_len1));
   rc_l_sockaddr_init2 = l_sockaddr_init(this1);
   rc_l_sockaddr_set_unix3 = l_sockaddr_set_unix(this1, unix1);
@@ -6204,9 +6558,6 @@ static int LSockAddr__family__meth(lua_State *L) {
   LSockAddr * this1 = &(this1_store);
   int rc_l_sockaddr_init2 = 0;
   int rc_l_sockaddr_set_family3 = 0;
-	LSockAddr addr;
-	this1 = &addr;
-
   family1 = luaL_checkinteger(L,1);
   rc_l_sockaddr_init2 = l_sockaddr_init(this1);
   rc_l_sockaddr_set_family3 = l_sockaddr_set_family(this1, family1);
@@ -6272,13 +6623,25 @@ static int LSockAddr__get_family__meth(lua_State *L) {
   return 1;
 }
 
+/* method: set_port */
+static int LSockAddr__set_port__meth(lua_State *L) {
+  LSockAddr * this1;
+  int port2;
+  int rc_l_sockaddr_set_port1 = 0;
+  this1 = obj_type_LSockAddr_check(L,1);
+  port2 = luaL_checkinteger(L,2);
+  rc_l_sockaddr_set_port1 = l_sockaddr_set_port(this1, port2);
+  lua_pushinteger(L, rc_l_sockaddr_set_port1);
+  return 1;
+}
+
 /* method: get_port */
 static int LSockAddr__get_port__meth(lua_State *L) {
   LSockAddr * this1;
-  int port1 = 0;
+  int rc_l_sockaddr_get_port1 = 0;
   this1 = obj_type_LSockAddr_check(L,1);
-  l_sockaddr_get_port(this1, &(port1));
-  lua_pushinteger(L, port1);
+  rc_l_sockaddr_get_port1 = l_sockaddr_get_port(this1);
+  lua_pushinteger(L, rc_l_sockaddr_get_port1);
   return 1;
 }
 
@@ -6305,15 +6668,216 @@ static int LSockAddr__addrlen__meth(lua_State *L) {
 /* method: __tostring */
 static int LSockAddr____tostring__meth(lua_State *L) {
   LSockAddr * this1;
-  const char * str1 = NULL;
-#define LSOCKADDR_BUF_LEN 1024
-	char tmp[LSOCKADDR_BUF_LEN];
-
+  size_t str_len1 = 1023;
+  char str1_buf[1024];
+  char * str1 = str1_buf;
   this1 = obj_type_LSockAddr_check(L,1);
-	str1 = tmp;
-	l_sockaddr_tostring(this1, tmp, LSOCKADDR_BUF_LEN);
+	str_len1 = l_sockaddr_tostring(this1, str1, str_len1);
 
-  lua_pushstring(L, str1);
+  if(str1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, str1,str_len1);
+  return 1;
+}
+
+/* method: lookup_full */
+static int LSockAddr__lookup_full__meth(lua_State *L) {
+  LSockAddr * this1;
+  size_t host_len2;
+  const char * host2;
+  size_t port_len3;
+  const char * port3;
+  int ai_family4;
+  int ai_socktype5;
+  int ai_protocol6;
+  int ai_flags7;
+  eai_rc rc_l_sockaddr_lookup_full1 = 0;
+  this1 = obj_type_LSockAddr_check(L,1);
+  host2 = luaL_checklstring(L,2,&(host_len2));
+  port3 = luaL_optlstring(L,3,NULL,&(port_len3));
+  ai_family4 = luaL_optinteger(L,4,0);
+  ai_socktype5 = luaL_optinteger(L,5,0);
+  ai_protocol6 = luaL_optinteger(L,6,0);
+  ai_flags7 = luaL_optinteger(L,7,0);
+  rc_l_sockaddr_lookup_full1 = l_sockaddr_lookup_full(this1, host2, port3, ai_family4, ai_socktype5, ai_protocol6, ai_flags7);
+  /* check for error. */
+  if((0 != rc_l_sockaddr_lookup_full1)) {
+    lua_pushnil(L);
+      error_code__eai_rc__push(L, rc_l_sockaddr_lookup_full1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+
+/* method: new */
+static int LAddrInfo__new__meth(lua_State *L) {
+  size_t host_len1;
+  const char * host1;
+  size_t port_len2;
+  const char * port2;
+  LAddrInfo this1_store;
+  LAddrInfo * this1 = &(this1_store);
+  eai_rc rc_l_addrinfo_init_ip2 = 0;
+  host1 = luaL_checklstring(L,1,&(host_len1));
+  port2 = luaL_optlstring(L,2,NULL,&(port_len2));
+  rc_l_addrinfo_init_ip2 = l_addrinfo_init_ip(this1, host1, port2);
+  if(!(0 != rc_l_addrinfo_init_ip2)) {
+    obj_type_LAddrInfo_push(L, this1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__eai_rc__push(L, rc_l_addrinfo_init_ip2);
+  return 2;
+}
+
+/* method: ipv4 */
+static int LAddrInfo__ipv4__meth(lua_State *L) {
+  size_t host_len1;
+  const char * host1;
+  size_t port_len2;
+  const char * port2;
+  LAddrInfo this1_store;
+  LAddrInfo * this1 = &(this1_store);
+  eai_rc rc_l_addrinfo_init_ipv42 = 0;
+  host1 = luaL_checklstring(L,1,&(host_len1));
+  port2 = luaL_optlstring(L,2,NULL,&(port_len2));
+  rc_l_addrinfo_init_ipv42 = l_addrinfo_init_ipv4(this1, host1, port2);
+  if(!(0 != rc_l_addrinfo_init_ipv42)) {
+    obj_type_LAddrInfo_push(L, this1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__eai_rc__push(L, rc_l_addrinfo_init_ipv42);
+  return 2;
+}
+
+/* method: ipv6 */
+static int LAddrInfo__ipv6__meth(lua_State *L) {
+  size_t host_len1;
+  const char * host1;
+  size_t port_len2;
+  const char * port2;
+  LAddrInfo this1_store;
+  LAddrInfo * this1 = &(this1_store);
+  eai_rc rc_l_addrinfo_init_ipv62 = 0;
+  host1 = luaL_checklstring(L,1,&(host_len1));
+  port2 = luaL_optlstring(L,2,NULL,&(port_len2));
+  rc_l_addrinfo_init_ipv62 = l_addrinfo_init_ipv6(this1, host1, port2);
+  if(!(0 != rc_l_addrinfo_init_ipv62)) {
+    obj_type_LAddrInfo_push(L, this1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__eai_rc__push(L, rc_l_addrinfo_init_ipv62);
+  return 2;
+}
+
+/* method: full */
+static int LAddrInfo__full__meth(lua_State *L) {
+  size_t host_len1;
+  const char * host1;
+  size_t port_len2;
+  const char * port2;
+  int ai_family3;
+  int ai_socktype4;
+  int ai_protocol5;
+  int ai_flags6;
+  LAddrInfo this1_store;
+  LAddrInfo * this1 = &(this1_store);
+  eai_rc rc_l_addrinfo_init_full2 = 0;
+  host1 = luaL_checklstring(L,1,&(host_len1));
+  port2 = luaL_optlstring(L,2,NULL,&(port_len2));
+  ai_family3 = luaL_optinteger(L,3,0);
+  ai_socktype4 = luaL_optinteger(L,4,0);
+  ai_protocol5 = luaL_optinteger(L,5,0);
+  ai_flags6 = luaL_optinteger(L,6,0);
+  rc_l_addrinfo_init_full2 = l_addrinfo_init_full(this1, host1, port2, ai_family3, ai_socktype4, ai_protocol5, ai_flags6);
+  if(!(0 != rc_l_addrinfo_init_full2)) {
+    obj_type_LAddrInfo_push(L, this1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__eai_rc__push(L, rc_l_addrinfo_init_full2);
+  return 2;
+}
+
+/* method: _priv */
+static int LAddrInfo__delete__meth(lua_State *L) {
+  LAddrInfo * this1;
+  this1 = obj_type_LAddrInfo_delete(L,1);
+  l_addrinfo_cleanup(this1);
+  return 0;
+}
+
+/* method: first */
+static int LAddrInfo__first__meth(lua_State *L) {
+  LAddrInfo * this1;
+  bool rc_l_addrinfo_first1 = 0;
+  this1 = obj_type_LAddrInfo_check(L,1);
+  rc_l_addrinfo_first1 = l_addrinfo_first(this1);
+  lua_pushboolean(L, rc_l_addrinfo_first1);
+  return 1;
+}
+
+/* method: get_addr */
+static int LAddrInfo__get_addr__meth(lua_State *L) {
+  LAddrInfo * this1;
+  LSockAddr * addr2;
+  int rc_l_addrinfo_get_addr1 = 0;
+  this1 = obj_type_LAddrInfo_check(L,1);
+  addr2 = obj_type_LSockAddr_check(L,2);
+  rc_l_addrinfo_get_addr1 = l_addrinfo_get_addr(this1, addr2);
+  lua_pushinteger(L, rc_l_addrinfo_get_addr1);
+  return 1;
+}
+
+/* method: get_canonname */
+static int LAddrInfo__get_canonname__meth(lua_State *L) {
+  LAddrInfo * this1;
+  const char * rc_l_addrinfo_get_canonname1 = NULL;
+  this1 = obj_type_LAddrInfo_check(L,1);
+  rc_l_addrinfo_get_canonname1 = l_addrinfo_get_canonname(this1);
+  lua_pushstring(L, rc_l_addrinfo_get_canonname1);
+  return 1;
+}
+
+/* method: get_family */
+static int LAddrInfo__get_family__meth(lua_State *L) {
+  LAddrInfo * this1;
+  int rc_l_addrinfo_get_family1 = 0;
+  this1 = obj_type_LAddrInfo_check(L,1);
+  rc_l_addrinfo_get_family1 = l_addrinfo_get_family(this1);
+  lua_pushinteger(L, rc_l_addrinfo_get_family1);
+  return 1;
+}
+
+/* method: get_socktype */
+static int LAddrInfo__get_socktype__meth(lua_State *L) {
+  LAddrInfo * this1;
+  int rc_l_addrinfo_get_socktype1 = 0;
+  this1 = obj_type_LAddrInfo_check(L,1);
+  rc_l_addrinfo_get_socktype1 = l_addrinfo_get_socktype(this1);
+  lua_pushinteger(L, rc_l_addrinfo_get_socktype1);
+  return 1;
+}
+
+/* method: get_protocol */
+static int LAddrInfo__get_protocol__meth(lua_State *L) {
+  LAddrInfo * this1;
+  int rc_l_addrinfo_get_protocol1 = 0;
+  this1 = obj_type_LAddrInfo_check(L,1);
+  rc_l_addrinfo_get_protocol1 = l_addrinfo_get_protocol(this1);
+  lua_pushinteger(L, rc_l_addrinfo_get_protocol1);
+  return 1;
+}
+
+/* method: next */
+static int LAddrInfo__next__meth(lua_State *L) {
+  LAddrInfo * this1;
+  bool rc_l_addrinfo_next1 = 0;
+  this1 = obj_type_LAddrInfo_check(L,1);
+  rc_l_addrinfo_next1 = l_addrinfo_next(this1);
+  lua_pushboolean(L, rc_l_addrinfo_next1);
   return 1;
 }
 
@@ -9611,12 +10175,10 @@ static int LSocketFD__recv_buf__meth(lua_State *L) {
 static int LIOBuffer__new__meth(lua_State *L) {
   LIOBuffer this1_store;
   LIOBuffer * this1 = &(this1_store);
-	LIOBuffer buf;
 	const uint8_t *data = NULL;
 	size_t len = 0;
 	int ltype = lua_type(L, 1);
 
-	this1 = &buf;
 	if(ltype == LUA_TSTRING) {
 		data = lua_tolstring(L, 1, &len);
 		l_iobuffer_init(this1, data, len);
@@ -9643,7 +10205,7 @@ static int LIOBuffer____tostring__meth(lua_State *L) {
   size_t data_len1 = 0;
   const char * data1 = NULL;
   this1 = obj_type_LIOBuffer_check(L,1);
- data1 = this1->buf; data_len1 = this1->size; 
+ data1 = this1->buf; data_len1 = this1->_size; 
   if(data1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, data1,data_len1);
   return 1;
 }
@@ -9654,7 +10216,7 @@ static int LIOBuffer__tostring__meth(lua_State *L) {
   size_t data_len1 = 0;
   const char * data1 = NULL;
   this1 = obj_type_LIOBuffer_check(L,1);
- data1 = this1->buf; data_len1 = this1->size; 
+ data1 = this1->buf; data_len1 = this1->_size; 
   if(data1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, data1,data_len1);
   return 1;
 }
@@ -9667,7 +10229,7 @@ static int LIOBuffer__get_byte__meth(lua_State *L) {
   this1 = obj_type_LIOBuffer_check(L,1);
   offset2 = luaL_checkinteger(L,2);
 	/* check offset. */
-	if(offset2 >= this1->size) {
+	if(offset2 >= this1->_size) {
 		return luaL_argerror(L, 2, "Offset out-of-bounds.");
 	}
 	val1 = this1->buf[offset2];
@@ -9685,7 +10247,7 @@ static int LIOBuffer__set_byte__meth(lua_State *L) {
   offset2 = luaL_checkinteger(L,2);
   val3 = luaL_checkinteger(L,3);
 	/* check offset. */
-	if(offset2 >= this1->size) {
+	if(offset2 >= this1->_size) {
 		return luaL_argerror(L, 2, "Offset out-of-bounds.");
 	}
 	this1->buf[offset2] = val3;
@@ -9705,7 +10267,7 @@ static int LIOBuffer__get_bytes__meth(lua_State *L) {
 	size_t data_len;
 	const uint8_t *data;
 
-	data_len = this1->size;
+	data_len = this1->_size;
 	data = this1->buf;
 	/* apply offset. */
 	if(offset2 > 0) {
@@ -9741,7 +10303,7 @@ static int LIOBuffer__get_data__meth(lua_State *L) {
   this1 = obj_type_LIOBuffer_check(L,1);
   offset2 = luaL_optinteger(L,2,0);
   length3 = luaL_optinteger(L,3,0);
-	data_len1 = this1->size;
+	data_len1 = this1->_size;
 	data1 = this1->buf;
 	/* apply offset. */
 	if(offset2 > 0) {
@@ -9771,13 +10333,55 @@ static int LIOBuffer__set_data__meth(lua_State *L) {
   this1 = obj_type_LIOBuffer_check(L,1);
   data2 = luaL_checklstring(L,2,&(data_len2));
 	/* check capacity */
-	if(data_len2 > this1->capacity) {
+	if(data_len2 > this1->_capacity) {
 		if(!l_iobuffer_set_capacity(this1, data_len2)) {
 			return luaL_argerror(L, 2, "Can't grow buffer, not enough space.");
 		}
 	}
 	memcpy(this1->buf, data2, data_len2);
-	this1->size = data_len2;
+	this1->_size = data_len2;
+
+  return 0;
+}
+
+/* method: copy_buffer */
+static int LIOBuffer__copy_buffer__meth(lua_State *L) {
+  LIOBuffer * this1;
+  BufferIF_VAR(src2);
+  size_t offset3;
+  size_t length4;
+	size_t data_len;
+	const uint8_t *data;
+
+  this1 = obj_type_LIOBuffer_check(L,1);
+  BufferIF_LUA_CHECK(L,2, src2);
+  offset3 = luaL_optinteger(L,3,0);
+  length4 = luaL_optinteger(L,4,0);
+	data_len = src2_if->get_size(src2);
+	data = src2_if->const_data(src2);
+	/* apply offset. */
+	if(offset3 > 0) {
+		if(offset3 >= data_len) {
+			luaL_argerror(L, 3, "Offset out-of-bounds.");
+		}
+		data += offset3;
+		data_len -= offset3;
+	}
+	/* apply length. */
+	if(length4 > 0) {
+		if(length4 > data_len) {
+			luaL_argerror(L, 4, "Length out-of-bounds.");
+		}
+		data_len = length4;
+	}
+	/* check capacity */
+	if(data_len > this1->_capacity) {
+		if(!l_iobuffer_set_capacity(this1, data_len)) {
+			return luaL_argerror(L, 2, "Can't grow buffer, not enough space.");
+		}
+	}
+	memcpy(this1->buf, data, data_len);
+	this1->_size = data_len;
 
   return 0;
 }
@@ -9795,7 +10399,7 @@ static int LIOBuffer____len__meth(lua_State *L) {
   LIOBuffer * this1;
   size_t size1 = 0;
   this1 = obj_type_LIOBuffer_check(L,1);
-size1 = this1->size; 
+size1 = this1->_size; 
   lua_pushinteger(L, size1);
   return 1;
 }
@@ -9805,7 +10409,7 @@ static int LIOBuffer__size__meth(lua_State *L) {
   LIOBuffer * this1;
   size_t size1 = 0;
   this1 = obj_type_LIOBuffer_check(L,1);
-size1 = this1->size; 
+size1 = this1->_size; 
   lua_pushinteger(L, size1);
   return 1;
 }
@@ -9827,7 +10431,7 @@ static int LIOBuffer__capacity__meth(lua_State *L) {
   LIOBuffer * this1;
   size_t capacity1 = 0;
   this1 = obj_type_LIOBuffer_check(L,1);
-capacity1 = this1->capacity; 
+capacity1 = this1->_capacity; 
   lua_pushinteger(L, capacity1);
   return 1;
 }
@@ -10263,6 +10867,81 @@ static const reg_impl obj_Errors_implements[] = {
   {NULL, NULL}
 };
 
+static const luaL_reg obj_EAI_Errors_pub_funcs[] = {
+  {NULL, NULL}
+};
+
+static const luaL_reg obj_EAI_Errors_methods[] = {
+  {"description", EAI_Errors__description__meth},
+  {NULL, NULL}
+};
+
+static const luaL_reg obj_EAI_Errors_metas[] = {
+  {NULL, NULL}
+};
+
+static const obj_const obj_EAI_Errors_constants[] = {
+#ifdef EAI_NODATA
+  {"EAI_NODATA", NULL, EAI_NODATA, CONST_NUMBER},
+#endif
+#ifdef EAI_SOCKTYPE
+  {"EAI_SOCKTYPE", NULL, EAI_SOCKTYPE, CONST_NUMBER},
+#endif
+#ifdef EAI_AGAIN
+  {"EAI_AGAIN", NULL, EAI_AGAIN, CONST_NUMBER},
+#endif
+#ifdef EAI_SERVICE
+  {"EAI_SERVICE", NULL, EAI_SERVICE, CONST_NUMBER},
+#endif
+#ifdef EAI_CANCELED
+  {"EAI_CANCELED", NULL, EAI_CANCELED, CONST_NUMBER},
+#endif
+#ifdef EAI_OVERFLOW
+  {"EAI_OVERFLOW", NULL, EAI_OVERFLOW, CONST_NUMBER},
+#endif
+#ifdef EAI_BADFLAGS
+  {"EAI_BADFLAGS", NULL, EAI_BADFLAGS, CONST_NUMBER},
+#endif
+#ifdef EAI_NOTCANCELED
+  {"EAI_NOTCANCELED", NULL, EAI_NOTCANCELED, CONST_NUMBER},
+#endif
+#ifdef EAI_IDN_ENCODE
+  {"EAI_IDN_ENCODE", NULL, EAI_IDN_ENCODE, CONST_NUMBER},
+#endif
+#ifdef EAI_FAMILY
+  {"EAI_FAMILY", NULL, EAI_FAMILY, CONST_NUMBER},
+#endif
+#ifdef EAI_FAIL
+  {"EAI_FAIL", NULL, EAI_FAIL, CONST_NUMBER},
+#endif
+#ifdef EAI_INPROGRESS
+  {"EAI_INPROGRESS", NULL, EAI_INPROGRESS, CONST_NUMBER},
+#endif
+#ifdef EAI_MEMORY
+  {"EAI_MEMORY", NULL, EAI_MEMORY, CONST_NUMBER},
+#endif
+#ifdef EAI_SYSTEM
+  {"EAI_SYSTEM", NULL, EAI_SYSTEM, CONST_NUMBER},
+#endif
+#ifdef EAI_NONAME
+  {"EAI_NONAME", NULL, EAI_NONAME, CONST_NUMBER},
+#endif
+#ifdef EAI_ALLDONE
+  {"EAI_ALLDONE", NULL, EAI_ALLDONE, CONST_NUMBER},
+#endif
+#ifdef EAI_ADDRFAMILY
+  {"EAI_ADDRFAMILY", NULL, EAI_ADDRFAMILY, CONST_NUMBER},
+#endif
+#ifdef EAI_INTR
+  {"EAI_INTR", NULL, EAI_INTR, CONST_NUMBER},
+#endif
+  {NULL, NULL, 0.0 , 0}
+};
+
+static const reg_impl obj_EAI_Errors_implements[] = {
+  {NULL, NULL}
+};
+
 static const luaL_reg obj_Protocols_pub_funcs[] = {
   {NULL, NULL}
 };
@@ -10320,9 +10999,11 @@ static const luaL_reg obj_LSockAddr_methods[] = {
   {"set_unix", LSockAddr__set_unix__meth},
   {"resize", LSockAddr__resize__meth},
   {"get_family", LSockAddr__get_family__meth},
+  {"set_port", LSockAddr__set_port__meth},
   {"get_port", LSockAddr__get_port__meth},
   {"addr", LSockAddr__addr__meth},
   {"addrlen", LSockAddr__addrlen__meth},
+  {"lookup_full", LSockAddr__lookup_full__meth},
   {NULL, NULL}
 };
 
@@ -10346,6 +11027,48 @@ static const obj_const obj_LSockAddr_constants[] = {
 };
 
 static const reg_impl obj_LSockAddr_implements[] = {
+  {NULL, NULL}
+};
+
+static const luaL_reg obj_LAddrInfo_pub_funcs[] = {
+  {"new", LAddrInfo__new__meth},
+  {"ipv4", LAddrInfo__ipv4__meth},
+  {"ipv6", LAddrInfo__ipv6__meth},
+  {"full", LAddrInfo__full__meth},
+  {NULL, NULL}
+};
+
+static const luaL_reg obj_LAddrInfo_methods[] = {
+  {"first", LAddrInfo__first__meth},
+  {"get_addr", LAddrInfo__get_addr__meth},
+  {"get_canonname", LAddrInfo__get_canonname__meth},
+  {"get_family", LAddrInfo__get_family__meth},
+  {"get_socktype", LAddrInfo__get_socktype__meth},
+  {"get_protocol", LAddrInfo__get_protocol__meth},
+  {"next", LAddrInfo__next__meth},
+  {NULL, NULL}
+};
+
+static const luaL_reg obj_LAddrInfo_metas[] = {
+  {"__gc", LAddrInfo__delete__meth},
+  {"__tostring", obj_simple_udata_default_tostring},
+  {"__eq", obj_simple_udata_default_equal},
+  {NULL, NULL}
+};
+
+static const obj_base obj_LAddrInfo_bases[] = {
+  {-1, NULL}
+};
+
+static const obj_field obj_LAddrInfo_fields[] = {
+  {NULL, 0, 0, 0}
+};
+
+static const obj_const obj_LAddrInfo_constants[] = {
+  {NULL, NULL, 0.0 , 0}
+};
+
+static const reg_impl obj_LAddrInfo_implements[] = {
   {NULL, NULL}
 };
 
@@ -11141,6 +11864,7 @@ static const luaL_reg obj_LIOBuffer_methods[] = {
   {"get_bytes", LIOBuffer__get_bytes__meth},
   {"get_data", LIOBuffer__get_data__meth},
   {"set_data", LIOBuffer__set_data__meth},
+  {"copy_buffer", LIOBuffer__copy_buffer__meth},
   {"reset", LIOBuffer__reset__meth},
   {"size", LIOBuffer__size__meth},
   {"set_size", LIOBuffer__set_size__meth},
@@ -11188,14 +11912,17 @@ static const obj_const llnet_constants[] = {
 #ifdef IP_PMTUDISC_DO
   {"IP_PMTUDISC_DO", NULL, IP_PMTUDISC_DO, CONST_NUMBER},
 #endif
+#ifdef IPV6_RTHDR_TYPE_0
+  {"IPV6_RTHDR_TYPE_0", NULL, IPV6_RTHDR_TYPE_0, CONST_NUMBER},
+#endif
 #ifdef SOCK_DGRAM
   {"SOCK_DGRAM", NULL, SOCK_DGRAM, CONST_NUMBER},
 #endif
-#ifdef AF_NETLINK
-  {"AF_NETLINK", NULL, AF_NETLINK, CONST_NUMBER},
+#ifdef AF_UNSPEC
+  {"AF_UNSPEC", NULL, AF_UNSPEC, CONST_NUMBER},
 #endif
-#ifdef IPV6_RTHDR_TYPE_0
-  {"IPV6_RTHDR_TYPE_0", NULL, IPV6_RTHDR_TYPE_0, CONST_NUMBER},
+#ifdef IPV6_RTHDR_STRICT
+  {"IPV6_RTHDR_STRICT", NULL, IPV6_RTHDR_STRICT, CONST_NUMBER},
 #endif
 #ifdef SOCK_RAW
   {"SOCK_RAW", NULL, SOCK_RAW, CONST_NUMBER},
@@ -11206,11 +11933,11 @@ static const obj_const llnet_constants[] = {
 #ifdef SOCK_RDM
   {"SOCK_RDM", NULL, SOCK_RDM, CONST_NUMBER},
 #endif
-#ifdef IPV6_RTHDR_STRICT
-  {"IPV6_RTHDR_STRICT", NULL, IPV6_RTHDR_STRICT, CONST_NUMBER},
-#endif
 #ifdef IPV6_RTHDR_LOOSE
   {"IPV6_RTHDR_LOOSE", NULL, IPV6_RTHDR_LOOSE, CONST_NUMBER},
+#endif
+#ifdef SOCK_STREAM
+  {"SOCK_STREAM", NULL, SOCK_STREAM, CONST_NUMBER},
 #endif
 #ifdef AF_UNIX
   {"AF_UNIX", NULL, AF_UNIX, CONST_NUMBER},
@@ -11218,26 +11945,26 @@ static const obj_const llnet_constants[] = {
 #ifdef SHUT_RDWR
   {"SHUT_RDWR", NULL, SHUT_RDWR, CONST_NUMBER},
 #endif
-#ifdef SHUT_WR
-  {"SHUT_WR", NULL, SHUT_WR, CONST_NUMBER},
-#endif
 #ifdef IPV6_PMTUDISC_DO
   {"IPV6_PMTUDISC_DO", NULL, IPV6_PMTUDISC_DO, CONST_NUMBER},
-#endif
-#ifdef SOCK_STREAM
-  {"SOCK_STREAM", NULL, SOCK_STREAM, CONST_NUMBER},
 #endif
 #ifdef IPV6_PMTUDISC_WANT
   {"IPV6_PMTUDISC_WANT", NULL, IPV6_PMTUDISC_WANT, CONST_NUMBER},
 #endif
+#ifdef AF_INET6
+  {"AF_INET6", NULL, AF_INET6, CONST_NUMBER},
+#endif
 #ifdef IPV6_PMTUDISC_DONT
   {"IPV6_PMTUDISC_DONT", NULL, IPV6_PMTUDISC_DONT, CONST_NUMBER},
+#endif
+#ifdef IP_PMTUDISC_PROBE
+  {"IP_PMTUDISC_PROBE", NULL, IP_PMTUDISC_PROBE, CONST_NUMBER},
 #endif
 #ifdef AF_IPX
   {"AF_IPX", NULL, AF_IPX, CONST_NUMBER},
 #endif
-#ifdef IP_PMTUDISC_PROBE
-  {"IP_PMTUDISC_PROBE", NULL, IP_PMTUDISC_PROBE, CONST_NUMBER},
+#ifdef IP_PMTUDISC_WANT
+  {"IP_PMTUDISC_WANT", NULL, IP_PMTUDISC_WANT, CONST_NUMBER},
 #endif
 #ifdef SOCK_NONBLOCK
   {"SOCK_NONBLOCK", NULL, SOCK_NONBLOCK, CONST_NUMBER},
@@ -11245,8 +11972,8 @@ static const obj_const llnet_constants[] = {
 #ifdef AF_PACKET
   {"AF_PACKET", NULL, AF_PACKET, CONST_NUMBER},
 #endif
-#ifdef IP_PMTUDISC_WANT
-  {"IP_PMTUDISC_WANT", NULL, IP_PMTUDISC_WANT, CONST_NUMBER},
+#ifdef SHUT_WR
+  {"SHUT_WR", NULL, SHUT_WR, CONST_NUMBER},
 #endif
 #ifdef AF_INET
   {"AF_INET", NULL, AF_INET, CONST_NUMBER},
@@ -11254,14 +11981,14 @@ static const obj_const llnet_constants[] = {
 #ifdef IPV6_PMTUDISC_PROBE
   {"IPV6_PMTUDISC_PROBE", NULL, IPV6_PMTUDISC_PROBE, CONST_NUMBER},
 #endif
-#ifdef AF_INET6
-  {"AF_INET6", NULL, AF_INET6, CONST_NUMBER},
+#ifdef SOCK_CLOEXEC
+  {"SOCK_CLOEXEC", NULL, SOCK_CLOEXEC, CONST_NUMBER},
 #endif
 #ifdef SHUT_RD
   {"SHUT_RD", NULL, SHUT_RD, CONST_NUMBER},
 #endif
-#ifdef SOCK_CLOEXEC
-  {"SOCK_CLOEXEC", NULL, SOCK_CLOEXEC, CONST_NUMBER},
+#ifdef AF_NETLINK
+  {"AF_NETLINK", NULL, AF_NETLINK, CONST_NUMBER},
 #endif
   {NULL, NULL, 0.0 , 0}
 };
@@ -11270,9 +11997,11 @@ static const obj_const llnet_constants[] = {
 
 static const reg_sub_module reg_sub_modules[] = {
   { &(obj_type_Errors), REG_META, obj_Errors_pub_funcs, obj_Errors_methods, obj_Errors_metas, NULL, NULL, obj_Errors_constants, NULL, 1},
+  { &(obj_type_EAI_Errors), REG_META, obj_EAI_Errors_pub_funcs, obj_EAI_Errors_methods, obj_EAI_Errors_metas, NULL, NULL, obj_EAI_Errors_constants, NULL, 1},
   { &(obj_type_Protocols), REG_META, obj_Protocols_pub_funcs, obj_Protocols_methods, obj_Protocols_metas, NULL, NULL, obj_Protocols_constants, NULL, 0},
   { &(obj_type_Services), REG_META, obj_Services_pub_funcs, obj_Services_methods, obj_Services_metas, NULL, NULL, obj_Services_constants, NULL, 0},
   { &(obj_type_LSockAddr), REG_OBJECT, obj_LSockAddr_pub_funcs, obj_LSockAddr_methods, obj_LSockAddr_metas, obj_LSockAddr_bases, obj_LSockAddr_fields, obj_LSockAddr_constants, obj_LSockAddr_implements, 0},
+  { &(obj_type_LAddrInfo), REG_OBJECT, obj_LAddrInfo_pub_funcs, obj_LAddrInfo_methods, obj_LAddrInfo_metas, obj_LAddrInfo_bases, obj_LAddrInfo_fields, obj_LAddrInfo_constants, obj_LAddrInfo_implements, 0},
   { &(obj_type_Options), REG_PACKAGE, obj_Options_pub_funcs, NULL, NULL, NULL, NULL, obj_Options_constants, NULL, 1},
   { &(obj_type_SetSocketOption), REG_PACKAGE, obj_SetSocketOption_pub_funcs, NULL, NULL, NULL, NULL, obj_SetSocketOption_constants, NULL, 0},
   { &(obj_type_GetSocketOption), REG_PACKAGE, obj_GetSocketOption_pub_funcs, NULL, NULL, NULL, NULL, obj_GetSocketOption_constants, NULL, 0},
@@ -11378,6 +12107,11 @@ LUA_NOBJ_API int luaopen_llnet(lua_State *L) {
 	/* Cache reference to llnet.Errors table for errno->string convertion. */
 	lua_pushlightuserdata(L, llnet_Errors_key);
 	lua_getfield(L, -2, "Errors");
+	lua_rawset(L, LUA_REGISTRYINDEX);
+
+	/* Cache reference to llnet.EAI_Errors table for errno->string convertion. */
+	lua_pushlightuserdata(L, llnet_EAI_Errors_key);
+	lua_getfield(L, -2, "EAI_Errors");
 	lua_rawset(L, LUA_REGISTRYINDEX);
 
 
