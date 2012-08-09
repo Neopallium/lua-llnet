@@ -57,4 +57,7 @@ L_LIB_API socklen_t l_sockaddr_get_addrlen(LSockAddr *addr);
 
 L_LIB_API int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buf_len);
 
+L_LIB_API int l_sockaddr_lookup_full(LSockAddr *addr, const char *node, const char *service,
+	int ai_family, int ai_socktype, int ai_protocol, int ai_flags);
+
 #endif /* __L_SOCKADDR_H__ */

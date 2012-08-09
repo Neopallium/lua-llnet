@@ -105,7 +105,7 @@ end
 local tmp_addr = llnet.LSockAddr()
 local function make_addr(host, port)
 	if host == '*' or host == nil then host = '0.0.0.0' end
-	tmp_addr:set_ip_port(host, tonumber(port))
+	tmp_addr:lookup_full(host, port)
 	return tmp_addr
 end
 

@@ -96,5 +96,10 @@ int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buf_len);
 	${str_len} = C.l_sockaddr_tostring(${this}, ${str}, ${str_len})
 ]],
 	},
+	method "lookup_full" {
+		c_method_call "eai_rc" "l_sockaddr_lookup_full" { "const char *", "host",
+			"const char *", "port?", "int", "ai_family?", "int", "ai_socktype?", "int", "ai_protocol?",
+			"int", "ai_flags?" },
+	},
 }
 

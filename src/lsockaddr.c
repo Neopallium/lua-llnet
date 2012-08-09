@@ -4,6 +4,7 @@
  ***************************************************************************/
 
 #include "lsockaddr.h"
+#include "laddrinfo.h"
 
 #ifdef __WINDOWS__
 #include <winsock2.h>
@@ -245,5 +246,21 @@ int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buflen) {
 		return snprintf(buf, buflen, "Un-supported sockaddr family %d", family);
 	}
 	return 0;
+}
+
+int l_sockaddr_lookup_full(LSockAddr *addr, const char *node, const char *service,
+	int ai_family, int ai_socktype, int ai_protocol, int ai_flags)
+{
+	LAddrInfo info;
+	int rc;
+
+	rc = l_addrinfo_init_full(&info, node, service, ai_family, ai_socktype, ai_protocol, ai_flags);
+	if(rc == 0) {
+		l_addrinfo_get_addr(&info, addr);
+	}
+
+	l_addrinfo_cleanup(&info);
+
+	return rc;
 }
 
