@@ -267,14 +267,66 @@ function sock_mt:recv(len)
 	return ffi.string(tmp_buf, rc)
 end
 
-function sock_mt:send_buf(data, len, flags)
+function sock_mt:send_buf(data, off, len, flags)
+	data = ffi.cast("const char *", data) + off
 	local rc = C.l_socket_send(self.fd, data, len, flags or 0)
 	if rc == -1 then return push_perror() end
 	return rc
 end
 
-function sock_mt:recv_buf(data, len, flags)
+function sock_mt:recv_buf(data, off, len, flags)
+	data = ffi.cast("char *", data) + off
 	local rc = C.l_socket_recv(self.fd, data, len, flags or 0)
+	if rc <= 0 then
+		-- rc == 0, then socket is closed.
+		if rc == 0 then return nil, "CLOSED" end
+		return push_perror()
+	end
+	return rc
+end
+
+function sock_mt:send_buffer(buf, off, len, flags)
+	local data_len = buf._size
+	local data = buf.buf
+	-- apply offset.
+	if(off > 0) then
+		if(off >= data_len) then
+			error("Offset out-of-bounds.");
+		end
+		data = data + off;
+		data_len = data_len - off;
+	end
+	-- apply length.
+	if(len > 0) then
+		if(len > data_len) then
+			error("Length out-of-bounds.");
+		end
+		data_len = len;
+	end
+	local rc = C.l_socket_send(self.fd, data, data_len, flags or 0)
+	if rc == -1 then return push_perror() end
+	return rc
+end
+
+function sock_mt:recv_buffer(buf, off, len, flags)
+	local cap_len = buf._capacity
+	local data = buf.buf
+	-- apply offset.
+	if(off > 0) then
+		if(off >= cap_len) then
+			error("Offset out-of-bounds.");
+		end
+		data = data + off;
+		cap_len = cap_len - off;
+	end
+	-- calculate read length.
+	if(len < cap_len) then
+		cap_len = len;
+	end
+	if(0 == cap_len) then
+		return nil, "ENOBUFS"
+	end
+	local rc = C.l_socket_recv(self.fd, data, cap_len, flags or 0)
 	if rc <= 0 then
 		-- rc == 0, then socket is closed.
 		if rc == 0 then return nil, "CLOSED" end

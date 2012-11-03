@@ -83,8 +83,6 @@ local sock_flags = sock.NONBLOCK + sock.CLOEXEC
 -- zmq used for stopwatch timer.
 local zmq = require"zmq"
 
-local lbuf = require"buf"
-
 local epoller = require"examples.epoller"
 
 local poll = epoller.new()
@@ -191,16 +189,16 @@ progress: %3i%% done, %7i requests, %5i open conns, %i.%03i%03i sec, %5i req/s
 end
 
 local READ_LEN = 2 * 1024
-local tmp_buf = lbuf.new(READ_LEN)
-local tmp_data = tmp_buf:data_ptr()
 
 local data_read
 if backend ~= 'nixio' then
+	local llnet = require"llnet"
+	local buf = llnet.LIOBuffer.new(READ_LEN)
 	function data_read(sock)
-		local len, err = sock:recv_buf(tmp_data, READ_LEN)
+		local len, err = sock:recv_buffer(buf, 0, READ_LEN)
 		if len then
-			tmp_buf:set_length(len)
-			return tmp_buf:tostring()
+			buf:set_size(len)
+			return buf:tostring()
 		end
 		return nil, err
 	end
