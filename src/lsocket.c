@@ -65,6 +65,17 @@ int l_socket_set_int_option(LSocketFD sock, int level, int opt, int val) {
 	return l_socket_set_option(sock, level, opt, &val, sizeof(val));
 }
 
+int l_socket_pair(int type, int flags, LSocketFD sv[2]) {
+	type |= flags;
+#ifdef __WINDOWS__
+	/* TODO: use TCP sockets. */
+	errno = EAFNOSUPPORT;
+	return -1;
+#else
+	return socketpair(AF_UNIX, type, 0, sv);
+#endif
+}
+
 LSocketFD l_socket_open(int domain, int type, int protocol, int flags) {
 	type |= flags;
 	return socket(domain, type, protocol);

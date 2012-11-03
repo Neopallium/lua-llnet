@@ -51,6 +51,8 @@ L_LIB_API int l_socket_set_int_option(LSocketFD sock, int level, int opt, int va
 
 #define l_socket_is_closed(sock) ((sock) < 0)
 
+L_LIB_API int l_socket_pair(int type, int flags, LSocketFD sv[2]);
+
 L_LIB_API LSocketFD l_socket_open(int domain, int type, int protocol, int flags);
 
 L_LIB_API LSocketFD l_socket_close_internal(LSocketFD sock);
