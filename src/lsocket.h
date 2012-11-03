@@ -64,6 +64,10 @@ L_LIB_API int l_socket_bind(LSocketFD sock, LSockAddr *addr);
 
 L_LIB_API int l_socket_listen(LSocketFD sock, int backlog);
 
+L_LIB_API int l_socket_get_sockname(LSocketFD sock, LSockAddr *addr);
+
+L_LIB_API int l_socket_get_peername(LSocketFD sock, LSockAddr *addr);
+
 L_LIB_API LSocketFD l_socket_accept(LSocketFD sock, LSockAddr *peer, int flags);
 
 L_LIB_API int l_socket_send(LSocketFD sock, const void *buf, size_t len, int flags);

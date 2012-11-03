@@ -6,7 +6,9 @@ local domain = llnet["AF_" .. (arg[3] or "inet"):upper()]
 local sock_type = llnet["SOCK_" .. (arg[4] or "stream"):upper()]
 local proto = llnet.Protocols[arg[4] or "tcp"]
 
-if type(port) == 'string' then
+if tonumber(port) then
+	port = tonumber(port)
+else
 	port = llnet.Services[port]
 end
 

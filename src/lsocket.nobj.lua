@@ -116,6 +116,12 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 	method "listen" {
 		c_method_call "errno_rc" "l_socket_listen" { "int", "backlog" },
 	},
+	method "get_sockname" {
+		c_method_call "errno_rc" "l_socket_get_sockname" { "LSockAddr *", "addr" },
+	},
+	method "get_peername" {
+		c_method_call "errno_rc" "l_socket_get_peername" { "LSockAddr *", "addr" },
+	},
 	method "accept" {
 		var_out{"LSocketFD", "client"},
 		c_method_call { "errno_rc", "rc"} "l_socket_accept" { "LSockAddr *", "peer?", "int", "flags?" },

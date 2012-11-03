@@ -94,12 +94,37 @@ int l_socket_listen(LSocketFD sock, int backlog) {
 	return listen(sock, backlog);
 }
 
+int l_socket_get_sockname(LSocketFD sock, LSockAddr *addr) {
+	MAKE_TEMP_ADDR(tmp1);
+	int rc;
+
+	rc = getsockname(sock, GET_TEMP_ADDR_AND_PTR_LEN(tmp1));
+	if(rc == 0) {
+		L_SOCKADDR_FILL_FROM_TEMP(addr, tmp1);
+	}
+	return rc;
+}
+
+int l_socket_get_peername(LSocketFD sock, LSockAddr *addr) {
+	MAKE_TEMP_ADDR(tmp1);
+	int rc;
+
+	rc = getpeername(sock, GET_TEMP_ADDR_AND_PTR_LEN(tmp1));
+	if(rc == 0) {
+		L_SOCKADDR_FILL_FROM_TEMP(addr, tmp1);
+	}
+	return rc;
+}
+
 LSocketFD l_socket_accept(LSocketFD sock, LSockAddr *peer, int flags) {
+	MAKE_TEMP_ADDR(tmp1);
 #ifdef __WINDOWS__
 	LSocketFD rc;
 	if(peer != NULL) {
-		socklen_t peerlen = l_sockaddr_get_addrlen(peer);
-		rc = accept(sock, l_sockaddr_get_addr(peer), &peerlen);
+		rc = accept(sock, GET_TEMP_ADDR_AND_PTR_LEN(tmp1));
+		if(rc == 0) {
+			L_SOCKADDR_FILL_FROM_TEMP(peer, tmp1);
+		}
 	} else {
 		rc = accept(sock, NULL, NULL);
 	}
@@ -112,8 +137,12 @@ LSocketFD l_socket_accept(LSocketFD sock, LSockAddr *peer, int flags) {
 	return rc;
 #else
 	if(peer != NULL) {
-		socklen_t peerlen = l_sockaddr_get_addrlen(peer);
-		return accept4(sock, l_sockaddr_get_addr(peer), &peerlen, flags);
+		LSocketFD rc;
+		rc = accept4(sock, GET_TEMP_ADDR_AND_PTR_LEN(tmp1), flags);
+		if(rc == 0) {
+			L_SOCKADDR_FILL_FROM_TEMP(peer, tmp1);
+		}
+		return rc;
 	}
 	return accept4(sock, NULL, NULL, flags);
 #endif

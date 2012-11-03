@@ -23,6 +23,16 @@ struct LSockAddr {
 
 typedef struct LSockAddr LSockAddr;
 
+#define MAKE_TEMP_ADDR(name) \
+	char tmp_buf_ ## name [L_SOCKADDR_MAX_LEN]; \
+	socklen_t tmp_buf_len_ ## name = L_SOCKADDR_MAX_LEN
+
+#define GET_TEMP_ADDR_AND_PTR_LEN(name) \
+	(struct sockaddr *)(tmp_buf_ ## name), &(tmp_buf_len_ ## name)
+
+#define L_SOCKADDR_FILL_FROM_TEMP(addr, name) \
+	l_sockaddr_fill((addr), (struct sockaddr *)(tmp_buf_ ## name), tmp_buf_len_ ## name)
+
 #define L_SOCKADDR_TO_ADDR_AND_LEN(addr) \
 	(addr)->addr, (addr)->addrlen
 

@@ -52,6 +52,9 @@ struct sockaddr *l_sockaddr_get_addr(LSockAddr *addr);
 
 socklen_t l_sockaddr_get_addrlen(LSockAddr *addr);
 
+int l_sockaddr_lookup_full(LSockAddr *addr, const char *node, const char *service,
+	int ai_family, int ai_socktype, int ai_protocol, int ai_flags);
+
 /* LSocketFD */
 typedef int LSocketFD;
 
@@ -177,7 +180,7 @@ end
 
 local function make_addr(host, port)
 	if host == '*' or host == nil then host = '0.0.0.0' end
-	C.l_sockaddr_set_ip_port(tmp_addr, host, tonumber(port))
+	C.l_sockaddr_lookup_full(tmp_addr, host, tostring(port), 0, 0, 0, 0)
 	return tmp_addr
 end
 
