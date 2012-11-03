@@ -235,7 +235,7 @@ end
 		if(${offset} >= ${data_len} or ${offset} < 0) then
 			return error("Offset out-of-bounds.")
 		end
-		${data} = data + ${offset}
+		${data} = ${data} + ${offset}
 		${data_len} = ${data_len} - ${offset}
 	end
 	-- apply length.
