@@ -3,6 +3,7 @@
 env:
   global:
     - LUA_CPATH="./?.so;;"
+    - LUA_LIBDIR="/usr/lib/x86_64-linux-gnu/"
   matrix:
     - "LUA=lua5.1 LIBLUA=liblua5.1-dev     LUA_INCDIR=/usr/include/lua5.1     LUA_LIB=lua5.1"
     - "LUA=lua5.2 LIBLUA=liblua5.2-dev     LUA_INCDIR=/usr/include/lua5.2     LUA_LIB=lua5.2"
@@ -13,7 +14,7 @@ branches:
     - master
 
 compiler:
-  - "clang"
+  #- "clang"
   - "gcc"
 
 before_install:
@@ -25,11 +26,8 @@ install:
 
 script:
   - "mkdir build; cd build"
-  - "cmake .."
+  - "cmake .. -DLUA_LIBRARIES=$LUA_LIBDIR -DLIB_INCLUDE_DIR=$LUA_INCDIR"
   - "make "
-  - "echo TRAVIS_BUILD_DIR $TRAVIS_BUILD_DIR"
-  - "echo PWD $PWD"
-  - "echo CC $CC"
 
 notifications:
   email:
