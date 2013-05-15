@@ -26,7 +26,7 @@ install:
 
 script:
   - "mkdir build; cd build"
-  - "cmake .. -DLUA_LIBRARIES=$LUA_LIBDIR -DLIB_INCLUDE_DIR=$LUA_INCDIR"
+  - "cmake .. -DLUA_LIBRARIES=$LUA_LIBDIR -DLUA_INCLUDE_DIR=$LUA_INCDIR"
   - "make "
 
 notifications:
