@@ -1,6 +1,8 @@
 About
 =====
 
+[![travis-ci status](https://secure.travis-ci.org/Neopallium/lua-llnet.png?branch=master)](http://travis-ci.org/Neopallium/lua-llnet/builds)
+
 A low-level network/socket library.
 
 TCP Tunning

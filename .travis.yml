@@ -1,0 +1,37 @@
+﻿language: c
+
+env:
+  global:
+    - LUA_CPATH="./?.so;;"
+  matrix:
+    - "LUA=lua5.1 LIBLUA=liblua5.1-dev     LUA_INCDIR=/usr/include/lua5.1     LUA_LIB=lua5.1"
+    - "LUA=lua5.2 LIBLUA=liblua5.2-dev     LUA_INCDIR=/usr/include/lua5.2     LUA_LIB=lua5.2"
+    - "LUA=luajit LIBLUA=libluajit-5.1-dev LUA_INCDIR=/usr/include/luajit-2.0 LUA_LIB=luajit-5.1"
+
+branches:
+  only:
+    - master
+
+compiler:
+  - "clang"
+  - "gcc"
+
+before_install:
+  - 'if [ $LUA = "luajit" ]; then sudo add-apt-repository ppa:mwild1/ppa -y && sudo apt-get update -y; fi'
+
+install:
+  - "sudo apt-get install $LUA -y"
+  - "sudo apt-get install $LIBLUA -y"
+
+script:
+  - "mkdir build; cd build"
+  - "cmake .."
+  - "make "
+  - "echo TRAVIS_BUILD_DIR $TRAVIS_BUILD_DIR"
+  - "echo PWD $PWD"
+  - "echo CC $CC"
+
+notifications:
+  email:
+    on_failure: always
+    on_success: change
