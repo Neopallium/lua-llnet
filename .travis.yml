@@ -23,9 +23,11 @@ before_install:
 install:
   - "sudo apt-get install $LUA -y"
   - "sudo apt-get install $LIBLUA -y"
+  - "LUA_LIBDIR=`pkg-config $LUA --variable=libdir`"
 
 script:
   - "mkdir build; cd build"
+  - "echo LUA_LIBDIR = $LUA_LIBDIR"
   - "cmake .. -DLUA_LIBRARIES=$LUA_LIBDIR -DLUA_INCLUDE_DIR=$LUA_INCDIR"
   - "make "
 
