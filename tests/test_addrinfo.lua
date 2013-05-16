@@ -2,14 +2,14 @@
 local llnet = require"llnet"
 local P = llnet.Protocols
 
-local host, port = arg[1], arg[2], arg[3], arg[4], arg[5]
+local host, port = arg[1], arg[2]
 
-if #arg < 1 then
-	print(arg[0], ": <host> [<port>]")
+if #arg < 2 then
+	print(arg[0], ": <host> <port>")
 	return
 end
 
-local info = llnet.LAddrInfo(host, port)
+local info = assert(llnet.LAddrInfo(host, port))
 local addr = llnet.LSockAddr()
 
 if info:first() then
