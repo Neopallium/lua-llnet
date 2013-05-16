@@ -29,7 +29,6 @@ script:
   #### build using pre-generated bindings.
   - mkdir build; cd build
   - cmake .. -DLUA_LIBRARIES=$LUA_LIBDIR -DLUA_INCLUDE_DIR=$LUA_INCDIR
-      -DUSE_PRE_GENERATED_BINDINGS=OFF -DGENERATE_LUADOCS=OFF
   - make
   # Run tests.
   - $LUA ../tests/test_buffer.lua
@@ -46,7 +45,7 @@ script:
   - mkdir build; cd build
   - cmake .. -DLUA_LIBRARIES=$LUA_LIBDIR -DLUA_INCLUDE_DIR=$LUA_INCDIR
       -DLUA_NATIVE_OBJECTS_PATH=$TRAVIS_BUILD_DIR/LuaNativeObjects
-      -DUSE_PRE_GENERATED_BINDINGS=ON -DGENERATE_LUADOCS=OFF
+      -DUSE_PRE_GENERATED_BINDINGS=OFF -DGENERATE_LUADOCS=OFF
   - make
   # Run tests.
   - $LUA ../tests/test_buffer.lua
