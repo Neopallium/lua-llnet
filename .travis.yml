@@ -24,6 +24,10 @@ install:
   - sudo apt-get install $LUA -y
   - sudo apt-get install $LIBLUA -y
   - LUA_LIBDIR=`pkg-config $LUA --variable=libdir`
+  ## make sure there is a 'lua' command.
+  - if [ ! -x /usr/bin/lua ]; then
+      sudo ln -s `which $LUA` /usr/bin/lua;
+    fi
 
 script:
   #### build using pre-generated bindings.
