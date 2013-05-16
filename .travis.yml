@@ -46,7 +46,6 @@ script:
   - $LUA ../tests/test_services.lua
   - $LUA ../tests/test_sockaddr_lookup_full.lua www.google.com http
   - $LUA ../tests/test_socketpair.lua
-  - $LUA ../tests/test_unload.lua
 
 notifications:
   email:
