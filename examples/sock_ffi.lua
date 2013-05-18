@@ -58,35 +58,39 @@ int l_sockaddr_lookup_full(LSockAddr *addr, const char *node, const char *servic
 /* LSocketFD */
 typedef int LSocketFD;
 
-int l_socket_set_nonblock(LSocketFD sock, bool val);
+typedef struct {
+	LSocketFD fd;
+} LSocket;
 
-int l_socket_set_close_on_exec(LSocketFD sock, bool val);
+int l_socket_set_nonblock(LSocket *sock, bool val);
 
-int l_socket_get_option(LSocketFD sock, int level, int opt, void *val, socklen_t *len);
+int l_socket_set_close_on_exec(LSocket *sock, bool val);
 
-int l_socket_set_option(LSocketFD sock, int level, int opt, const void *val, socklen_t len);
+int l_socket_get_option(LSocket *sock, int level, int opt, void *val, socklen_t *len);
 
-int l_socket_get_int_option(LSocketFD sock, int level, int opt, int *val);
+int l_socket_set_option(LSocket *sock, int level, int opt, const void *val, socklen_t len);
 
-int l_socket_set_int_option(LSocketFD sock, int level, int opt, int val);
+int l_socket_get_int_option(LSocket *sock, int level, int opt, int *val);
 
-LSocketFD l_socket_open(int domain, int type, int protocol, int flags);
+int l_socket_set_int_option(LSocket *sock, int level, int opt, int val);
 
-LSocketFD l_socket_close_internal(LSocketFD sock);
+int l_socket_open(LSocket *sock, int domain, int type, int protocol, int flags);
 
-int l_socket_shutdown(LSocketFD sock, int how);
+int l_socket_close(LSocket *sock);
 
-int l_socket_connect(LSocketFD sock, LSockAddr *addr);
+int l_socket_shutdown(LSocket *sock, int how);
 
-int l_socket_bind(LSocketFD sock, LSockAddr *addr);
+int l_socket_connect(LSocket *sock, LSockAddr *addr);
 
-int l_socket_listen(LSocketFD sock, int backlog);
+int l_socket_bind(LSocket *sock, LSockAddr *addr);
 
-LSocketFD l_socket_accept(LSocketFD sock, LSockAddr *peer, int flags);
+int l_socket_listen(LSocket *sock, int backlog);
 
-int l_socket_send(LSocketFD sock, const void *buf, size_t len, int flags);
+int l_socket_accept(LSocket *sock, LSocket *client, LSockAddr *peer, int flags);
 
-int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
+int l_socket_send(LSocket *sock, const void *buf, size_t len, int flags);
+
+int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags);
 
 LSocketFD l_socket_open(int domain, int type, int protocol, int flags);
 
@@ -173,8 +177,9 @@ local tmp_addr = ffi.new("LSockAddr[1]")
 C.l_sockaddr_init(tmp_addr)
 
 function sock_mt:accept(addr, flags)
-	local fd = C.l_socket_accept(self.fd, addr, flags or 0)
-	if fd == -1 then return push_perror() end
+	local fd = ffi.new("LSocket")
+	local rc = C.l_socket_accept(self.fd, fd, addr, flags or 0)
+	if rc == -1 then return push_perror() end
 	return wrap_llnet_sock(fd, self.family, self.stype)
 end
 
@@ -236,15 +241,11 @@ function sock_mt:shutdown(how)
 end
 
 function sock_mt:fileno()
-	return self.fd
+	return self.fd:fileno()
 end
 
 function sock_mt:close()
-	local fd = self.fd
-	if fd == nil then return true end
-	self.fd = nil
-	local rc = C.l_socket_close_internal(fd)
-	if rc == -1 then return push_perror() end
+	if C.l_socket_close(self.fd) == -1 then return push_perror() end
 	return true
 end
 
@@ -343,8 +344,9 @@ CLOEXEC = llnet.SOCK_CLOEXEC
 function new(family, stype, proto, flags)
 	family = Families[family or 'inet']
 	stype = Sock_types[stype or 'stream']
-	local fd = C.l_socket_open(family, stype, proto or 0, flags or 0)
-	if fd == -1 then return push_perror() end
+	local fd = ffi.new("LSocket")
+	local rc = C.l_socket_open(fd, family, stype, proto or 0, flags or 0)
+	if rc == -1 then return push_perror() end
 	return wrap_llnet_sock(fd, family, stype)
 end
 

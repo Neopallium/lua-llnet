@@ -50,18 +50,16 @@ c_source "module_init_src" [[
 c_function "socketpair" {
 	var_in{"int", "type"},
 	var_in{"int", "flags?"},
-	var_out{"LSocketFD", "sock1" },
-	var_out{"LSocketFD", "sock2" },
+	var_out{"LSocket *", "sock1" },
+	var_out{"LSocket *", "sock2" },
 	var_out{"errno_rc", "rc"},
 	c_source "pre" [[
-	LSocketFD sv[2];
+	LSocket *sv[2];
 ]],
 	c_source[[
+	sv[0] = ${sock1};
+	sv[1] = ${sock2};
 	${rc} = l_socket_pair(${type}, ${flags}, sv);
-	if(${rc} == 0) {
-		${sock1} = sv[0];
-		${sock2} = sv[1];
-	}
 ]],
 },
 subfiles {

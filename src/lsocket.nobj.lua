@@ -63,25 +63,38 @@ export_definitions {
 
 }
 
-object "LSocketFD" {
-	userdata_type = 'simple',
+object "LSocket" {
+	userdata_type = 'embed',
 	include "lsocket.h",
-	ffi_type = "int",
-	ffi_cdef[[
-int l_socket_send(LSocketFD sock, const void *buf, size_t len, int flags);
-int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
+	ffi_typedef[[
+typedef int LSocketFD;
+struct LSocket {
+	LSocketFD fd;
+};
 ]],
+	ffi_cdef[[
+int l_socket_send(LSocket *sock, const void *buf, size_t len, int flags);
+int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags);
+]],
+	implements "FD" {
+		implement_method "get_fd" {
+			get_field = 'fd'
+		},
+		implement_method "get_type" {
+			constant = "1", -- 1 == socket
+		},
+	},
 	constructor {
-		c_call "LSocketFD" "l_socket_open"
+		c_method_call "errno_rc" "l_socket_open"
 			{ "int", "domain", "int", "type", "int", "protocol?", "int", "flags?" },
 	},
 	constructor "fd" {
 		var_in{"int", "fd"},
-		c_source"  ${this} = ${fd};",
-		ffi_source"  ${this} = ${fd}",
+		c_source"  ${this}->fd = ${fd};",
+		ffi_source"  ${this}.fd = ${fd}",
 	},
 	destructor "close" {
-		c_method_call "void" "l_socket_close_internal" {},
+		c_method_call "void" "l_socket_close" {},
 	},
 	method "__tostring" {
 		var_out{ "const char *", "str", },
@@ -90,19 +103,19 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 ]],
 		c_source[[
 	${str} = tmp;
-	snprintf(tmp, 64, "LSocketFD: fd=%d", ${this});
+	snprintf(tmp, 64, "LSocket: fd=%d", ${this}->fd);
 ]],
 		ffi_source[[
-	${str} = string.format("LSocketFD: fd=%i", ${this})
+	${str} = string.format("LSocket: fd=%i", ${this}.fd)
 ]],
 	},
 	method "shutdown" {
-		c_method_call "int" "l_socket_shutdown" { "int", "how" },
+		c_method_call "errno_rc" "l_socket_shutdown" { "int", "how" },
 	},
 	method "fileno" {
 		var_out{"int", "fd"},
-		c_source"  ${fd} = ${this};",
-		ffi_source"  ${fd} = ${this}",
+		c_source"  ${fd} = ${this}->fd;",
+		ffi_source"  ${fd} = ${this}.fd",
 	},
 	method "set_nonblock" {
 		c_method_call "errno_rc" "l_socket_set_nonblock" { "bool", "nonblock" },
@@ -123,14 +136,8 @@ int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
 		c_method_call "errno_rc" "l_socket_get_peername" { "LSockAddr *", "addr" },
 	},
 	method "accept" {
-		var_out{"LSocketFD", "client"},
-		c_method_call { "errno_rc", "rc"} "l_socket_accept" { "LSockAddr *", "peer?", "int", "flags?" },
-		c_source[[
-	${client} = ${rc};
-]],
-		ffi_source[[
-	${client} = ${rc};
-]],
+		c_method_call { "errno_rc", "rc"} "l_socket_accept"
+			{ "LSocket *", "client>1", "LSockAddr *", "peer?", "int", "flags?" },
 	},
 	method "send" {
 		var_in{"const char *", "data"},

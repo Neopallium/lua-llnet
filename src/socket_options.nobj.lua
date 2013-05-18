@@ -32,36 +32,36 @@ local Options = {
 local supported_otypes = {
 bool   = { ctype="int",
 	set_opt = [[
-errno_rc lsocket_opt_set_${opt_name}(LSocketFD sock, int value) {
+errno_rc lsocket_opt_set_${opt_name}(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, ${level}, ${opt_name}, value);
 }
 ]],
 	get_opt = [[
-errno_rc lsocket_opt_get_${opt_name}(LSocketFD sock, int *value) {
+errno_rc lsocket_opt_get_${opt_name}(LSocket * sock, int *value) {
 	return l_socket_get_int_option(sock, ${level}, ${opt_name}, value);
 }
 ]],
 },
 int    = { ctype="int",
 	set_opt = [[
-errno_rc lsocket_opt_set_${opt_name}(LSocketFD sock, int value) {
+errno_rc lsocket_opt_set_${opt_name}(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, ${level}, ${opt_name}, value);
 }
 ]],
 	get_opt = [[
-errno_rc lsocket_opt_get_${opt_name}(LSocketFD sock, int *value) {
+errno_rc lsocket_opt_get_${opt_name}(LSocket * sock, int *value) {
 	return l_socket_get_int_option(sock, ${level}, ${opt_name}, value);
 }
 ]],
 },
 string = { ctype="const char *",
 	set_opt = [[
-errno_rc lsocket_opt_set_${opt_name}(LSocketFD sock, const char *value, size_t len) {
+errno_rc lsocket_opt_set_${opt_name}(LSocket * sock, const char *value, size_t len) {
 	return l_socket_set_option(sock, ${level}, ${opt_name}, value, len);
 }
 ]],
 	get_opt = [[
-errno_rc lsocket_opt_get_${opt_name}(LSocketFD sock, char *value, size_t *len) {
+errno_rc lsocket_opt_get_${opt_name}(LSocket * sock, char *value, size_t *len) {
 	socklen_t slen = *len;
 	int rc = l_socket_get_option(sock, ${level}, ${opt_name}, value, &slen);
 	*len = slen;
@@ -71,12 +71,12 @@ errno_rc lsocket_opt_get_${opt_name}(LSocketFD sock, char *value, size_t *len) {
 },
 sockaddr = { ctype="LSockAddr *", is_object = true,
 	set_opt = [[
-errno_rc lsocket_opt_set_${opt_name}(LSocketFD sock, LSockAddr *addr) {
+errno_rc lsocket_opt_set_${opt_name}(LSocket * sock, LSockAddr *addr) {
 	return l_socket_set_option(sock, ${level}, ${opt_name}, L_SOCKADDR_TO_CONST_ADDR_AND_LEN(addr));
 }
 ]],
 	get_opt = [[
-errno_rc lsocket_opt_get_${opt_name}(LSocketFD sock, LSockAddr *addr) {
+errno_rc lsocket_opt_get_${opt_name}(LSocket * sock, LSockAddr *addr) {
 	struct sockaddr_storage saddr;
 	socklen_t slen = sizeof(saddr);
 	int rc = l_socket_get_option(sock, ${level}, ${opt_name}, &addr, &slen);
@@ -288,7 +288,7 @@ for lvl,opts in pairs(option_info) do
 				local m = info.mode
 				local code = "#ifdef ${opt_name}\n"
 				if m == 'rw' or m == 'w' then
-					local args = { "LSocketFD", "sock", ctype.ctype, "value" }
+					local args = { "LSocket *", "sock", ctype.ctype, "value" }
 					if otype == 'string' then
 						args[5] = "socklen_t"
 						args[6] = "#value"
@@ -300,13 +300,13 @@ for lvl,opts in pairs(option_info) do
 				end
 				local get = ''
 				if m == 'rw' or m == 'r' then
-					local args = { "LSocketFD", "sock", ctype.ctype, "&value" }
+					local args = { "LSocket *", "sock", ctype.ctype, "&value" }
 					local val_out = { ctype.ctype, "&value" }
 					if otype == 'string' then
-						args = { "LSocketFD", "sock", "char *", "value", "socklen_t", "&#value" }
+						args = { "LSocket *", "sock", "char *", "value", "socklen_t", "&#value" }
 						val_out = { "char *", "value", has_length = true }
 					elseif ctype.is_object then
-						args = { "LSocketFD", "sock", ctype.ctype, "value" }
+						args = { "LSocket *", "sock", ctype.ctype, "value" }
 						val_out = { ctype.ctype, "value" }
 					end
 					add(options_get_list, c_function(opt) { if_defs = opt,

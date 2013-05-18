@@ -37,43 +37,50 @@ typedef int LSocketFD;
 #include <netinet/udp.h>
 #endif
 
-L_LIB_API int l_socket_set_nonblock(LSocketFD sock, bool val);
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET ((LSocketFD) -1)
+#endif
 
-L_LIB_API int l_socket_set_close_on_exec(LSocketFD sock, bool val);
+typedef struct {
+	LSocketFD fd;
+} LSocket;
 
-L_LIB_API int l_socket_get_option(LSocketFD sock, int level, int opt, void *val, socklen_t *len);
+L_LIB_API int l_socket_set_nonblock(LSocket *sock, bool val);
 
-L_LIB_API int l_socket_set_option(LSocketFD sock, int level, int opt, const void *val, socklen_t len);
+L_LIB_API int l_socket_set_close_on_exec(LSocket *sock, bool val);
 
-L_LIB_API int l_socket_get_int_option(LSocketFD sock, int level, int opt, int *val);
+L_LIB_API int l_socket_get_option(LSocket *sock, int level, int opt, void *val, socklen_t *len);
 
-L_LIB_API int l_socket_set_int_option(LSocketFD sock, int level, int opt, int val);
+L_LIB_API int l_socket_set_option(LSocket *sock, int level, int opt, const void *val, socklen_t len);
+
+L_LIB_API int l_socket_get_int_option(LSocket *sock, int level, int opt, int *val);
+
+L_LIB_API int l_socket_set_int_option(LSocket *sock, int level, int opt, int val);
 
 #define l_socket_is_closed(sock) ((sock) < 0)
 
-L_LIB_API int l_socket_pair(int type, int flags, LSocketFD sv[2]);
+L_LIB_API int l_socket_pair(int type, int flags, LSocket *sv[2]);
 
-L_LIB_API LSocketFD l_socket_open(int domain, int type, int protocol, int flags);
+L_LIB_API int l_socket_open(LSocket *sock, int domain, int type, int protocol, int flags);
 
-L_LIB_API LSocketFD l_socket_close_internal(LSocketFD sock);
-#define l_socket_close(sock) (sock) = l_socket_close_internal(sock)
+L_LIB_API int l_socket_close(LSocket *sock);
 
-L_LIB_API int l_socket_shutdown(LSocketFD sock, int how);
+L_LIB_API int l_socket_shutdown(LSocket *sock, int how);
 
-L_LIB_API int l_socket_connect(LSocketFD sock, LSockAddr *addr);
+L_LIB_API int l_socket_connect(LSocket *sock, LSockAddr *addr);
 
-L_LIB_API int l_socket_bind(LSocketFD sock, LSockAddr *addr);
+L_LIB_API int l_socket_bind(LSocket *sock, LSockAddr *addr);
 
-L_LIB_API int l_socket_listen(LSocketFD sock, int backlog);
+L_LIB_API int l_socket_listen(LSocket *sock, int backlog);
 
-L_LIB_API int l_socket_get_sockname(LSocketFD sock, LSockAddr *addr);
+L_LIB_API int l_socket_get_sockname(LSocket *sock, LSockAddr *addr);
 
-L_LIB_API int l_socket_get_peername(LSocketFD sock, LSockAddr *addr);
+L_LIB_API int l_socket_get_peername(LSocket *sock, LSockAddr *addr);
 
-L_LIB_API LSocketFD l_socket_accept(LSocketFD sock, LSockAddr *peer, int flags);
+L_LIB_API int l_socket_accept(LSocket *sock, LSocket *client, LSockAddr *peer, int flags);
 
-L_LIB_API int l_socket_send(LSocketFD sock, const void *buf, size_t len, int flags);
+L_LIB_API int l_socket_send(LSocket *sock, const void *buf, size_t len, int flags);
 
-L_LIB_API int l_socket_recv(LSocketFD sock, void *buf, size_t len, int flags);
+L_LIB_API int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags);
 
 #endif /* __L_SOCKET_H__ */
