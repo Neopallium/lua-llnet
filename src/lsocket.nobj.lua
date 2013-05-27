@@ -317,54 +317,5 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 	${read_len} = ${rc}
 ]],
 	},
-
-	method "send_buf" {
-		var_in{"const uint8_t *", "data"},
-		var_in{"size_t", "off?", default = 0 },
-		var_in{"size_t", "len?", default = 0 },
-		var_in{"int", "flags?"},
-		var_out{"errno_rc", "rc"},
-		c_source[[
-	${data} += ${off};
-	${rc} = l_socket_send(${this}, ${data}, ${len}, ${flags});
-	/* ${rc} >= 0, then return number of bytes sent. */
-	if(${rc} >= 0) {
-		lua_pushinteger(L, ${rc});
-		return 1;
-	}
-]],
-		ffi_source[[
-	${data} = ffi.cast("uint8_t *",${data}) + ${off}
-	${rc} = C.l_socket_send(${this}, ${data}, ${len}, ${flags})
-	-- ${rc} >= 0, then return number of bytes sent.
-	if ${rc} >= 0 then return ${rc} end
-]],
-	},
-	method "recv_buf" {
-		var_in{"uint8_t *", "data"},
-		var_in{"size_t", "off?", default = 0 },
-		var_in{"size_t", "len?", default = 4 * 1024 },
-		var_in{"int", "flags?"},
-		var_out{"int", "data_len"},
-		var_out{"errno_rc", "rc"},
-		c_source[[
-	${data} += ${off};
-	${rc} = l_socket_recv(${this}, ${data}, ${len}, ${flags});
-	/* ${rc} == 0, then socket is closed. */
-	if(${rc} == 0) {
-		lua_pushnil(L);
-		lua_pushliteral(L, "CLOSED");
-		return 2;
-	}
-	${data_len} = ${rc};
-]],
-		ffi_source[[
-	${data} = ffi.cast("uint8_t *",${data}) + ${off}
-	${rc} = C.l_socket_recv(${this}, ${data}, ${len}, ${flags})
-	-- ${rc} == 0, then socket is closed.
-	if ${rc} == 0 then return nil, "CLOSED" end
-	${data_len} = ${rc}
-]],
-	},
 }
 
