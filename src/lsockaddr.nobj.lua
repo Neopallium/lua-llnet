@@ -89,12 +89,7 @@ int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buf_len);
 	},
 	method "__tostring" {
 		var_out{ "char *", "str", need_buffer = 1024 },
-		c_source[[
-	${str_len} = l_sockaddr_tostring(${this}, ${str}, ${str_len});
-]],
-		ffi_source[[
-	${str_len} = C.l_sockaddr_tostring(${this}, ${str}, ${str_len})
-]],
+		c_method_call { "size_t", "#str" } "l_sockaddr_tostring" { "char *", "str", "size_t", "#str" }
 	},
 	method "lookup_full" {
 		c_method_call "eai_rc" "l_sockaddr_lookup_full" { "const char *", "host",
