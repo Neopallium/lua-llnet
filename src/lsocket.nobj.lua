@@ -72,10 +72,6 @@ struct LSocket {
 	LSocketFD fd;
 };
 ]],
-	ffi_cdef[[
-int l_socket_send(LSocket *sock, const void *buf, size_t len, int flags);
-int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags);
-]],
 	implements "FD" {
 		implement_method "get_fd" {
 			get_field = 'fd'
@@ -140,11 +136,9 @@ int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags);
 			{ "LSocket *", "client>1", "LSockAddr *", "peer?", "int", "flags?" },
 	},
 	method "send" {
-		var_in{"const char *", "data"},
-		var_in{"int", "flags?"},
-		var_out{"errno_rc", "rc"},
+		c_method_call { "errno_rc", "rc"} "l_socket_send"
+			{ "const char *", "data", "size_t", "#data", "int", "flags?" },
 		c_source[[
-	${rc} = l_socket_send(${this}, ${data}, ${data_len}, ${flags});
 	/* ${rc} >= 0, then return number of bytes sent. */
 	if(${rc} >= 0) {
 		lua_pushinteger(L, ${rc});
@@ -152,44 +146,27 @@ int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags);
 	}
 ]],
 		ffi_source[[
-	${rc} = C.l_socket_send(${this}, ${data}, ${data_len}, ${flags})
 	-- ${rc} >= 0, then return number of bytes sent.
 	if ${rc} >= 0 then return ${rc} end
 ]],
 	},
-	ffi_source[[
-local tmp_buf_len = 8192
-local tmp_buf = ffi.new("char[?]", tmp_buf_len)
-]],
 	method "recv" {
-		var_in{"size_t", "len"},
-		var_in{"int", "flags?"},
-		var_out{"char *", "data", has_length = true},
-		var_out{"errno_rc", "rc"},
-		c_source "pre" [[
-#define BUF_LEN 8192
-	char buf[BUF_LEN];
-	size_t buf_len = BUF_LEN;
-]],
+		var_out{"char *", "data", need_buffer = 8192, length = 'len' },
+		c_method_call { "errno_rc", "rc"} "l_socket_recv"
+			{ "char *", "data", "size_t", "len", "int", "flags?" },
 		c_source[[
-	if(buf_len > ${len}) { buf_len = ${len}; }
-	${rc} = l_socket_recv(${this}, buf, buf_len, ${flags});
 	/* ${rc} == 0, then socket is closed. */
 	if(${rc} == 0) {
 		lua_pushnil(L);
 		lua_pushliteral(L, "CLOSED");
 		return 2;
 	}
-	${data} = buf;
-	${data_len} = ${rc};
+	${len} = ${rc};
 ]],
 		ffi_source[[
-	local buf_len = (tmp_buf_len < ${len}) and tmp_buf_len or ${len}
-	${rc} = C.l_socket_recv(${this}, tmp_buf, buf_len, ${flags})
 	-- ${rc} == 0, then socket is closed.
 	if ${rc} == 0 then return nil, "CLOSED" end
-	${data} = tmp_buf;
-	${data_len} = ${rc};
+	${len} = ${rc};
 ]],
 	},
 
@@ -197,32 +174,47 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 		var_in{"Buffer", "buf"},
 		var_in{"size_t", "off?", default = 0 },
 		var_in{"size_t", "len?", default = 0 },
-		var_in{"int", "flags?"},
-		var_out{"errno_rc", "rc"},
-		-- temp. vars
-		c_source "pre" [[
-	size_t data_len;
-	const uint8_t *data;
-]],
 		c_source[[
-	data_len = ${buf}_if->get_size(${buf});
-	data = ${buf}_if->const_data(${buf});
+	${data_len} = ${buf}_if->get_size(${buf});
+	${data} = ${buf}_if->const_data(${buf});
 	/* apply offset. */
 	if(${off} > 0) {
-		if(${off} >= data_len) {
+		if(${off} >= ${data_len}) {
 			luaL_argerror(L, ${off::idx}, "Offset out-of-bounds.");
 		}
-		data += ${off};
-		data_len -= ${off};
+		${data} += ${off};
+		${data_len} -= ${off};
 	}
 	/* apply length. */
 	if(${len} > 0) {
-		if(${len} > data_len) {
+		if(${len} > ${data_len}) {
 			luaL_argerror(L, ${len::idx}, "Length out-of-bounds.");
 		}
-		data_len = ${len};
+		${data_len} = ${len};
 	}
-	${rc} = l_socket_send(${this}, data, data_len, ${flags});
+]],
+		ffi_source[[
+	${data_len} = ${buf}_if.get_size(${buf})
+	${data} = ${buf}_if.const_data(${buf})
+	-- apply offset.
+	if(${off} > 0) then
+		if(${off} >= ${data_len}) then
+			error("Offset out-of-bounds.");
+		end
+		${data} = ${data} + ${off};
+		${data_len} = ${data_len} - ${off};
+	end
+	-- apply length.
+	if(${len} > 0) then
+		if(${len} > ${data_len}) then
+			error("Length out-of-bounds.");
+		end
+		${data_len} = ${len};
+	end
+]],
+		c_method_call { "errno_rc", "rc"} "l_socket_send"
+			{ "const char *", "(data)", "size_t", "(data_len)", "int", "flags?" },
+		c_source[[
 	/* ${rc} >= 0, then return number of bytes sent. */
 	if(${rc} >= 0) {
 		lua_pushinteger(L, ${rc});
@@ -230,24 +222,6 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 	}
 ]],
 		ffi_source[[
-	local data_len = ${buf}_if.get_size(${buf})
-	local data = ${buf}_if.const_data(${buf})
-	-- apply offset.
-	if(${off} > 0) then
-		if(${off} >= data_len) then
-			error("Offset out-of-bounds.");
-		end
-		data = data + ${off};
-		data_len = data_len - ${off};
-	end
-	-- apply length.
-	if(${len} > 0) then
-		if(${len} > data_len) then
-			error("Length out-of-bounds.");
-		end
-		data_len = ${len};
-	end
-	${rc} = C.l_socket_send(${this}, data, data_len, ${flags})
 	-- ${rc} >= 0, then return number of bytes sent.
 	if ${rc} >= 0 then return ${rc} end
 ]],
@@ -257,64 +231,62 @@ local tmp_buf = ffi.new("char[?]", tmp_buf_len)
 		var_in{"size_t", "off?", default = 0 },
 		var_in{"size_t", "len?", default = 4 * 1024 },
 		var_in{"int", "flags?"},
-		var_out{"int", "read_len"},
-		var_out{"errno_rc", "rc"},
-		-- temp. vars
-		c_source "pre" [[
-	size_t cap_len;
-	uint8_t *data;
-]],
+		var_out{"int", "data_len"},
 		c_source[[
-	cap_len = ${buf}_if->get_size(${buf});
-	data = ${buf}_if->data(${buf});
+	${data_len} = ${buf}_if->get_size(${buf});
+	${data} = ${buf}_if->data(${buf});
 	/* apply offset. */
 	if(${off} > 0) {
-		if(${off} >= cap_len) {
+		if(${off} >= ${data_len}) {
 			luaL_argerror(L, ${off::idx}, "Offset out-of-bounds.");
 		}
-		data += ${off};
-		cap_len -= ${off};
+		${data} += ${off};
+		${data_len} -= ${off};
 	}
 	/* calculate read length. */
-	if(${len} < cap_len) {
-		cap_len = ${len};
+	if(${len} < ${data_len}) {
+		${data_len} = ${len};
 	}
-	if(0 == cap_len) {
+	if(0 == ${data_len}) {
 		lua_pushnil(L);
 		lua_pushliteral(L, "ENOBUFS");
 		return 2;
 	}
-	${rc} = l_socket_recv(${this}, data, cap_len, ${flags});
+]],
+		ffi_source[[
+	${data_len} = ${buf}_if.get_size(${buf})
+	${data} = ${buf}_if.data(${buf})
+	-- apply offset.
+	if(${off} > 0) then
+		if(${off} >= ${data_len}) then
+			error("Offset out-of-bounds.");
+		end
+		${data} = ${data} + ${off};
+		${data_len} = ${data_len} - ${off};
+	end
+	-- calculate read length.
+	if(${len} < ${data_len}) then
+		${data_len} = ${len};
+	end
+	if(0 == ${data_len}) then
+		return nil, "ENOBUFS"
+	end
+]],
+		c_method_call { "errno_rc", "rc"} "l_socket_recv"
+			{ "char *", "(data)", "size_t", "(data_len)", "int", "flags?" },
+		c_source[[
 	/* ${rc} == 0, then socket is closed. */
 	if(${rc} == 0) {
 		lua_pushnil(L);
 		lua_pushliteral(L, "CLOSED");
 		return 2;
 	}
-	${read_len} = ${rc};
+	${data_len} = ${rc};
 ]],
 		ffi_source[[
-	local cap_len = ${buf}_if.get_size(${buf})
-	local data = ${buf}_if.data(${buf})
-	-- apply offset.
-	if(${off} > 0) then
-		if(${off} >= cap_len) then
-			error("Offset out-of-bounds.");
-		end
-		data = data + ${off};
-		cap_len = cap_len - ${off};
-	end
-	-- calculate read length.
-	if(${len} < cap_len) then
-		cap_len = ${len};
-	end
-	if(0 == cap_len) then
-		return nil, "ENOBUFS"
-	end
-	${rc} = C.l_socket_recv(${this}, data, cap_len, ${flags})
 	-- ${rc} == 0, then socket is closed.
 	if ${rc} == 0 then return nil, "CLOSED" end
-	${read_len} = ${rc}
+	${data_len} = ${rc}
 ]],
 	},
 }

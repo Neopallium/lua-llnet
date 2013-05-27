@@ -5574,24 +5574,24 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  len4 = len4 or 0\n"
 "  flags5 = flags5 or 0\n"
 "  local rc1 = 0\n"
-"	local data_len = buf2_if.get_size(buf2)\n"
-"	local data = buf2_if.const_data(buf2)\n"
+"	data_len3 = buf2_if.get_size(buf2)\n"
+"	data2 = buf2_if.const_data(buf2)\n"
 "	-- apply offset.\n"
 "	if(off3 > 0) then\n"
-"		if(off3 >= data_len) then\n"
+"		if(off3 >= data_len3) then\n"
 "			error(\"Offset out-of-bounds.\");\n"
 "		end\n"
-"		data = data + off3;\n"
-"		data_len = data_len - off3;\n"
+"		data2 = data2 + off3;\n"
+"		data_len3 = data_len3 - off3;\n"
 "	end\n"
 "	-- apply length.\n"
 "	if(len4 > 0) then\n"
-"		if(len4 > data_len) then\n"
+"		if(len4 > data_len3) then\n"
 "			error(\"Length out-of-bounds.\");\n"
 "		end\n"
-"		data_len = len4;\n"
+"		data_len3 = len4;\n"
 "	end\n"
-"	rc1 = C.l_socket_send(self, data, data_len, flags5)\n"
+"	rc1 = C.l_socket_send(self, data2, data_len3, flags5)\n"
 "	-- rc1 >= 0, then return number of bytes sent.\n"
 "	if rc1 >= 0 then return rc1 end\n"
 "\n"
@@ -5609,34 +5609,34 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  off3 = off3 or 0\n"
 "  len4 = len4 or 4096\n"
 "  flags5 = flags5 or 0\n"
-"  local read_len1 = 0\n"
+"  local data_len1 = 0\n"
 "  local rc2 = 0\n"
-"	local cap_len = buf2_if.get_size(buf2)\n"
-"	local data = buf2_if.data(buf2)\n"
+"	data_len1 = buf2_if.get_size(buf2)\n"
+"	data3 = buf2_if.data(buf2)\n"
 "	-- apply offset.\n"
 "	if(off3 > 0) then\n"
-"		if(off3 >= cap_len) then\n"
+"		if(off3 >= data_len1) then\n"
 "			error(\"Offset out-of-bounds.\");\n"
 "		end\n"
-"		data = data + off3;\n"
-"		cap_len = cap_len - off3;\n"
+"		data3 = data3 + off3;\n"
+"		data_len1 = data_len1 - off3;\n"
 "	end\n"
 "	-- calculate read length.\n"
-"	if(len4 < cap_len) then\n"
-"		cap_len = len4;\n"
+"	if(len4 < data_len1) then\n"
+"		data_len1 = len4;\n"
 "	end\n"
-"	if(0 == cap_len) then\n"
+"	if(0 == data_len1) then\n"
 "		return nil, \"ENOBUFS\"\n"
 "	end\n"
-"	rc2 = C.l_socket_recv(self, data, cap_len, flags5)\n"
+"	rc2 = C.l_socket_recv(self, data3, data_len1, flags5)\n"
 "	-- rc2 == 0, then socket is closed.\n"
 "	if rc2 == 0 then return nil, \"CLOSED\" end\n"
-"	read_len1 = rc2\n"
+"	data_len1 = rc2\n"
 "\n"
 "  if (-1 == rc2) then\n"
 "    return nil,error_code__errno_rc__push(rc2)\n"
 "  end\n"
-"  return read_len1\n"
+"  return data_len1\n"
 "end\n"
 "\n"
 "-- LSocket implements FD interface\n"
@@ -10495,7 +10495,6 @@ static int LSocket__recv__meth(lua_State *L) {
   LSocket * this1;
   size_t len2;
   int flags3;
-  size_t data_len1 = 0;
   char * data1 = NULL;
   errno_rc rc2 = 0;
 #define BUF_LEN 8192
@@ -10514,10 +10513,10 @@ static int LSocket__recv__meth(lua_State *L) {
 		return 2;
 	}
 	data1 = buf;
-	data_len1 = rc2;
+	len2 = rc2;
 
   if(!(-1 == rc2)) {
-    if(data1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, data1,data_len1);
+    if(data1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, data1,len2);
   } else {
     lua_pushnil(L);
   }
@@ -10533,32 +10532,32 @@ static int LSocket__send_buffer__meth(lua_State *L) {
   size_t len4;
   int flags5;
   errno_rc rc1 = 0;
-	size_t data_len;
-	const uint8_t *data;
+	size_t data_len3;
+	const uint8_t *data2;
 
   this1 = obj_type_LSocket_check(L,1);
   BufferIF_LUA_CHECK(L,2, buf2);
   off3 = luaL_optinteger(L,3,0);
   len4 = luaL_optinteger(L,4,0);
   flags5 = luaL_optinteger(L,5,0);
-	data_len = buf2_if->get_size(buf2);
-	data = buf2_if->const_data(buf2);
+	data_len3 = buf2_if->get_size(buf2);
+	data2 = buf2_if->const_data(buf2);
 	/* apply offset. */
 	if(off3 > 0) {
-		if(off3 >= data_len) {
+		if(off3 >= data_len3) {
 			luaL_argerror(L, 3, "Offset out-of-bounds.");
 		}
-		data += off3;
-		data_len -= off3;
+		data2 += off3;
+		data_len3 -= off3;
 	}
 	/* apply length. */
 	if(len4 > 0) {
-		if(len4 > data_len) {
+		if(len4 > data_len3) {
 			luaL_argerror(L, 4, "Length out-of-bounds.");
 		}
-		data_len = len4;
+		data_len3 = len4;
 	}
-	rc1 = l_socket_send(this1, data, data_len, flags5);
+	rc1 = l_socket_send(this1, data2, data_len3, flags5);
 	/* rc1 >= 0, then return number of bytes sent. */
 	if(rc1 >= 0) {
 		lua_pushinteger(L, rc1);
@@ -10583,46 +10582,47 @@ static int LSocket__recv_buffer__meth(lua_State *L) {
   size_t off3;
   size_t len4;
   int flags5;
-  int read_len1 = 0;
+  int data_len1 = 0;
   errno_rc rc2 = 0;
-	size_t cap_len;
-	uint8_t *data;
+	size_t data_len1;
+	uint8_t *data3;
 
   this1 = obj_type_LSocket_check(L,1);
   MutableBufferIF_LUA_CHECK(L,2, buf2);
   off3 = luaL_optinteger(L,3,0);
   len4 = luaL_optinteger(L,4,4096);
   flags5 = luaL_optinteger(L,5,0);
-	cap_len = buf2_if->get_size(buf2);
-	data = buf2_if->data(buf2);
+	data_len1 = buf2_if->get_size(buf2);
+	data3 = buf2_if->data(buf2);
 	/* apply offset. */
 	if(off3 > 0) {
-		if(off3 >= cap_len) {
+		if(off3 >= data_len1) {
 			luaL_argerror(L, 3, "Offset out-of-bounds.");
 		}
-		data += off3;
-		cap_len -= off3;
+		data3 += off3;
+		data_len1 -= off3;
 	}
 	/* calculate read length. */
-	if(len4 < cap_len) {
-		cap_len = len4;
+	if(len4 < data_len1) {
+		data_len1 = len4;
 	}
-	if(0 == cap_len) {
+	if(0 == data_len1) {
 		lua_pushnil(L);
 		lua_pushliteral(L, "ENOBUFS");
 		return 2;
 	}
-	rc2 = l_socket_recv(this1, data, cap_len, flags5);
+
+	rc2 = l_socket_recv(this1, data3, data_len1, flags5);
 	/* rc2 == 0, then socket is closed. */
 	if(rc2 == 0) {
 		lua_pushnil(L);
 		lua_pushliteral(L, "CLOSED");
 		return 2;
 	}
-	read_len1 = rc2;
+	data_len1 = rc2;
 
   if(!(-1 == rc2)) {
-    lua_pushinteger(L, read_len1);
+    lua_pushinteger(L, data_len1);
   } else {
     lua_pushnil(L);
   }
