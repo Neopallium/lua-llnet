@@ -137,9 +137,9 @@ function sock_mt:setblocking(blocking)
 	return self.fd:set_nonblock(not blocking)
 end
 
-function sock_mt:shutdown(how)
+function sock_mt:shutdown(read, write)
 	if self.fd then
-		return self.fd:shutdown(how)
+		return self.fd:shutdown(read, write)
 	end
 end
 

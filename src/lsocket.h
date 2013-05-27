@@ -65,7 +65,7 @@ L_LIB_API int l_socket_open(LSocket *sock, int domain, int type, int protocol, i
 
 L_LIB_API int l_socket_close(LSocket *sock);
 
-L_LIB_API int l_socket_shutdown(LSocket *sock, int how);
+L_LIB_API int l_socket_shutdown(LSocket *sock, int read, int write);
 
 L_LIB_API int l_socket_connect(LSocket *sock, LSockAddr *addr);
 

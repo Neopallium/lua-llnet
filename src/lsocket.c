@@ -104,7 +104,14 @@ int l_socket_close(LSocket *sock) {
 	return rc;
 }
 
-int l_socket_shutdown(LSocket *sock, int how) {
+int l_socket_shutdown(LSocket *sock, int read, int write) {
+	int how = 0;
+	if(read) {
+		how = SHUT_RD;
+	}
+	if(write) {
+		how |= SHUT_WR;
+	}
 	return shutdown(sock->fd, how);
 }
 

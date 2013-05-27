@@ -38,11 +38,6 @@ export_definitions {
 "SOCK_NONBLOCK",
 "SOCK_CLOEXEC",
 
--- Shutdown how types.
-"SHUT_RD",
-"SHUT_WR",
-"SHUT_RDWR",
-
 -- IP_MTU_DISCOVER arguments.
 "IP_PMTUDISC_DONT",   -- Never send DF frames.
 "IP_PMTUDISC_WANT",   -- Use per route hints.
@@ -106,7 +101,7 @@ struct LSocket {
 ]],
 	},
 	method "shutdown" {
-		c_method_call "errno_rc" "l_socket_shutdown" { "int", "how" },
+		c_method_call "errno_rc" "l_socket_shutdown" { "bool", "read", "bool", "write" },
 	},
 	method "fileno" {
 		var_out{"int", "fd"},

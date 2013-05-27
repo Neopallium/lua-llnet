@@ -2133,14 +2133,11 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_KEEPINTVL(LSocket *, int*);\n"
 "\n"
-"int l_socket_send(LSocket *sock, const void *buf, size_t len, int flags);\n"
-"int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags);\n"
-"\n"
 "errno_rc l_socket_open(LSocket *, int, int, int, int);\n"
 "\n"
 "void l_socket_close(LSocket *);\n"
 "\n"
-"errno_rc l_socket_shutdown(LSocket *, int);\n"
+"errno_rc l_socket_shutdown(LSocket *, bool, bool);\n"
 "\n"
 "errno_rc l_socket_set_nonblock(LSocket *, bool);\n"
 "\n"
@@ -2155,6 +2152,10 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "errno_rc l_socket_get_peername(LSocket *, LSockAddr *);\n"
 "\n"
 "errno_rc l_socket_accept(LSocket *, LSocket *, LSockAddr *, int);\n"
+"\n"
+"errno_rc l_socket_send(LSocket *, const char *, size_t, int);\n"
+"\n"
+"errno_rc l_socket_recv(LSocket *, char *, size_t, int);\n"
 "\n"
 "typedef struct LIOBuffer LIOBuffer;\n"
 "\n"
@@ -5413,11 +5414,12 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "-- method: shutdown\n"
-"function _meth.LSocket.shutdown(self, how2)\n"
+"function _meth.LSocket.shutdown(self, read2, write3)\n"
+"  \n"
 "  \n"
 "  \n"
 "  local rc_l_socket_shutdown1 = 0\n"
-"  rc_l_socket_shutdown1 = C.l_socket_shutdown(self, how2)\n"
+"  rc_l_socket_shutdown1 = C.l_socket_shutdown(self, read2, write3)\n"
 "  -- check for error.\n"
 "  if (-1 == rc_l_socket_shutdown1) then\n"
 "    return nil, error_code__errno_rc__push(rc_l_socket_shutdown1)\n"
@@ -5531,7 +5533,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local data_len2 = #data2\n"
 "  flags3 = flags3 or 0\n"
 "  local rc1 = 0\n"
-"	rc1 = C.l_socket_send(self, data2, data_len2, flags3)\n"
+"  rc1 = C.l_socket_send(self, data2, data_len2, flags3)\n"
 "	-- rc1 >= 0, then return number of bytes sent.\n"
 "	if rc1 >= 0 then return rc1 end\n"
 "\n"
@@ -5542,28 +5544,26 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  return true\n"
 "end\n"
 "\n"
-"local tmp_buf_len = 8192\n"
-"local tmp_buf = ffi.new(\"char[?]\", tmp_buf_len)\n"
-"\n"
+"do\n"
+"  local recv_data_tmp = ffi.new(\"char[8192]\")\n"
 "-- method: recv\n"
 "function _meth.LSocket.recv(self, len2, flags3)\n"
 "  \n"
 "  \n"
 "  flags3 = flags3 or 0\n"
-"  local data_len1 = 0\n"
-"  local data1\n"
+"  if len2 > 8191 then len2 = 8191 end\n"
+"  local data1 = recv_data_tmp\n"
 "  local rc2 = 0\n"
-"	local buf_len = (tmp_buf_len < len2) and tmp_buf_len or len2\n"
-"	rc2 = C.l_socket_recv(self, tmp_buf, buf_len, flags3)\n"
+"  rc2 = C.l_socket_recv(self, data1, len2, flags3)\n"
 "	-- rc2 == 0, then socket is closed.\n"
 "	if rc2 == 0 then return nil, \"CLOSED\" end\n"
-"	data1 = tmp_buf;\n"
-"	data_len1 = rc2;\n"
+"	len2 = rc2;\n"
 "\n"
 "  if (-1 == rc2) then\n"
 "    return nil,error_code__errno_rc__push(rc2)\n"
 "  end\n"
-"  return data1 ~= nil and ffi_string(data1,data_len1) or nil\n"
+"  return data1 ~= nil and ffi_string(data1,len2) or nil\n"
+"end\n"
 "end\n"
 "\n"
 "-- method: send_buffer\n"
@@ -5574,6 +5574,8 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  len4 = len4 or 0\n"
 "  flags5 = flags5 or 0\n"
 "  local rc1 = 0\n"
+"  local data2\n"
+"  local data_len3 = 0\n"
 "	data_len3 = buf2_if.get_size(buf2)\n"
 "	data2 = buf2_if.const_data(buf2)\n"
 "	-- apply offset.\n"
@@ -5591,7 +5593,8 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "		end\n"
 "		data_len3 = len4;\n"
 "	end\n"
-"	rc1 = C.l_socket_send(self, data2, data_len3, flags5)\n"
+"\n"
+"  rc1 = C.l_socket_send(self, data2, data_len3, flags5)\n"
 "	-- rc1 >= 0, then return number of bytes sent.\n"
 "	if rc1 >= 0 then return rc1 end\n"
 "\n"
@@ -5611,6 +5614,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  flags5 = flags5 or 0\n"
 "  local data_len1 = 0\n"
 "  local rc2 = 0\n"
+"  local data3\n"
 "	data_len1 = buf2_if.get_size(buf2)\n"
 "	data3 = buf2_if.data(buf2)\n"
 "	-- apply offset.\n"
@@ -5628,7 +5632,8 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "	if(0 == data_len1) then\n"
 "		return nil, \"ENOBUFS\"\n"
 "	end\n"
-"	rc2 = C.l_socket_recv(self, data3, data_len1, flags5)\n"
+"\n"
+"  rc2 = C.l_socket_recv(self, data3, data_len1, flags5)\n"
 "	-- rc2 == 0, then socket is closed.\n"
 "	if rc2 == 0 then return nil, \"CLOSED\" end\n"
 "	data_len1 = rc2\n"
@@ -10301,11 +10306,13 @@ static int LSocket____tostring__meth(lua_State *L) {
 /* method: shutdown */
 static int LSocket__shutdown__meth(lua_State *L) {
   LSocket * this1;
-  int how2;
+  bool read2;
+  bool write3;
   errno_rc rc_l_socket_shutdown1 = 0;
   this1 = obj_type_LSocket_check(L,1);
-  how2 = luaL_checkinteger(L,2);
-  rc_l_socket_shutdown1 = l_socket_shutdown(this1, how2);
+  read2 = lua_toboolean(L,2);
+  write3 = lua_toboolean(L,3);
+  rc_l_socket_shutdown1 = l_socket_shutdown(this1, read2, write3);
   /* check for error. */
   if((-1 == rc_l_socket_shutdown1)) {
     lua_pushnil(L);
@@ -10472,7 +10479,7 @@ static int LSocket__send__meth(lua_State *L) {
   this1 = obj_type_LSocket_check(L,1);
   data2 = luaL_checklstring(L,2,&(data_len2));
   flags3 = luaL_optinteger(L,3,0);
-	rc1 = l_socket_send(this1, data2, data_len2, flags3);
+  rc1 = l_socket_send(this1, data2, data_len2, flags3);
 	/* rc1 >= 0, then return number of bytes sent. */
 	if(rc1 >= 0) {
 		lua_pushinteger(L, rc1);
@@ -10495,24 +10502,20 @@ static int LSocket__recv__meth(lua_State *L) {
   LSocket * this1;
   size_t len2;
   int flags3;
-  char * data1 = NULL;
+  char data1_buf[8192];
+  char * data1 = data1_buf;
   errno_rc rc2 = 0;
-#define BUF_LEN 8192
-	char buf[BUF_LEN];
-	size_t buf_len = BUF_LEN;
-
   this1 = obj_type_LSocket_check(L,1);
   len2 = luaL_checkinteger(L,2);
   flags3 = luaL_optinteger(L,3,0);
-	if(buf_len > len2) { buf_len = len2; }
-	rc2 = l_socket_recv(this1, buf, buf_len, flags3);
+  if(len2 > 8191) len2 = 8191;
+  rc2 = l_socket_recv(this1, data1, len2, flags3);
 	/* rc2 == 0, then socket is closed. */
 	if(rc2 == 0) {
 		lua_pushnil(L);
 		lua_pushliteral(L, "CLOSED");
 		return 2;
 	}
-	data1 = buf;
 	len2 = rc2;
 
   if(!(-1 == rc2)) {
@@ -10532,9 +10535,8 @@ static int LSocket__send_buffer__meth(lua_State *L) {
   size_t len4;
   int flags5;
   errno_rc rc1 = 0;
-	size_t data_len3;
-	const uint8_t *data2;
-
+  const char * data2 = NULL;
+  size_t data_len3 = 0;
   this1 = obj_type_LSocket_check(L,1);
   BufferIF_LUA_CHECK(L,2, buf2);
   off3 = luaL_optinteger(L,3,0);
@@ -10557,7 +10559,8 @@ static int LSocket__send_buffer__meth(lua_State *L) {
 		}
 		data_len3 = len4;
 	}
-	rc1 = l_socket_send(this1, data2, data_len3, flags5);
+
+  rc1 = l_socket_send(this1, data2, data_len3, flags5);
 	/* rc1 >= 0, then return number of bytes sent. */
 	if(rc1 >= 0) {
 		lua_pushinteger(L, rc1);
@@ -10584,9 +10587,7 @@ static int LSocket__recv_buffer__meth(lua_State *L) {
   int flags5;
   int data_len1 = 0;
   errno_rc rc2 = 0;
-	size_t data_len1;
-	uint8_t *data3;
-
+  char * data3 = NULL;
   this1 = obj_type_LSocket_check(L,1);
   MutableBufferIF_LUA_CHECK(L,2, buf2);
   off3 = luaL_optinteger(L,3,0);
@@ -10612,7 +10613,7 @@ static int LSocket__recv_buffer__meth(lua_State *L) {
 		return 2;
 	}
 
-	rc2 = l_socket_recv(this1, data3, data_len1, flags5);
+  rc2 = l_socket_recv(this1, data3, data_len1, flags5);
 	/* rc2 == 0, then socket is closed. */
 	if(rc2 == 0) {
 		lua_pushnil(L);
@@ -12374,17 +12375,11 @@ static const obj_const llnet_constants[] = {
 #ifdef IP_PMTUDISC_DO
   {"IP_PMTUDISC_DO", NULL, IP_PMTUDISC_DO, CONST_NUMBER},
 #endif
-#ifdef IPV6_RTHDR_TYPE_0
-  {"IPV6_RTHDR_TYPE_0", NULL, IPV6_RTHDR_TYPE_0, CONST_NUMBER},
-#endif
 #ifdef SOCK_DGRAM
   {"SOCK_DGRAM", NULL, SOCK_DGRAM, CONST_NUMBER},
 #endif
 #ifdef AF_UNSPEC
   {"AF_UNSPEC", NULL, AF_UNSPEC, CONST_NUMBER},
-#endif
-#ifdef IPV6_RTHDR_STRICT
-  {"IPV6_RTHDR_STRICT", NULL, IPV6_RTHDR_STRICT, CONST_NUMBER},
 #endif
 #ifdef SOCK_RAW
   {"SOCK_RAW", NULL, SOCK_RAW, CONST_NUMBER},
@@ -12395,17 +12390,23 @@ static const obj_const llnet_constants[] = {
 #ifdef SOCK_RDM
   {"SOCK_RDM", NULL, SOCK_RDM, CONST_NUMBER},
 #endif
-#ifdef IPV6_RTHDR_LOOSE
-  {"IPV6_RTHDR_LOOSE", NULL, IPV6_RTHDR_LOOSE, CONST_NUMBER},
-#endif
-#ifdef SOCK_STREAM
-  {"SOCK_STREAM", NULL, SOCK_STREAM, CONST_NUMBER},
+#ifdef IPV6_RTHDR_TYPE_0
+  {"IPV6_RTHDR_TYPE_0", NULL, IPV6_RTHDR_TYPE_0, CONST_NUMBER},
 #endif
 #ifdef AF_UNIX
   {"AF_UNIX", NULL, AF_UNIX, CONST_NUMBER},
 #endif
-#ifdef SHUT_RDWR
-  {"SHUT_RDWR", NULL, SHUT_RDWR, CONST_NUMBER},
+#ifdef IPV6_RTHDR_STRICT
+  {"IPV6_RTHDR_STRICT", NULL, IPV6_RTHDR_STRICT, CONST_NUMBER},
+#endif
+#ifdef IPV6_RTHDR_LOOSE
+  {"IPV6_RTHDR_LOOSE", NULL, IPV6_RTHDR_LOOSE, CONST_NUMBER},
+#endif
+#ifdef IP_PMTUDISC_WANT
+  {"IP_PMTUDISC_WANT", NULL, IP_PMTUDISC_WANT, CONST_NUMBER},
+#endif
+#ifdef SOCK_STREAM
+  {"SOCK_STREAM", NULL, SOCK_STREAM, CONST_NUMBER},
 #endif
 #ifdef IPV6_PMTUDISC_DO
   {"IPV6_PMTUDISC_DO", NULL, IPV6_PMTUDISC_DO, CONST_NUMBER},
@@ -12413,20 +12414,11 @@ static const obj_const llnet_constants[] = {
 #ifdef IPV6_PMTUDISC_WANT
   {"IPV6_PMTUDISC_WANT", NULL, IPV6_PMTUDISC_WANT, CONST_NUMBER},
 #endif
-#ifdef AF_INET6
-  {"AF_INET6", NULL, AF_INET6, CONST_NUMBER},
-#endif
-#ifdef IPV6_PMTUDISC_DONT
-  {"IPV6_PMTUDISC_DONT", NULL, IPV6_PMTUDISC_DONT, CONST_NUMBER},
-#endif
-#ifdef IP_PMTUDISC_PROBE
-  {"IP_PMTUDISC_PROBE", NULL, IP_PMTUDISC_PROBE, CONST_NUMBER},
-#endif
 #ifdef AF_IPX
   {"AF_IPX", NULL, AF_IPX, CONST_NUMBER},
 #endif
-#ifdef IP_PMTUDISC_WANT
-  {"IP_PMTUDISC_WANT", NULL, IP_PMTUDISC_WANT, CONST_NUMBER},
+#ifdef IPV6_PMTUDISC_DONT
+  {"IPV6_PMTUDISC_DONT", NULL, IPV6_PMTUDISC_DONT, CONST_NUMBER},
 #endif
 #ifdef SOCK_NONBLOCK
   {"SOCK_NONBLOCK", NULL, SOCK_NONBLOCK, CONST_NUMBER},
@@ -12434,8 +12426,8 @@ static const obj_const llnet_constants[] = {
 #ifdef AF_PACKET
   {"AF_PACKET", NULL, AF_PACKET, CONST_NUMBER},
 #endif
-#ifdef SHUT_WR
-  {"SHUT_WR", NULL, SHUT_WR, CONST_NUMBER},
+#ifdef IP_PMTUDISC_PROBE
+  {"IP_PMTUDISC_PROBE", NULL, IP_PMTUDISC_PROBE, CONST_NUMBER},
 #endif
 #ifdef AF_INET
   {"AF_INET", NULL, AF_INET, CONST_NUMBER},
@@ -12446,8 +12438,8 @@ static const obj_const llnet_constants[] = {
 #ifdef SOCK_CLOEXEC
   {"SOCK_CLOEXEC", NULL, SOCK_CLOEXEC, CONST_NUMBER},
 #endif
-#ifdef SHUT_RD
-  {"SHUT_RD", NULL, SHUT_RD, CONST_NUMBER},
+#ifdef AF_INET6
+  {"AF_INET6", NULL, AF_INET6, CONST_NUMBER},
 #endif
 #ifdef AF_NETLINK
   {"AF_NETLINK", NULL, AF_NETLINK, CONST_NUMBER},

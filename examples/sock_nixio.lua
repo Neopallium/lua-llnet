@@ -92,7 +92,13 @@ function sock_mt:setblocking(blocking)
 	return self.sock:setblocking(blocking)
 end
 
-function sock_mt:shutdown(how)
+function sock_mt:shutdown(read, write)
+	local how = ''
+	if read then
+		how = write and 'rdwr' or 'rd'
+	elseif write then
+		how = 'wr'
+	end
 	return self.sock:shutdown(how)
 end
 

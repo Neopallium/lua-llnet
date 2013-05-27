@@ -78,7 +78,7 @@ int l_socket_open(LSocket *sock, int domain, int type, int protocol, int flags);
 
 int l_socket_close(LSocket *sock);
 
-int l_socket_shutdown(LSocket *sock, int how);
+int l_socket_shutdown(LSocket *sock, int read, int write);
 
 int l_socket_connect(LSocket *sock, LSockAddr *addr);
 
@@ -232,9 +232,9 @@ function sock_mt:setblocking(blocking)
 	return true
 end
 
-function sock_mt:shutdown(how)
+function sock_mt:shutdown(read, write)
 	if self.fd then
-		local rc = C.l_socket_shutdown(self.fd,how)
+		local rc = C.l_socket_shutdown(self.fd, read, write)
 		if rc == -1 then return push_perror() end
 	end
 	return true
