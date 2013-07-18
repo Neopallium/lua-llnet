@@ -212,12 +212,14 @@ int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buflen) {
 	sa_family_t family;
 	family = addr->addr->sa_family;
 	switch(family) {
+#ifndef __WINDOWS__
 	/* local/file/unix */
 	case PF_LOCAL: {
 		struct sockaddr_un *addr_un;
 		addr_un = (struct sockaddr_un *)addr->addr;
 		return snprintf(buf, buflen, "%s", addr_un->sun_path);
 	}
+#endif
 	case PF_INET: {
 		struct sockaddr_in *addr_in;
 		char str_addr[INET_ADDRSTRLEN];
@@ -225,7 +227,7 @@ int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buflen) {
 
 		addr_in = (struct sockaddr_in *)addr->addr;
 		port = ntohs(addr_in->sin_port);
-		if(inet_ntop(family, &(addr_in->sin_addr), str_addr, INET_ADDRSTRLEN) != NULL) {
+		if(inet_ntop(family, &(addr_in->sin_addr), str_addr, INET_ADDRSTRLEN) != 0) {
 			return snprintf(buf, buflen, "%s:%d", str_addr, port);
 		}
 		break;
@@ -237,7 +239,7 @@ int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buflen) {
 
 		addr_in = (struct sockaddr_in6 *)addr->addr;
 		port = ntohs(addr_in->sin6_port);
-		if(inet_ntop(family, &(addr_in->sin6_addr), str_addr, INET6_ADDRSTRLEN) != NULL) {
+		if(inet_ntop(family, &(addr_in->sin6_addr), str_addr, INET6_ADDRSTRLEN) != 0) {
 			return snprintf(buf, buflen, "[%s]:%d", str_addr, port);
 		}
 		break;
