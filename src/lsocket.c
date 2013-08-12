@@ -6,6 +6,11 @@
 #include "lsocket.h"
 #ifdef __WINDOWS__
 #include <winsock2.h>
+
+#define SHUT_RD   SD_RECEIVE 
+#define SHUT_WR   SD_SEND 
+#define SHUT_RDWR SD_BOTH 
+
 #else
 #include <unistd.h>
 #include <sys/types.h>
@@ -162,7 +167,8 @@ int l_socket_accept(LSocket *sock, LSocket *client, LSockAddr *peer, int flags) 
 		rc = accept(sock->fd, NULL, NULL);
 	}
 	if(rc != INVALID_SOCKET && (flags & SOCK_NONBLOCK) == SOCK_NONBLOCK) {
-		l_socket_set_nonblock(rc, 1);
+		client->fd = rc;
+		l_socket_set_nonblock(client, 1);
 	}
 #else
 	if(peer != NULL) {
