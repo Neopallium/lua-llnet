@@ -17,7 +17,9 @@ build = {
 		llnet = {
 			sources = {
 				"src/lsockaddr.c",
+				"src/laddrinfo.c",
 				"src/lsocket.c",
+				"src/liobuffer.c",
 				"src/pre_generated-llnet.nobj.c",
 			},
 		}
