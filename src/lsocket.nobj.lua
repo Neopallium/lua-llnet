@@ -165,6 +165,26 @@ struct LSocket {
 ]],
 	},
 
+	method "recvfrom" {
+		var_out{"char *", "data", need_buffer = 8192, length = 'len' },
+		c_method_call { "errno_rc", "rc"} "l_socket_recvfrom"
+			{ "char *", "data", "size_t", "len", "int", "flags?", "LSockAddr *", "addr" },
+		c_source[[
+	/* ${rc} == 0, then socket is closed. */
+	if(${rc} == 0) {
+		lua_pushnil(L);
+		lua_pushliteral(L, "CLOSED");
+		return 2;
+	}
+	${len} = ${rc};
+]],
+		ffi_source[[
+	-- ${rc} == 0, then socket is closed.
+	if ${rc} == 0 then return nil, "CLOSED" end
+	${len} = ${rc};
+]],
+	},
+
 	method "send_buffer" {
 		var_in{"Buffer", "buf"},
 		var_in{"size_t", "off?", default = 0 },

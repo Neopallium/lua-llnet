@@ -83,4 +83,6 @@ L_LIB_API int l_socket_send(LSocket *sock, const void *buf, size_t len, int flag
 
 L_LIB_API int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags);
 
+L_LIB_API int l_socket_recvfrom(LSocket *sock, void *buf, size_t len, int flags, LSockAddr *addr);
+
 #endif /* __L_SOCKET_H__ */

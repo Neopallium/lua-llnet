@@ -1627,7 +1627,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "		local dir_sep = p_config:sub(1,1)\n"
 "		local path_sep = p_config:sub(3,3)\n"
 "		local path_mark = p_config:sub(5,5)\n"
-"		local path_match = \"([^\" .. path_sep .. \"]*)\" .. path_sep\n"
+"		local path_match = \"([^\" .. path_sep .. \"]+)\"\n"
 "		-- convert dotted name to directory path.\n"
 "		name = name:gsub('%.', dir_sep)\n"
 "		-- try each path in search path.\n"
@@ -1798,9 +1798,13 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "int l_sockaddr_get_port(LSockAddr *);\n"
 "\n"
-"sockaddr * l_sockaddr_get_addr(LSockAddr *);\n"
+"size_t l_sockaddr_get_address(LSockAddr *, char *, size_t);\n"
 "\n"
-"socklen_t l_sockaddr_get_addrlen(LSockAddr *);\n"
+"sockaddr * l_sockaddr_get_sockaddr(LSockAddr *);\n"
+"\n"
+"socklen_t l_sockaddr_get_sockaddr_len(LSockAddr *);\n"
+"\n"
+"const char * l_sockaddr_get_data(LSockAddr *, size_t*);\n"
 "\n"
 "size_t l_sockaddr_tostring(LSockAddr *, char *, size_t);\n"
 "\n"
@@ -2112,11 +2116,11 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "errno_rc lsocket_opt_get_TCP_CORK(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_KEEPIDLE(LSocket *, int*);\n"
-"\n"
+"\n", /* ----- CUT ----- */
 "errno_rc lsocket_opt_get_TCP_QUICKACK(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_CONGESTION(LSocket *, char *, socklen_t*);\n"
-"\n", /* ----- CUT ----- */
+"\n"
 "errno_rc lsocket_opt_get_TCP_WINDOW_CLAMP(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_DEFER_ACCEPT(LSocket *, int*);\n"
@@ -2156,6 +2160,8 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "errno_rc l_socket_send(LSocket *, const char *, size_t, int);\n"
 "\n"
 "errno_rc l_socket_recv(LSocket *, char *, size_t, int);\n"
+"\n"
+"errno_rc l_socket_recvfrom(LSocket *, char *, size_t, int, LSockAddr *);\n"
 "\n"
 "typedef struct LIOBuffer LIOBuffer;\n"
 "\n"
@@ -2651,20 +2657,58 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  return rc_l_sockaddr_get_port1\n"
 "end\n"
 "\n"
-"-- method: addr\n"
-"function _meth.LSockAddr.addr(self)\n"
+"do\n"
+"  local get_address_str_tmp = ffi.new(\"char[1024]\")\n"
+"-- method: get_address\n"
+"function _meth.LSockAddr.get_address(self)\n"
 "  \n"
-"  local rc_l_sockaddr_get_addr1\n"
-"  rc_l_sockaddr_get_addr1 = C.l_sockaddr_get_addr(self)\n"
-"  return rc_l_sockaddr_get_addr1\n"
+"  local str_len1 = 1023;\n"
+"  local str1 = get_address_str_tmp\n"
+"  str_len1 = C.l_sockaddr_get_address(self, str1, str_len1)\n"
+"  return str1 ~= nil and ffi_string(str1,str_len1) or nil\n"
+"end\n"
 "end\n"
 "\n"
-"-- method: addrlen\n"
-"function _meth.LSockAddr.addrlen(self)\n"
+"-- method: sockaddr\n"
+"function _meth.LSockAddr.sockaddr(self)\n"
 "  \n"
-"  local rc_l_sockaddr_get_addrlen1 = 0\n"
-"  rc_l_sockaddr_get_addrlen1 = C.l_sockaddr_get_addrlen(self)\n"
-"  return rc_l_sockaddr_get_addrlen1\n"
+"  local rc_l_sockaddr_get_sockaddr1\n"
+"  rc_l_sockaddr_get_sockaddr1 = C.l_sockaddr_get_sockaddr(self)\n"
+"  return rc_l_sockaddr_get_sockaddr1\n"
+"end\n"
+"\n"
+"-- method: sockaddr_len\n"
+"function _meth.LSockAddr.sockaddr_len(self)\n"
+"  \n", /* ----- CUT ----- */
+"  local rc_l_sockaddr_get_sockaddr_len1 = 0\n"
+"  rc_l_sockaddr_get_sockaddr_len1 = C.l_sockaddr_get_sockaddr_len(self)\n"
+"  return rc_l_sockaddr_get_sockaddr_len1\n"
+"end\n"
+"\n"
+"do\n"
+"  local todata_data_len_tmp = ffi.new(\"size_t[1]\")\n"
+"\n"
+"-- method: todata\n"
+"function _meth.LSockAddr.todata(self)\n"
+"  \n"
+"  local data_len1 = 0\n"
+"  local data1\n"
+"  data1 = C.l_sockaddr_get_data(self, todata_data_len_tmp)\n"
+"  data_len1 = todata_data_len_tmp[0]\n"
+"  return data1 ~= nil and ffi_string(data1,data_len1) or nil\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local tostring_str_tmp = ffi.new(\"char[1024]\")\n"
+"-- method: tostring\n"
+"function _meth.LSockAddr.tostring(self)\n"
+"  \n"
+"  local str_len1 = 1023;\n"
+"  local str1 = tostring_str_tmp\n"
+"  str_len1 = C.l_sockaddr_tostring(self, str1, str_len1)\n"
+"  return str1 ~= nil and ffi_string(str1,str_len1) or nil\n"
+"end\n"
 "end\n"
 "\n"
 "do\n"
@@ -2679,7 +2723,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: lookup_full\n", /* ----- CUT ----- */
+"-- method: lookup_full\n"
 "function _meth.LSockAddr.lookup_full(self, host2, port3, ai_family4, ai_socktype5, ai_protocol6, ai_flags7)\n"
 "  \n"
 "  local host_len2 = #host2\n"
@@ -3130,7 +3174,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _pub.SetSocketOption.IPV6_MULTICAST_HOPS(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IPV6_MULTICAST_HOPS1 = 0\n"
+"  local rc_lsocket_opt_set_IPV6_MULTICAST_HOPS1 = 0\n", /* ----- CUT ----- */
 "  rc_lsocket_opt_set_IPV6_MULTICAST_HOPS1 = C.lsocket_opt_set_IPV6_MULTICAST_HOPS(sock1, value2)\n"
 "  -- check for error.\n"
 "  if (-1 == rc_lsocket_opt_set_IPV6_MULTICAST_HOPS1) then\n"
@@ -3169,7 +3213,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  return true\n"
 "end\n"
 "end\n"
-"\n", /* ----- CUT ----- */
+"\n"
 "-- method: IPV6_MULTICAST_LOOP\n"
 "if (_pub.SetSocketOption.IPV6_MULTICAST_LOOP) then\n"
 "function _pub.SetSocketOption.IPV6_MULTICAST_LOOP(sock1, value2)\n"
@@ -3610,7 +3654,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _pub.SetSocketOption.SO_SNDLOWAT(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_SO_SNDLOWAT1 = 0\n"
+"  local rc_lsocket_opt_set_SO_SNDLOWAT1 = 0\n", /* ----- CUT ----- */
 "  rc_lsocket_opt_set_SO_SNDLOWAT1 = C.lsocket_opt_set_SO_SNDLOWAT(sock1, value2)\n"
 "  -- check for error.\n"
 "  if (-1 == rc_lsocket_opt_set_SO_SNDLOWAT1) then\n"
@@ -3650,7 +3694,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: SO_PASSCRED\n", /* ----- CUT ----- */
+"-- method: SO_PASSCRED\n"
 "if (_pub.SetSocketOption.SO_PASSCRED) then\n"
 "function _pub.SetSocketOption.SO_PASSCRED(sock1, value2)\n"
 "  \n"
@@ -4119,7 +4163,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local IP_PKTINFO_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: IP_PKTINFO\n"
-"if (_pub.GetSocketOption.IP_PKTINFO) then\n"
+"if (_pub.GetSocketOption.IP_PKTINFO) then\n", /* ----- CUT ----- */
 "function _pub.GetSocketOption.IP_PKTINFO(sock1)\n"
 "  \n"
 "  local value1\n"
@@ -4160,7 +4204,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "if (_pub.GetSocketOption.IP_MTU_DISCOVER) then\n"
 "function _pub.GetSocketOption.IP_MTU_DISCOVER(sock1)\n"
 "  \n"
-"  local value1\n", /* ----- CUT ----- */
+"  local value1\n"
 "  local rc_lsocket_opt_get_IP_MTU_DISCOVER2 = 0\n"
 "  rc_lsocket_opt_get_IP_MTU_DISCOVER2 = C.lsocket_opt_get_IP_MTU_DISCOVER(sock1, IP_MTU_DISCOVER_value_tmp)\n"
 "  value1 = IP_MTU_DISCOVER_value_tmp[0]\n"
@@ -4605,7 +4649,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"do\n"
+"do\n", /* ----- CUT ----- */
 "  local IPV6_RECVPKTINFO_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: IPV6_RECVPKTINFO\n"
@@ -4642,7 +4686,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "end\n"
-"\n", /* ----- CUT ----- */
+"\n"
 "do\n"
 "  local SO_SNDBUFFORCE_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
@@ -5111,7 +5155,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local rc_lsocket_opt_get_SO_DEBUG2 = 0\n"
 "  rc_lsocket_opt_get_SO_DEBUG2 = C.lsocket_opt_get_SO_DEBUG(sock1, SO_DEBUG_value_tmp)\n"
 "  value1 = SO_DEBUG_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_DEBUG2) then\n"
+"  if (-1 == rc_lsocket_opt_get_SO_DEBUG2) then\n", /* ----- CUT ----- */
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DEBUG2)\n"
 "  end\n"
 "  return value1\n"
@@ -5157,7 +5201,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"do\n", /* ----- CUT ----- */
+"do\n"
 "  local TCP_KEEPIDLE_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: TCP_KEEPIDLE\n"
@@ -5566,6 +5610,29 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
+"do\n"
+"  local recvfrom_data_tmp = ffi.new(\"char[8192]\")\n"
+"-- method: recvfrom\n"
+"function _meth.LSocket.recvfrom(self, len2, flags3, addr4)\n"
+"  \n"
+"  \n"
+"  flags3 = flags3 or 0\n"
+"  \n"
+"  if len2 > 8191 then len2 = 8191 end\n"
+"  local data1 = recvfrom_data_tmp\n"
+"  local rc2 = 0\n"
+"  rc2 = C.l_socket_recvfrom(self, data1, len2, flags3, addr4)\n"
+"	-- rc2 == 0, then socket is closed.\n"
+"	if rc2 == 0 then return nil, \"CLOSED\" end\n"
+"	len2 = rc2;\n"
+"\n"
+"  if (-1 == rc2) then\n"
+"    return nil,error_code__errno_rc__push(rc2)\n"
+"  end\n"
+"  return data1 ~= nil and ffi_string(data1,len2) or nil\n"
+"end\n"
+"end\n"
+"\n"
 "-- method: send_buffer\n"
 "function _meth.LSocket.send_buffer(self, buf2, off3, len4, flags5)\n"
 "  \n"
@@ -5639,7 +5706,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "	data_len1 = rc2\n"
 "\n"
 "  if (-1 == rc2) then\n"
-"    return nil,error_code__errno_rc__push(rc2)\n"
+"    return nil,error_code__errno_rc__push(rc2)\n", /* ----- CUT ----- */
 "  end\n"
 "  return data_len1\n"
 "end\n"
@@ -5712,7 +5779,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  return data1 ~= nil and ffi_string(data1,data_len1) or nil\n"
 "end\n"
 "\n"
-"-- method: get_byte\n", /* ----- CUT ----- */
+"-- method: get_byte\n"
 "function _meth.LIOBuffer.get_byte(self, offset2)\n"
 "  \n"
 "  \n"
@@ -7122,23 +7189,60 @@ static int LSockAddr__get_port__meth(lua_State *L) {
   return 1;
 }
 
-/* method: addr */
-static int LSockAddr__addr__meth(lua_State *L) {
+/* method: get_address */
+static int LSockAddr__get_address__meth(lua_State *L) {
   LSockAddr * this1;
-  sockaddr * rc_l_sockaddr_get_addr1 = NULL;
+  size_t str_len1 = 0;
+  char str1_buf[1024];
+  char * str1 = str1_buf;
   this1 = obj_type_LSockAddr_check(L,1);
-  rc_l_sockaddr_get_addr1 = l_sockaddr_get_addr(this1);
-  lua_pushlightuserdata(L, rc_l_sockaddr_get_addr1);
+  str_len1 = 1023;
+  str_len1 = l_sockaddr_get_address(this1, str1, str_len1);
+  if(str1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, str1,str_len1);
   return 1;
 }
 
-/* method: addrlen */
-static int LSockAddr__addrlen__meth(lua_State *L) {
+/* method: sockaddr */
+static int LSockAddr__sockaddr__meth(lua_State *L) {
   LSockAddr * this1;
-  socklen_t rc_l_sockaddr_get_addrlen1 = 0;
+  sockaddr * rc_l_sockaddr_get_sockaddr1 = NULL;
   this1 = obj_type_LSockAddr_check(L,1);
-  rc_l_sockaddr_get_addrlen1 = l_sockaddr_get_addrlen(this1);
-  lua_pushinteger(L, rc_l_sockaddr_get_addrlen1);
+  rc_l_sockaddr_get_sockaddr1 = l_sockaddr_get_sockaddr(this1);
+  lua_pushlightuserdata(L, rc_l_sockaddr_get_sockaddr1);
+  return 1;
+}
+
+/* method: sockaddr_len */
+static int LSockAddr__sockaddr_len__meth(lua_State *L) {
+  LSockAddr * this1;
+  socklen_t rc_l_sockaddr_get_sockaddr_len1 = 0;
+  this1 = obj_type_LSockAddr_check(L,1);
+  rc_l_sockaddr_get_sockaddr_len1 = l_sockaddr_get_sockaddr_len(this1);
+  lua_pushinteger(L, rc_l_sockaddr_get_sockaddr_len1);
+  return 1;
+}
+
+/* method: todata */
+static int LSockAddr__todata__meth(lua_State *L) {
+  LSockAddr * this1;
+  size_t data_len1 = 0;
+  const char * data1 = NULL;
+  this1 = obj_type_LSockAddr_check(L,1);
+  data1 = l_sockaddr_get_data(this1, &(data_len1));
+  if(data1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, data1,data_len1);
+  return 1;
+}
+
+/* method: tostring */
+static int LSockAddr__tostring__meth(lua_State *L) {
+  LSockAddr * this1;
+  size_t str_len1 = 0;
+  char str1_buf[1024];
+  char * str1 = str1_buf;
+  this1 = obj_type_LSockAddr_check(L,1);
+  str_len1 = 1023;
+  str_len1 = l_sockaddr_tostring(this1, str1, str_len1);
+  if(str1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, str1,str_len1);
   return 1;
 }
 
@@ -10527,6 +10631,38 @@ static int LSocket__recv__meth(lua_State *L) {
   return 2;
 }
 
+/* method: recvfrom */
+static int LSocket__recvfrom__meth(lua_State *L) {
+  LSocket * this1;
+  size_t len2;
+  int flags3;
+  LSockAddr * addr4;
+  char data1_buf[8192];
+  char * data1 = data1_buf;
+  errno_rc rc2 = 0;
+  this1 = obj_type_LSocket_check(L,1);
+  len2 = luaL_checkinteger(L,2);
+  flags3 = luaL_optinteger(L,3,0);
+  addr4 = obj_type_LSockAddr_check(L,4);
+  if(len2 > 8191) len2 = 8191;
+  rc2 = l_socket_recvfrom(this1, data1, len2, flags3, addr4);
+	/* rc2 == 0, then socket is closed. */
+	if(rc2 == 0) {
+		lua_pushnil(L);
+		lua_pushliteral(L, "CLOSED");
+		return 2;
+	}
+	len2 = rc2;
+
+  if(!(-1 == rc2)) {
+    if(data1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, data1,len2);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc2);
+  return 2;
+}
+
 /* method: send_buffer */
 static int LSocket__send_buffer__meth(lua_State *L) {
   LSocket * this1;
@@ -11461,8 +11597,11 @@ static const luaL_Reg obj_LSockAddr_methods[] = {
   {"get_family", LSockAddr__get_family__meth},
   {"set_port", LSockAddr__set_port__meth},
   {"get_port", LSockAddr__get_port__meth},
-  {"addr", LSockAddr__addr__meth},
-  {"addrlen", LSockAddr__addrlen__meth},
+  {"get_address", LSockAddr__get_address__meth},
+  {"sockaddr", LSockAddr__sockaddr__meth},
+  {"sockaddr_len", LSockAddr__sockaddr_len__meth},
+  {"todata", LSockAddr__todata__meth},
+  {"tostring", LSockAddr__tostring__meth},
   {"lookup_full", LSockAddr__lookup_full__meth},
   {NULL, NULL}
 };
@@ -12283,6 +12422,7 @@ static const luaL_Reg obj_LSocket_methods[] = {
   {"accept", LSocket__accept__meth},
   {"send", LSocket__send__meth},
   {"recv", LSocket__recv__meth},
+  {"recvfrom", LSocket__recvfrom__meth},
   {"send_buffer", LSocket__send_buffer__meth},
   {"recv_buffer", LSocket__recv_buffer__meth},
   {NULL, NULL}

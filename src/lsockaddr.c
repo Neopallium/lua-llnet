@@ -200,12 +200,60 @@ int l_sockaddr_get_port(LSockAddr *addr) {
 	return -1;
 }
 
-struct sockaddr *l_sockaddr_get_addr(LSockAddr *addr) {
+int l_sockaddr_get_address(LSockAddr *addr, char *buf, size_t buf_len) {
+	sa_family_t family;
+	family = addr->addr->sa_family;
+	switch(family) {
+#ifndef __WINDOWS__
+	/* local/file/unix */
+	case PF_LOCAL: {
+		struct sockaddr_un *addr_un;
+		size_t len;
+		addr_un = (struct sockaddr_un *)addr->addr;
+		len = strlen(addr_un->sun_path);
+		if(len > buf_len) {
+			len = buf_len - 1;
+		}
+		strncpy(buf, addr_un->sun_path, len);
+		buf[len] = 0;
+		return len;
+	}
+#endif
+	case PF_INET: {
+		struct sockaddr_in *addr_in;
+
+		addr_in = (struct sockaddr_in *)addr->addr;
+		if(inet_ntop(family, &(addr_in->sin_addr), buf, buf_len) != 0) {
+			return strlen(buf);
+		}
+		break;
+	}
+	case PF_INET6: {
+		struct sockaddr_in6 *addr_in;
+
+		addr_in = (struct sockaddr_in6 *)addr->addr;
+		if(inet_ntop(family, &(addr_in->sin6_addr), buf, buf_len) != 0) {
+			return strlen(buf);
+		}
+		break;
+	}
+	default:
+		return snprintf(buf, buf_len, "Un-supported sockaddr family %d", family);
+	}
+	return 0;
+}
+
+struct sockaddr *l_sockaddr_get_sockaddr(LSockAddr *addr) {
 	return addr->addr;
 }
 
-socklen_t l_sockaddr_get_addrlen(LSockAddr *addr) {
+socklen_t l_sockaddr_get_sockaddr_len(LSockAddr *addr) {
 	return addr->addrlen;
+}
+
+const char *l_sockaddr_get_data(LSockAddr *addr, size_t *datalen) {
+	*datalen = addr->addrlen;
+	return (const char *)addr->addr;
 }
 
 int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buflen) {

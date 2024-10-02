@@ -61,9 +61,13 @@ L_LIB_API int l_sockaddr_set_port(LSockAddr *addr, int port);
 
 L_LIB_API int l_sockaddr_get_port(LSockAddr *addr);
 
-L_LIB_API struct sockaddr *l_sockaddr_get_addr(LSockAddr *addr);
+L_LIB_API int l_sockaddr_get_address(LSockAddr *addr, char *buf, size_t buf_len);
 
-L_LIB_API socklen_t l_sockaddr_get_addrlen(LSockAddr *addr);
+L_LIB_API struct sockaddr *l_sockaddr_get_sockaddr(LSockAddr *addr);
+
+L_LIB_API socklen_t l_sockaddr_get_sockaddr_len(LSockAddr *addr);
+
+L_LIB_API const char *l_sockaddr_get_data(LSockAddr *addr, size_t *datalen);
 
 L_LIB_API int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buf_len);
 

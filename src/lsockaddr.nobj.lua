@@ -81,11 +81,26 @@ int l_sockaddr_tostring(LSockAddr *addr, char *buf, size_t buf_len);
 	method "get_port" {
 		c_method_call "int" "l_sockaddr_get_port" {},
 	},
-	method "addr" {
-		c_method_call "sockaddr *" "l_sockaddr_get_addr" {},
+	method "get_address" {
+		var_out{ "char *", "str", need_buffer = 1024 },
+		c_method_call { "size_t", "#str" } "l_sockaddr_get_address" { "char *", "str", "size_t", "#str" }
 	},
-	method "addrlen" {
-		c_method_call "socklen_t" "l_sockaddr_get_addrlen" {},
+	method "sockaddr" {
+		c_method_call "sockaddr *" "l_sockaddr_get_sockaddr" {},
+	},
+	method "sockaddr_len" {
+		c_method_call "socklen_t" "l_sockaddr_get_sockaddr_len" {},
+	},
+	method "todata" {
+		--var_out { "const char *", "data" },
+		--var_out { "size_t", "#data" },
+		--c_method_call { "const char *", "data" } "l_sockaddr_get_data" { "size_t *", "&#(data)" },
+		c_method_call { "const char *", "data", has_length = true } "l_sockaddr_get_data" { "size_t", "&#data" },
+		--c_method_call { "size_t", "#data" } "l_sockaddr_get_addrlen" {}
+	},
+	method "tostring" {
+		var_out{ "char *", "str", need_buffer = 1024 },
+		c_method_call { "size_t", "#str" } "l_sockaddr_tostring" { "char *", "str", "size_t", "#str" }
 	},
 	method "__tostring" {
 		var_out{ "char *", "str", need_buffer = 1024 },

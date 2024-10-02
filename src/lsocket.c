@@ -192,3 +192,13 @@ int l_socket_recv(LSocket *sock, void *buf, size_t len, int flags) {
 	return recv(sock->fd, buf, len, flags);
 }
 
+int l_socket_recvfrom(LSocket *sock, void *buf, size_t len, int flags, LSockAddr *addr) {
+	MAKE_TEMP_ADDR(tmp1);
+	int rc;
+
+	rc = recvfrom(sock->fd, buf, len, flags, GET_TEMP_ADDR_AND_PTR_LEN(tmp1));
+	if(rc >= 0) {
+		L_SOCKADDR_FILL_FROM_TEMP(addr, tmp1);
+	}
+	return rc;
+}
