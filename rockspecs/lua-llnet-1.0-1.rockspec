@@ -1,7 +1,8 @@
 package = "lua-llnet"
-version = "scm-0"
+version = "1.0-1"
 source = {
 	url = "git://github.com/Neopallium/lua-llnet.git",
+  branch = "v1.0",
 }
 description = {
 	summary = "Low-Level network for Lua",

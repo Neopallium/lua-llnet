@@ -126,12 +126,13 @@ function sock_mt:recv(len)
 	return rc, errmsg
 end
 
-module(...)
+local _M = {
+	NONBLOCK = SOCK_NONBLOCK,
+	CLOEXEC = SOCK_CLOEXEC,
+}
 
-NONBLOCK = SOCK_NONBLOCK
-CLOEXEC = SOCK_CLOEXEC
-
-function new(family, stype, proto, flags)
+function _M.new(family, stype, proto, flags)
 	return wrap_nixio_sock(new_socket(family or 'inet', stype or 'stream'), flags)
 end
 
+return _M

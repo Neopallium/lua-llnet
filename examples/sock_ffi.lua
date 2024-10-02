@@ -336,12 +336,12 @@ function sock_mt:recv_buffer(buf, off, len, flags)
 	return rc
 end
 
-module(...)
+local _M = {
+	NONBLOCK = llnet.SOCK_NONBLOCK,
+	CLOEXEC = llnet.SOCK_CLOEXEC,
+}
 
-NONBLOCK = llnet.SOCK_NONBLOCK
-CLOEXEC = llnet.SOCK_CLOEXEC
-
-function new(family, stype, proto, flags)
+function _M.new(family, stype, proto, flags)
 	family = Families[family or 'inet']
 	stype = Sock_types[stype or 'stream']
 	local fd = ffi.new("LSocket")
@@ -350,3 +350,4 @@ function new(family, stype, proto, flags)
 	return wrap_llnet_sock(fd, family, stype)
 end
 
+return _M

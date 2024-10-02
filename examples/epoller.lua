@@ -1,7 +1,7 @@
 
 local epoll = require"epoll"
 
-local bit = require"bit"
+local bit = require"bit32"
 local band = bit.band
 
 local setmetatable = setmetatable
@@ -82,7 +82,7 @@ function poll_mt:close()
 	return self.epoll:close()
 end
 
-module(...)
+local _M={}
 
 for k,v in pairs(epoll) do
 	if k:sub(1,5) == 'EPOLL' then
@@ -90,7 +90,7 @@ for k,v in pairs(epoll) do
 	end
 end
 
-function new()
+function _M.new()
 	local self
 	local socks = {}
 	self = setmetatable({
@@ -101,3 +101,4 @@ function new()
 	return self
 end
 
+return _M

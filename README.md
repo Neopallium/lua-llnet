@@ -40,6 +40,11 @@ If the backlog value passed to listen() is greater then the value in /proc/sys/n
 Installation
 ============
 
+Release 1.0 LuaRocks
+--------------------
+
+  luarocks install lua-llnet
+
 Lastest Git Revision
 --------------------
 
