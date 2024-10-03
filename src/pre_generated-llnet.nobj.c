@@ -623,8 +623,8 @@ static void obj_type_register_implements(lua_State *L, const reg_impl *impls) {
 #define REG_MODULES_AS_GLOBALS 0
 #endif
 
-/* For Lua 5.2 don't register modules as globals. */
-#if LUA_VERSION_NUM == 502
+/* For Lua >=5.2 don't register modules as globals. */
+#if LUA_VERSION_NUM >= 502
 #undef REG_MODULES_AS_GLOBALS
 #define REG_MODULES_AS_GLOBALS 0
 #endif
@@ -1392,25 +1392,25 @@ static FUNC_UNUSED void *nobj_delete_callback_state(lua_State *L, int owner_idx)
 
 
 
-typedef struct Buffer_if {
-  const uint8_t * (* const const_data)(void *this_v);
+typedef struct MutableBuffer_if {
+  uint8_t * (* const data)(void *this_v);
   size_t (* const get_size)(void *this_v);
-} BufferIF;
+} MutableBufferIF;
 
 /* a per-module unique pointer for fast lookup of an interface's implementation table. */
-static char obj_interface_BufferIF[] = "BufferIF";
+static char obj_interface_MutableBufferIF[] = "MutableBufferIF";
 
-#define BufferIF_VAR(var_name) \
-	BufferIF *var_name ## _if; \
+#define MutableBufferIF_VAR(var_name) \
+	MutableBufferIF *var_name ## _if; \
 	void *var_name;
 
-#define BufferIF_LUA_OPTIONAL(L, _index, var_name) \
+#define MutableBufferIF_LUA_OPTIONAL(L, _index, var_name) \
 	var_name = obj_implement_luaoptional(L, _index, (void **)&(var_name ## _if), \
-		obj_interface_BufferIF)
+		obj_interface_MutableBufferIF)
 
-#define BufferIF_LUA_CHECK(L, _index, var_name) \
+#define MutableBufferIF_LUA_CHECK(L, _index, var_name) \
 	var_name = obj_implement_luacheck(L, _index, (void **)&(var_name ## _if), \
-		obj_interface_BufferIF)
+		obj_interface_MutableBufferIF)
 
 
 
@@ -1442,33 +1442,33 @@ static char obj_interface_FDIF[] = "FDIF";
 
 
 
-typedef struct MutableBuffer_if {
-  uint8_t * (* const data)(void *this_v);
+typedef struct Buffer_if {
+  const uint8_t * (* const const_data)(void *this_v);
   size_t (* const get_size)(void *this_v);
-} MutableBufferIF;
+} BufferIF;
 
 /* a per-module unique pointer for fast lookup of an interface's implementation table. */
-static char obj_interface_MutableBufferIF[] = "MutableBufferIF";
+static char obj_interface_BufferIF[] = "BufferIF";
 
-#define MutableBufferIF_VAR(var_name) \
-	MutableBufferIF *var_name ## _if; \
+#define BufferIF_VAR(var_name) \
+	BufferIF *var_name ## _if; \
 	void *var_name;
 
-#define MutableBufferIF_LUA_OPTIONAL(L, _index, var_name) \
+#define BufferIF_LUA_OPTIONAL(L, _index, var_name) \
 	var_name = obj_implement_luaoptional(L, _index, (void **)&(var_name ## _if), \
-		obj_interface_MutableBufferIF)
+		obj_interface_BufferIF)
 
-#define MutableBufferIF_LUA_CHECK(L, _index, var_name) \
+#define BufferIF_LUA_CHECK(L, _index, var_name) \
 	var_name = obj_implement_luacheck(L, _index, (void **)&(var_name ## _if), \
-		obj_interface_MutableBufferIF)
+		obj_interface_BufferIF)
 
 
 
 
 static char *obj_interfaces[] = {
-  obj_interface_BufferIF,
-  obj_interface_FDIF,
   obj_interface_MutableBufferIF,
+  obj_interface_FDIF,
+  obj_interface_BufferIF,
   NULL,
 };
 
@@ -1724,11 +1724,11 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "	end\n"
 "end\n"
 "\n"
-"ffi_safe_cdef(\"BufferIF\", [[\n"
-"typedef struct Buffer_if {\n"
-"  const uint8_t * (* const const_data)(void *this_v);\n"
+"ffi_safe_cdef(\"MutableBufferIF\", [[\n"
+"typedef struct MutableBuffer_if {\n"
+"  uint8_t * (* const data)(void *this_v);\n"
 "  size_t (* const get_size)(void *this_v);\n"
-"} BufferIF;\n"
+"} MutableBufferIF;\n"
 "]])\n"
 "\n"
 "ffi_safe_cdef(\"FDIF\", [[\n"
@@ -1738,11 +1738,11 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "} FDIF;\n"
 "]])\n"
 "\n"
-"ffi_safe_cdef(\"MutableBufferIF\", [[\n"
-"typedef struct MutableBuffer_if {\n"
-"  uint8_t * (* const data)(void *this_v);\n"
+"ffi_safe_cdef(\"BufferIF\", [[\n"
+"typedef struct Buffer_if {\n"
+"  const uint8_t * (* const const_data)(void *this_v);\n"
 "  size_t (* const get_size)(void *this_v);\n"
-"} MutableBufferIF;\n"
+"} BufferIF;\n"
 "]])\n"
 "\n"
 "local Cmod = ffi_load_cmodule(\"llnet\", false)\n"
@@ -1842,301 +1842,301 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "bool l_addrinfo_next(LAddrInfo *);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_ADDRFORM(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IPV6_MTU(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_NEXTHOP(LSocket *, LSockAddr *);\n"
+"errno_rc lsocket_opt_set_IPV6_ADDRFORM(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IPV6_MULTICAST_LOOP(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_RECVPKTINFO(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IPV6_CHECKSUM(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_IPV6_RECVDSTOPTS(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_IPV6_ROUTER_ALERT(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IPV6_V6ONLY(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_MTU_DISCOVER(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IPV6_UNICAST_HOPS(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_IPV6_NEXTHOP(LSocket *, LSockAddr *);\n"
+"\n"
+"errno_rc lsocket_opt_set_IPV6_RECVERR(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IPV6_HOPLIMIT(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_UNICAST_HOPS(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IPV6_CHECKSUM(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IPV6_RECVPKTINFO(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IPV6_RECVTCLASS(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IPV6_MULTICAST_HOPS(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_ROUTER_ALERT(LSocket *, int);\n"
-"\n"
 "errno_rc lsocket_opt_set_IPV6_RECVHOPOPTS(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IPV6_RECVERR(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IPV6_TCLASS(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_MULTICAST_IF(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IPV6_RECVHOPLIMIT(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IPV6_RECVRTHDR(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_RECVDSTOPTS(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IPV6_MTU_DISCOVER(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IPV6_RECVHOPLIMIT(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IPV6_MTU(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IP_MTU(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IP_RECVTOS(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IP_PKTINFO(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IP_RECVORIGDSTADDR(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IP_FREEBIND(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IP_RECVERR(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IP_OPTIONS(LSocket *, const char *, socklen_t);\n"
+"errno_rc lsocket_opt_set_IPV6_MULTICAST_IF(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IP_MULTICAST_LOOP(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IP_MINTTL(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IP_ROUTER_ALERT(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_IP_TTL(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_MULTICAST_TTL(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IP_RECVTTL(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IP_RECVRETOPTS(LSocket *, int);\n"
-"\n"
 "errno_rc lsocket_opt_set_IP_RECVOPTS(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IP_HDRINCL(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_RECVRETOPTS(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IP_MULTICAST_TTL(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_RECVORIGDSTADDR(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IP_MTU_DISCOVER(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_FREEBIND(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_IP_TOS(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_TTL(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_IP_RECVTOS(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_IP_RECVERR(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_IP_RETOPTS(LSocket *, const char *, socklen_t);\n"
 "\n"
-"errno_rc lsocket_opt_set_SO_RCVBUFFORCE(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_TOS(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_SO_DEBUG(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_MTU_DISCOVER(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_SO_REUSEADDR(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_OPTIONS(LSocket *, const char *, socklen_t);\n"
 "\n"
-"errno_rc lsocket_opt_set_SO_PASSCRED(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_PKTINFO(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_SO_SNDLOWAT(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_ROUTER_ALERT(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_SO_SNDBUFFORCE(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_MTU(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_SO_MARK(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_RCVLOWAT(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_BSDCOMPAT(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_TIMESTAMPNS(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_TIMESTAMP(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_OOBINLINE(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_BINDTODEVICE(LSocket *, const char *, socklen_t);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_RCVBUF(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_TIMESTAMPING(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_PRIORITY(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_SO_NO_CHECK(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_IP_HDRINCL(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_SO_KEEPALIVE(LSocket *, int);\n"
 "\n"
+"errno_rc lsocket_opt_set_SO_RCVLOWAT(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_SNDBUFFORCE(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_RCVBUF(LSocket *, int);\n"
+"\n"
 "errno_rc lsocket_opt_set_SO_DONTROUTE(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_DEBUG(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_TIMESTAMPNS(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_MARK(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_TIMESTAMPING(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_TIMESTAMP(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_BINDTODEVICE(LSocket *, const char *, socklen_t);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_OOBINLINE(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_SO_SNDBUF(LSocket *, int);\n"
 "\n"
+"errno_rc lsocket_opt_set_SO_BSDCOMPAT(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_PRIORITY(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_RCVBUFFORCE(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_SNDLOWAT(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_PASSCRED(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_SO_NO_CHECK(LSocket *, int);\n"
+"\n"
 "errno_rc lsocket_opt_set_SO_BROADCAST(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_TCP_MAXSEG(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_SO_REUSEADDR(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_TCP_KEEPCNT(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_TCP_WINDOW_CLAMP(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_TCP_KEEPINTVL(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_TCP_QUICKACK(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_TCP_KEEPIDLE(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_TCP_CONGESTION(LSocket *, const char *, socklen_t);\n"
+"errno_rc lsocket_opt_set_TCP_KEEPCNT(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_TCP_CORK(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_TCP_LINGER2(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_TCP_MAXSEG(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_set_TCP_DEFER_ACCEPT(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_TCP_WINDOW_CLAMP(LSocket *, int);\n"
-"\n"
-"errno_rc lsocket_opt_set_TCP_NODELAY(LSocket *, int);\n"
+"errno_rc lsocket_opt_set_TCP_KEEPIDLE(LSocket *, int);\n"
 "\n"
 "errno_rc lsocket_opt_set_TCP_SYNCNT(LSocket *, int);\n"
 "\n"
-"errno_rc lsocket_opt_get_IPV6_NEXTHOP(LSocket *, LSockAddr *);\n"
+"errno_rc lsocket_opt_set_TCP_CONGESTION(LSocket *, const char *, socklen_t);\n"
+"\n"
+"errno_rc lsocket_opt_set_TCP_DEFER_ACCEPT(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_TCP_NODELAY(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_set_TCP_LINGER2(LSocket *, int);\n"
+"\n"
+"errno_rc lsocket_opt_get_IPV6_MTU(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IPV6_MULTICAST_LOOP(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IPV6_RECVPKTINFO(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IPV6_CHECKSUM(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_IPV6_RECVDSTOPTS(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_IPV6_ROUTER_ALERT(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IPV6_V6ONLY(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IPV6_MTU_DISCOVER(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IPV6_UNICAST_HOPS(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_IPV6_NEXTHOP(LSocket *, LSockAddr *);\n"
+"\n"
+"errno_rc lsocket_opt_get_IPV6_RECVERR(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IPV6_HOPLIMIT(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IPV6_UNICAST_HOPS(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IPV6_CHECKSUM(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IPV6_RECVPKTINFO(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IPV6_RECVTCLASS(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IPV6_MULTICAST_HOPS(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IPV6_ROUTER_ALERT(LSocket *, int*);\n"
-"\n"
 "errno_rc lsocket_opt_get_IPV6_RECVHOPOPTS(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IPV6_RECVERR(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IPV6_TCLASS(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IPV6_MULTICAST_IF(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IPV6_RECVHOPLIMIT(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IPV6_RECVRTHDR(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IPV6_RECVDSTOPTS(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IPV6_MTU_DISCOVER(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IPV6_RECVHOPLIMIT(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IPV6_MTU(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IP_MTU(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IP_RECVTOS(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IP_PKTINFO(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IP_RECVORIGDSTADDR(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IP_FREEBIND(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IP_RECVERR(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IP_OPTIONS(LSocket *, char *, socklen_t*);\n"
+"errno_rc lsocket_opt_get_IPV6_MULTICAST_IF(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IP_MULTICAST_LOOP(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IP_MINTTL(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IP_ROUTER_ALERT(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_IP_TTL(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_MULTICAST_TTL(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IP_RECVTTL(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IP_RECVRETOPTS(LSocket *, int*);\n"
-"\n"
 "errno_rc lsocket_opt_get_IP_RECVOPTS(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IP_HDRINCL(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_RECVRETOPTS(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IP_MULTICAST_TTL(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_RECVORIGDSTADDR(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IP_MTU_DISCOVER(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_FREEBIND(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_IP_TOS(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_TTL(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_IP_RECVTOS(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_IP_RECVERR(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_IP_RETOPTS(LSocket *, char *, socklen_t*);\n"
 "\n"
-"errno_rc lsocket_opt_get_SO_PROTOCOL(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_TOS(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_SO_RCVBUFFORCE(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_MTU_DISCOVER(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_SO_ERROR(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_OPTIONS(LSocket *, char *, socklen_t*);\n"
 "\n"
-"errno_rc lsocket_opt_get_SO_DOMAIN(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_PKTINFO(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_SO_DEBUG(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_ROUTER_ALERT(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_SO_REUSEADDR(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_MTU(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_SO_PASSCRED(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_SNDLOWAT(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_SNDBUFFORCE(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_MARK(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_RCVLOWAT(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_BSDCOMPAT(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_TYPE(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_TIMESTAMPNS(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_TIMESTAMP(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_ACCEPTCONN(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_OOBINLINE(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_BINDTODEVICE(LSocket *, char *, socklen_t*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_RCVBUF(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_TIMESTAMPING(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_PRIORITY(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_SO_NO_CHECK(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_IP_HDRINCL(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_SO_KEEPALIVE(LSocket *, int*);\n"
 "\n"
+"errno_rc lsocket_opt_get_SO_RCVLOWAT(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_TYPE(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_SNDBUFFORCE(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_RCVBUF(LSocket *, int*);\n"
+"\n"
 "errno_rc lsocket_opt_get_SO_DONTROUTE(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_DEBUG(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_TIMESTAMPNS(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_PROTOCOL(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_MARK(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_TIMESTAMPING(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_DOMAIN(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_TIMESTAMP(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_BINDTODEVICE(LSocket *, char *, socklen_t*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_OOBINLINE(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_ERROR(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_SO_SNDBUF(LSocket *, int*);\n"
 "\n"
+"errno_rc lsocket_opt_get_SO_ACCEPTCONN(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_BSDCOMPAT(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_PRIORITY(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_RCVBUFFORCE(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_SNDLOWAT(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_PASSCRED(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_SO_NO_CHECK(LSocket *, int*);\n"
+"\n"
 "errno_rc lsocket_opt_get_SO_BROADCAST(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_TCP_MAXSEG(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_TCP_KEEPCNT(LSocket *, int*);\n"
-"\n", /* ----- CUT ----- */
-"errno_rc lsocket_opt_get_TCP_KEEPINTVL(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_TCP_QUICKACK(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_TCP_KEEPIDLE(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_TCP_CONGESTION(LSocket *, char *, socklen_t*);\n"
-"\n"
-"errno_rc lsocket_opt_get_TCP_CORK(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_TCP_LINGER2(LSocket *, int*);\n"
-"\n"
-"errno_rc lsocket_opt_get_TCP_DEFER_ACCEPT(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_SO_REUSEADDR(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_WINDOW_CLAMP(LSocket *, int*);\n"
 "\n"
-"errno_rc lsocket_opt_get_TCP_NODELAY(LSocket *, int*);\n"
+"errno_rc lsocket_opt_get_TCP_KEEPINTVL(LSocket *, int*);\n"
+"\n", /* ----- CUT ----- */
+"errno_rc lsocket_opt_get_TCP_QUICKACK(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_TCP_KEEPCNT(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_TCP_CORK(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_TCP_MAXSEG(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_TCP_KEEPIDLE(LSocket *, int*);\n"
 "\n"
 "errno_rc lsocket_opt_get_TCP_SYNCNT(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_TCP_CONGESTION(LSocket *, char *, socklen_t*);\n"
+"\n"
+"errno_rc lsocket_opt_get_TCP_DEFER_ACCEPT(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_TCP_NODELAY(LSocket *, int*);\n"
+"\n"
+"errno_rc lsocket_opt_get_TCP_LINGER2(LSocket *, int*);\n"
 "\n"
 "errno_rc l_socket_open(LSocket *, int, int, int, int);\n"
 "\n"
@@ -2504,14 +2504,14 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "\n"
-"local obj_type_Buffer_check =\n"
-"	obj_get_interface_check(\"BufferIF\", \"Expected object with Buffer interface\")\n"
+"local obj_type_MutableBuffer_check =\n"
+"	obj_get_interface_check(\"MutableBufferIF\", \"Expected object with MutableBuffer interface\")\n"
 "\n"
 "local obj_type_FD_check =\n"
 "	obj_get_interface_check(\"FDIF\", \"Expected object with FD interface\")\n"
 "\n"
-"local obj_type_MutableBuffer_check =\n"
-"	obj_get_interface_check(\"MutableBufferIF\", \"Expected object with MutableBuffer interface\")\n"
+"local obj_type_Buffer_check =\n"
+"	obj_get_interface_check(\"BufferIF\", \"Expected object with Buffer interface\")\n"
 "\n"
 "\n"
 "-- Start \"Errors\" FFI interface\n"
@@ -2885,6 +2885,21 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "\n"
 "\n"
 "-- Start \"SetSocketOption\" FFI interface\n"
+"-- method: IPV6_MTU\n"
+"if (_pub.SetSocketOption.IPV6_MTU) then\n"
+"function _pub.SetSocketOption.IPV6_MTU(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_IPV6_MTU1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_MTU1 = C.lsocket_opt_set_IPV6_MTU(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_MTU1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_MTU1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
 "-- method: IPV6_ADDRFORM\n"
 "if (_pub.SetSocketOption.IPV6_ADDRFORM) then\n"
 "function _pub.SetSocketOption.IPV6_ADDRFORM(sock1, value2)\n"
@@ -2895,21 +2910,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  -- check for error.\n"
 "  if (-1 == rc_lsocket_opt_set_IPV6_ADDRFORM1) then\n"
 "    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_ADDRFORM1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IPV6_NEXTHOP\n"
-"if (_pub.SetSocketOption.IPV6_NEXTHOP) then\n"
-"function _pub.SetSocketOption.IPV6_NEXTHOP(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IPV6_NEXTHOP1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_NEXTHOP1 = C.lsocket_opt_set_IPV6_NEXTHOP(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_NEXTHOP1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_NEXTHOP1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -2930,16 +2930,46 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IPV6_RECVPKTINFO\n"
-"if (_pub.SetSocketOption.IPV6_RECVPKTINFO) then\n"
-"function _pub.SetSocketOption.IPV6_RECVPKTINFO(sock1, value2)\n"
+"-- method: IPV6_CHECKSUM\n"
+"if (_pub.SetSocketOption.IPV6_CHECKSUM) then\n"
+"function _pub.SetSocketOption.IPV6_CHECKSUM(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IPV6_RECVPKTINFO1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_RECVPKTINFO1 = C.lsocket_opt_set_IPV6_RECVPKTINFO(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IPV6_CHECKSUM1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_CHECKSUM1 = C.lsocket_opt_set_IPV6_CHECKSUM(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_RECVPKTINFO1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVPKTINFO1)\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_CHECKSUM1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_CHECKSUM1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: IPV6_RECVDSTOPTS\n"
+"if (_pub.SetSocketOption.IPV6_RECVDSTOPTS) then\n"
+"function _pub.SetSocketOption.IPV6_RECVDSTOPTS(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_IPV6_RECVDSTOPTS1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_RECVDSTOPTS1 = C.lsocket_opt_set_IPV6_RECVDSTOPTS(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_RECVDSTOPTS1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVDSTOPTS1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: IPV6_ROUTER_ALERT\n"
+"if (_pub.SetSocketOption.IPV6_ROUTER_ALERT) then\n"
+"function _pub.SetSocketOption.IPV6_ROUTER_ALERT(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_IPV6_ROUTER_ALERT1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_ROUTER_ALERT1 = C.lsocket_opt_set_IPV6_ROUTER_ALERT(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_ROUTER_ALERT1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_ROUTER_ALERT1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -2960,16 +2990,46 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IPV6_MTU_DISCOVER\n"
-"if (_pub.SetSocketOption.IPV6_MTU_DISCOVER) then\n"
-"function _pub.SetSocketOption.IPV6_MTU_DISCOVER(sock1, value2)\n"
+"-- method: IPV6_UNICAST_HOPS\n"
+"if (_pub.SetSocketOption.IPV6_UNICAST_HOPS) then\n"
+"function _pub.SetSocketOption.IPV6_UNICAST_HOPS(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IPV6_MTU_DISCOVER1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_MTU_DISCOVER1 = C.lsocket_opt_set_IPV6_MTU_DISCOVER(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IPV6_UNICAST_HOPS1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_UNICAST_HOPS1 = C.lsocket_opt_set_IPV6_UNICAST_HOPS(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_MTU_DISCOVER1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_MTU_DISCOVER1)\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_UNICAST_HOPS1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_UNICAST_HOPS1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: IPV6_NEXTHOP\n"
+"if (_pub.SetSocketOption.IPV6_NEXTHOP) then\n"
+"function _pub.SetSocketOption.IPV6_NEXTHOP(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_IPV6_NEXTHOP1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_NEXTHOP1 = C.lsocket_opt_set_IPV6_NEXTHOP(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_NEXTHOP1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_NEXTHOP1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: IPV6_RECVERR\n"
+"if (_pub.SetSocketOption.IPV6_RECVERR) then\n"
+"function _pub.SetSocketOption.IPV6_RECVERR(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_IPV6_RECVERR1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_RECVERR1 = C.lsocket_opt_set_IPV6_RECVERR(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_RECVERR1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVERR1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -2990,31 +3050,16 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IPV6_UNICAST_HOPS\n"
-"if (_pub.SetSocketOption.IPV6_UNICAST_HOPS) then\n"
-"function _pub.SetSocketOption.IPV6_UNICAST_HOPS(sock1, value2)\n"
+"-- method: IPV6_RECVPKTINFO\n"
+"if (_pub.SetSocketOption.IPV6_RECVPKTINFO) then\n"
+"function _pub.SetSocketOption.IPV6_RECVPKTINFO(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IPV6_UNICAST_HOPS1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_UNICAST_HOPS1 = C.lsocket_opt_set_IPV6_UNICAST_HOPS(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IPV6_RECVPKTINFO1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_RECVPKTINFO1 = C.lsocket_opt_set_IPV6_RECVPKTINFO(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_UNICAST_HOPS1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_UNICAST_HOPS1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IPV6_CHECKSUM\n"
-"if (_pub.SetSocketOption.IPV6_CHECKSUM) then\n"
-"function _pub.SetSocketOption.IPV6_CHECKSUM(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IPV6_CHECKSUM1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_CHECKSUM1 = C.lsocket_opt_set_IPV6_CHECKSUM(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_CHECKSUM1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_CHECKSUM1)\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_RECVPKTINFO1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVPKTINFO1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3050,21 +3095,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IPV6_ROUTER_ALERT\n"
-"if (_pub.SetSocketOption.IPV6_ROUTER_ALERT) then\n"
-"function _pub.SetSocketOption.IPV6_ROUTER_ALERT(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IPV6_ROUTER_ALERT1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_ROUTER_ALERT1 = C.lsocket_opt_set_IPV6_ROUTER_ALERT(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_ROUTER_ALERT1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_ROUTER_ALERT1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
 "-- method: IPV6_RECVHOPOPTS\n"
 "if (_pub.SetSocketOption.IPV6_RECVHOPOPTS) then\n"
 "function _pub.SetSocketOption.IPV6_RECVHOPOPTS(sock1, value2)\n"
@@ -3075,21 +3105,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  -- check for error.\n"
 "  if (-1 == rc_lsocket_opt_set_IPV6_RECVHOPOPTS1) then\n"
 "    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVHOPOPTS1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IPV6_RECVERR\n"
-"if (_pub.SetSocketOption.IPV6_RECVERR) then\n"
-"function _pub.SetSocketOption.IPV6_RECVERR(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IPV6_RECVERR1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_RECVERR1 = C.lsocket_opt_set_IPV6_RECVERR(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_RECVERR1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVERR1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3110,16 +3125,16 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IPV6_MULTICAST_IF\n"
-"if (_pub.SetSocketOption.IPV6_MULTICAST_IF) then\n"
-"function _pub.SetSocketOption.IPV6_MULTICAST_IF(sock1, value2)\n"
+"-- method: IPV6_RECVHOPLIMIT\n"
+"if (_pub.SetSocketOption.IPV6_RECVHOPLIMIT) then\n"
+"function _pub.SetSocketOption.IPV6_RECVHOPLIMIT(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IPV6_MULTICAST_IF1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_MULTICAST_IF1 = C.lsocket_opt_set_IPV6_MULTICAST_IF(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1 = C.lsocket_opt_set_IPV6_RECVHOPLIMIT(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_MULTICAST_IF1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_MULTICAST_IF1)\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3140,151 +3155,31 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IPV6_RECVDSTOPTS\n"
-"if (_pub.SetSocketOption.IPV6_RECVDSTOPTS) then\n"
-"function _pub.SetSocketOption.IPV6_RECVDSTOPTS(sock1, value2)\n"
+"-- method: IPV6_MTU_DISCOVER\n"
+"if (_pub.SetSocketOption.IPV6_MTU_DISCOVER) then\n"
+"function _pub.SetSocketOption.IPV6_MTU_DISCOVER(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IPV6_RECVDSTOPTS1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_RECVDSTOPTS1 = C.lsocket_opt_set_IPV6_RECVDSTOPTS(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_RECVDSTOPTS1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVDSTOPTS1)\n"
+"  local rc_lsocket_opt_set_IPV6_MTU_DISCOVER1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_MTU_DISCOVER1 = C.lsocket_opt_set_IPV6_MTU_DISCOVER(sock1, value2)\n"
+"  -- check for error.\n", /* ----- CUT ----- */
+"  if (-1 == rc_lsocket_opt_set_IPV6_MTU_DISCOVER1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_MTU_DISCOVER1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IPV6_RECVHOPLIMIT\n"
-"if (_pub.SetSocketOption.IPV6_RECVHOPLIMIT) then\n"
-"function _pub.SetSocketOption.IPV6_RECVHOPLIMIT(sock1, value2)\n"
+"-- method: IPV6_MULTICAST_IF\n"
+"if (_pub.SetSocketOption.IPV6_MULTICAST_IF) then\n"
+"function _pub.SetSocketOption.IPV6_MULTICAST_IF(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1 = 0\n", /* ----- CUT ----- */
-"  rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1 = C.lsocket_opt_set_IPV6_RECVHOPLIMIT(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IPV6_MULTICAST_IF1 = 0\n"
+"  rc_lsocket_opt_set_IPV6_MULTICAST_IF1 = C.lsocket_opt_set_IPV6_MULTICAST_IF(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IPV6_MTU\n"
-"if (_pub.SetSocketOption.IPV6_MTU) then\n"
-"function _pub.SetSocketOption.IPV6_MTU(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IPV6_MTU1 = 0\n"
-"  rc_lsocket_opt_set_IPV6_MTU1 = C.lsocket_opt_set_IPV6_MTU(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IPV6_MTU1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_MTU1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IP_MTU\n"
-"if (_pub.SetSocketOption.IP_MTU) then\n"
-"function _pub.SetSocketOption.IP_MTU(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IP_MTU1 = 0\n"
-"  rc_lsocket_opt_set_IP_MTU1 = C.lsocket_opt_set_IP_MTU(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_MTU1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_MTU1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IP_RECVTOS\n"
-"if (_pub.SetSocketOption.IP_RECVTOS) then\n"
-"function _pub.SetSocketOption.IP_RECVTOS(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IP_RECVTOS1 = 0\n"
-"  rc_lsocket_opt_set_IP_RECVTOS1 = C.lsocket_opt_set_IP_RECVTOS(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_RECVTOS1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_RECVTOS1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IP_PKTINFO\n"
-"if (_pub.SetSocketOption.IP_PKTINFO) then\n"
-"function _pub.SetSocketOption.IP_PKTINFO(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IP_PKTINFO1 = 0\n"
-"  rc_lsocket_opt_set_IP_PKTINFO1 = C.lsocket_opt_set_IP_PKTINFO(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_PKTINFO1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_PKTINFO1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IP_RECVORIGDSTADDR\n"
-"if (_pub.SetSocketOption.IP_RECVORIGDSTADDR) then\n"
-"function _pub.SetSocketOption.IP_RECVORIGDSTADDR(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IP_RECVORIGDSTADDR1 = 0\n"
-"  rc_lsocket_opt_set_IP_RECVORIGDSTADDR1 = C.lsocket_opt_set_IP_RECVORIGDSTADDR(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_RECVORIGDSTADDR1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_RECVORIGDSTADDR1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IP_FREEBIND\n"
-"if (_pub.SetSocketOption.IP_FREEBIND) then\n"
-"function _pub.SetSocketOption.IP_FREEBIND(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IP_FREEBIND1 = 0\n"
-"  rc_lsocket_opt_set_IP_FREEBIND1 = C.lsocket_opt_set_IP_FREEBIND(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_FREEBIND1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_FREEBIND1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IP_RECVERR\n"
-"if (_pub.SetSocketOption.IP_RECVERR) then\n"
-"function _pub.SetSocketOption.IP_RECVERR(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IP_RECVERR1 = 0\n"
-"  rc_lsocket_opt_set_IP_RECVERR1 = C.lsocket_opt_set_IP_RECVERR(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_RECVERR1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_RECVERR1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IP_OPTIONS\n"
-"if (_pub.SetSocketOption.IP_OPTIONS) then\n"
-"function _pub.SetSocketOption.IP_OPTIONS(sock1, value2)\n"
-"  \n"
-"  local value_len2 = #value2\n"
-"  local rc_lsocket_opt_set_IP_OPTIONS1 = 0\n"
-"  rc_lsocket_opt_set_IP_OPTIONS1 = C.lsocket_opt_set_IP_OPTIONS(sock1, value2, value_len2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_OPTIONS1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_OPTIONS1)\n"
+"  if (-1 == rc_lsocket_opt_set_IPV6_MULTICAST_IF1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IPV6_MULTICAST_IF1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3320,31 +3215,16 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IP_ROUTER_ALERT\n"
-"if (_pub.SetSocketOption.IP_ROUTER_ALERT) then\n"
-"function _pub.SetSocketOption.IP_ROUTER_ALERT(sock1, value2)\n"
+"-- method: IP_MULTICAST_TTL\n"
+"if (_pub.SetSocketOption.IP_MULTICAST_TTL) then\n"
+"function _pub.SetSocketOption.IP_MULTICAST_TTL(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IP_ROUTER_ALERT1 = 0\n"
-"  rc_lsocket_opt_set_IP_ROUTER_ALERT1 = C.lsocket_opt_set_IP_ROUTER_ALERT(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_MULTICAST_TTL1 = 0\n"
+"  rc_lsocket_opt_set_IP_MULTICAST_TTL1 = C.lsocket_opt_set_IP_MULTICAST_TTL(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_ROUTER_ALERT1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_ROUTER_ALERT1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: IP_TTL\n"
-"if (_pub.SetSocketOption.IP_TTL) then\n"
-"function _pub.SetSocketOption.IP_TTL(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IP_TTL1 = 0\n"
-"  rc_lsocket_opt_set_IP_TTL1 = C.lsocket_opt_set_IP_TTL(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_TTL1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_TTL1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_MULTICAST_TTL1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_MULTICAST_TTL1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3365,21 +3245,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IP_RECVRETOPTS\n"
-"if (_pub.SetSocketOption.IP_RECVRETOPTS) then\n"
-"function _pub.SetSocketOption.IP_RECVRETOPTS(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_IP_RECVRETOPTS1 = 0\n"
-"  rc_lsocket_opt_set_IP_RECVRETOPTS1 = C.lsocket_opt_set_IP_RECVRETOPTS(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_RECVRETOPTS1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_RECVRETOPTS1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
 "-- method: IP_RECVOPTS\n"
 "if (_pub.SetSocketOption.IP_RECVOPTS) then\n"
 "function _pub.SetSocketOption.IP_RECVOPTS(sock1, value2)\n"
@@ -3395,61 +3260,91 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IP_HDRINCL\n"
-"if (_pub.SetSocketOption.IP_HDRINCL) then\n"
-"function _pub.SetSocketOption.IP_HDRINCL(sock1, value2)\n"
+"-- method: IP_RECVRETOPTS\n"
+"if (_pub.SetSocketOption.IP_RECVRETOPTS) then\n"
+"function _pub.SetSocketOption.IP_RECVRETOPTS(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IP_HDRINCL1 = 0\n"
-"  rc_lsocket_opt_set_IP_HDRINCL1 = C.lsocket_opt_set_IP_HDRINCL(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_RECVRETOPTS1 = 0\n"
+"  rc_lsocket_opt_set_IP_RECVRETOPTS1 = C.lsocket_opt_set_IP_RECVRETOPTS(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_HDRINCL1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_HDRINCL1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_RECVRETOPTS1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_RECVRETOPTS1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IP_MULTICAST_TTL\n"
-"if (_pub.SetSocketOption.IP_MULTICAST_TTL) then\n"
-"function _pub.SetSocketOption.IP_MULTICAST_TTL(sock1, value2)\n"
+"-- method: IP_RECVORIGDSTADDR\n"
+"if (_pub.SetSocketOption.IP_RECVORIGDSTADDR) then\n"
+"function _pub.SetSocketOption.IP_RECVORIGDSTADDR(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IP_MULTICAST_TTL1 = 0\n"
-"  rc_lsocket_opt_set_IP_MULTICAST_TTL1 = C.lsocket_opt_set_IP_MULTICAST_TTL(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_RECVORIGDSTADDR1 = 0\n"
+"  rc_lsocket_opt_set_IP_RECVORIGDSTADDR1 = C.lsocket_opt_set_IP_RECVORIGDSTADDR(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_MULTICAST_TTL1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_MULTICAST_TTL1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_RECVORIGDSTADDR1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_RECVORIGDSTADDR1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IP_MTU_DISCOVER\n"
-"if (_pub.SetSocketOption.IP_MTU_DISCOVER) then\n"
-"function _pub.SetSocketOption.IP_MTU_DISCOVER(sock1, value2)\n"
+"-- method: IP_FREEBIND\n"
+"if (_pub.SetSocketOption.IP_FREEBIND) then\n"
+"function _pub.SetSocketOption.IP_FREEBIND(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IP_MTU_DISCOVER1 = 0\n"
-"  rc_lsocket_opt_set_IP_MTU_DISCOVER1 = C.lsocket_opt_set_IP_MTU_DISCOVER(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_FREEBIND1 = 0\n"
+"  rc_lsocket_opt_set_IP_FREEBIND1 = C.lsocket_opt_set_IP_FREEBIND(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_MTU_DISCOVER1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_MTU_DISCOVER1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_FREEBIND1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_FREEBIND1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: IP_TOS\n"
-"if (_pub.SetSocketOption.IP_TOS) then\n"
-"function _pub.SetSocketOption.IP_TOS(sock1, value2)\n"
+"-- method: IP_TTL\n"
+"if (_pub.SetSocketOption.IP_TTL) then\n"
+"function _pub.SetSocketOption.IP_TTL(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_IP_TOS1 = 0\n"
-"  rc_lsocket_opt_set_IP_TOS1 = C.lsocket_opt_set_IP_TOS(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_TTL1 = 0\n"
+"  rc_lsocket_opt_set_IP_TTL1 = C.lsocket_opt_set_IP_TTL(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_IP_TOS1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_TOS1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_TTL1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_TTL1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: IP_RECVTOS\n"
+"if (_pub.SetSocketOption.IP_RECVTOS) then\n"
+"function _pub.SetSocketOption.IP_RECVTOS(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_IP_RECVTOS1 = 0\n"
+"  rc_lsocket_opt_set_IP_RECVTOS1 = C.lsocket_opt_set_IP_RECVTOS(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_IP_RECVTOS1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_RECVTOS1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: IP_RECVERR\n"
+"if (_pub.SetSocketOption.IP_RECVERR) then\n"
+"function _pub.SetSocketOption.IP_RECVERR(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_IP_RECVERR1 = 0\n"
+"  rc_lsocket_opt_set_IP_RECVERR1 = C.lsocket_opt_set_IP_RECVERR(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_IP_RECVERR1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_RECVERR1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3470,256 +3365,106 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: SO_RCVBUFFORCE\n"
-"if (_pub.SetSocketOption.SO_RCVBUFFORCE) then\n"
-"function _pub.SetSocketOption.SO_RCVBUFFORCE(sock1, value2)\n"
+"-- method: IP_TOS\n"
+"if (_pub.SetSocketOption.IP_TOS) then\n"
+"function _pub.SetSocketOption.IP_TOS(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_SO_RCVBUFFORCE1 = 0\n"
-"  rc_lsocket_opt_set_SO_RCVBUFFORCE1 = C.lsocket_opt_set_SO_RCVBUFFORCE(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_TOS1 = 0\n"
+"  rc_lsocket_opt_set_IP_TOS1 = C.lsocket_opt_set_IP_TOS(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_RCVBUFFORCE1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_RCVBUFFORCE1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_TOS1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_TOS1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: SO_DEBUG\n"
-"if (_pub.SetSocketOption.SO_DEBUG) then\n"
-"function _pub.SetSocketOption.SO_DEBUG(sock1, value2)\n"
+"-- method: IP_MTU_DISCOVER\n"
+"if (_pub.SetSocketOption.IP_MTU_DISCOVER) then\n"
+"function _pub.SetSocketOption.IP_MTU_DISCOVER(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_SO_DEBUG1 = 0\n"
-"  rc_lsocket_opt_set_SO_DEBUG1 = C.lsocket_opt_set_SO_DEBUG(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_MTU_DISCOVER1 = 0\n"
+"  rc_lsocket_opt_set_IP_MTU_DISCOVER1 = C.lsocket_opt_set_IP_MTU_DISCOVER(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_DEBUG1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_DEBUG1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_MTU_DISCOVER1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_MTU_DISCOVER1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: SO_REUSEADDR\n"
-"if (_pub.SetSocketOption.SO_REUSEADDR) then\n"
-"function _pub.SetSocketOption.SO_REUSEADDR(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_REUSEADDR1 = 0\n"
-"  rc_lsocket_opt_set_SO_REUSEADDR1 = C.lsocket_opt_set_SO_REUSEADDR(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_REUSEADDR1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_REUSEADDR1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_PASSCRED\n"
-"if (_pub.SetSocketOption.SO_PASSCRED) then\n"
-"function _pub.SetSocketOption.SO_PASSCRED(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_PASSCRED1 = 0\n"
-"  rc_lsocket_opt_set_SO_PASSCRED1 = C.lsocket_opt_set_SO_PASSCRED(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_PASSCRED1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_PASSCRED1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_SNDLOWAT\n"
-"if (_pub.SetSocketOption.SO_SNDLOWAT) then\n"
-"function _pub.SetSocketOption.SO_SNDLOWAT(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_SNDLOWAT1 = 0\n"
-"  rc_lsocket_opt_set_SO_SNDLOWAT1 = C.lsocket_opt_set_SO_SNDLOWAT(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_SNDLOWAT1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_SNDLOWAT1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_SNDBUFFORCE\n"
-"if (_pub.SetSocketOption.SO_SNDBUFFORCE) then\n"
-"function _pub.SetSocketOption.SO_SNDBUFFORCE(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_SNDBUFFORCE1 = 0\n"
-"  rc_lsocket_opt_set_SO_SNDBUFFORCE1 = C.lsocket_opt_set_SO_SNDBUFFORCE(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_SNDBUFFORCE1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_SNDBUFFORCE1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_MARK\n"
-"if (_pub.SetSocketOption.SO_MARK) then\n"
-"function _pub.SetSocketOption.SO_MARK(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_MARK1 = 0\n"
-"  rc_lsocket_opt_set_SO_MARK1 = C.lsocket_opt_set_SO_MARK(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_MARK1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_MARK1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_RCVLOWAT\n"
-"if (_pub.SetSocketOption.SO_RCVLOWAT) then\n"
-"function _pub.SetSocketOption.SO_RCVLOWAT(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_RCVLOWAT1 = 0\n"
-"  rc_lsocket_opt_set_SO_RCVLOWAT1 = C.lsocket_opt_set_SO_RCVLOWAT(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_RCVLOWAT1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_RCVLOWAT1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_BSDCOMPAT\n"
-"if (_pub.SetSocketOption.SO_BSDCOMPAT) then\n"
-"function _pub.SetSocketOption.SO_BSDCOMPAT(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_BSDCOMPAT1 = 0\n"
-"  rc_lsocket_opt_set_SO_BSDCOMPAT1 = C.lsocket_opt_set_SO_BSDCOMPAT(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_BSDCOMPAT1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_BSDCOMPAT1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_TIMESTAMPNS\n"
-"if (_pub.SetSocketOption.SO_TIMESTAMPNS) then\n"
-"function _pub.SetSocketOption.SO_TIMESTAMPNS(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_TIMESTAMPNS1 = 0\n"
-"  rc_lsocket_opt_set_SO_TIMESTAMPNS1 = C.lsocket_opt_set_SO_TIMESTAMPNS(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_TIMESTAMPNS1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_TIMESTAMPNS1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_TIMESTAMP\n"
-"if (_pub.SetSocketOption.SO_TIMESTAMP) then\n"
-"function _pub.SetSocketOption.SO_TIMESTAMP(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_TIMESTAMP1 = 0\n"
-"  rc_lsocket_opt_set_SO_TIMESTAMP1 = C.lsocket_opt_set_SO_TIMESTAMP(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_TIMESTAMP1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_TIMESTAMP1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_OOBINLINE\n"
-"if (_pub.SetSocketOption.SO_OOBINLINE) then\n"
-"function _pub.SetSocketOption.SO_OOBINLINE(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_SO_OOBINLINE1 = 0\n"
-"  rc_lsocket_opt_set_SO_OOBINLINE1 = C.lsocket_opt_set_SO_OOBINLINE(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_OOBINLINE1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_OOBINLINE1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: SO_BINDTODEVICE\n"
-"if (_pub.SetSocketOption.SO_BINDTODEVICE) then\n"
-"function _pub.SetSocketOption.SO_BINDTODEVICE(sock1, value2)\n"
+"-- method: IP_OPTIONS\n"
+"if (_pub.SetSocketOption.IP_OPTIONS) then\n"
+"function _pub.SetSocketOption.IP_OPTIONS(sock1, value2)\n"
 "  \n"
 "  local value_len2 = #value2\n"
-"  local rc_lsocket_opt_set_SO_BINDTODEVICE1 = 0\n", /* ----- CUT ----- */
-"  rc_lsocket_opt_set_SO_BINDTODEVICE1 = C.lsocket_opt_set_SO_BINDTODEVICE(sock1, value2, value_len2)\n"
+"  local rc_lsocket_opt_set_IP_OPTIONS1 = 0\n"
+"  rc_lsocket_opt_set_IP_OPTIONS1 = C.lsocket_opt_set_IP_OPTIONS(sock1, value2, value_len2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_BINDTODEVICE1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_BINDTODEVICE1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_OPTIONS1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_OPTIONS1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: SO_RCVBUF\n"
-"if (_pub.SetSocketOption.SO_RCVBUF) then\n"
-"function _pub.SetSocketOption.SO_RCVBUF(sock1, value2)\n"
+"-- method: IP_PKTINFO\n"
+"if (_pub.SetSocketOption.IP_PKTINFO) then\n"
+"function _pub.SetSocketOption.IP_PKTINFO(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_SO_RCVBUF1 = 0\n"
-"  rc_lsocket_opt_set_SO_RCVBUF1 = C.lsocket_opt_set_SO_RCVBUF(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_PKTINFO1 = 0\n"
+"  rc_lsocket_opt_set_IP_PKTINFO1 = C.lsocket_opt_set_IP_PKTINFO(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_RCVBUF1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_RCVBUF1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_PKTINFO1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_PKTINFO1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: SO_TIMESTAMPING\n"
-"if (_pub.SetSocketOption.SO_TIMESTAMPING) then\n"
-"function _pub.SetSocketOption.SO_TIMESTAMPING(sock1, value2)\n"
+"-- method: IP_ROUTER_ALERT\n"
+"if (_pub.SetSocketOption.IP_ROUTER_ALERT) then\n"
+"function _pub.SetSocketOption.IP_ROUTER_ALERT(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_SO_TIMESTAMPING1 = 0\n"
-"  rc_lsocket_opt_set_SO_TIMESTAMPING1 = C.lsocket_opt_set_SO_TIMESTAMPING(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_ROUTER_ALERT1 = 0\n"
+"  rc_lsocket_opt_set_IP_ROUTER_ALERT1 = C.lsocket_opt_set_IP_ROUTER_ALERT(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_TIMESTAMPING1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_TIMESTAMPING1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_ROUTER_ALERT1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_ROUTER_ALERT1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: SO_PRIORITY\n"
-"if (_pub.SetSocketOption.SO_PRIORITY) then\n"
-"function _pub.SetSocketOption.SO_PRIORITY(sock1, value2)\n"
+"-- method: IP_MTU\n"
+"if (_pub.SetSocketOption.IP_MTU) then\n"
+"function _pub.SetSocketOption.IP_MTU(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_SO_PRIORITY1 = 0\n"
-"  rc_lsocket_opt_set_SO_PRIORITY1 = C.lsocket_opt_set_SO_PRIORITY(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_MTU1 = 0\n"
+"  rc_lsocket_opt_set_IP_MTU1 = C.lsocket_opt_set_IP_MTU(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_PRIORITY1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_PRIORITY1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_MTU1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_MTU1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: SO_NO_CHECK\n"
-"if (_pub.SetSocketOption.SO_NO_CHECK) then\n"
-"function _pub.SetSocketOption.SO_NO_CHECK(sock1, value2)\n"
+"-- method: IP_HDRINCL\n"
+"if (_pub.SetSocketOption.IP_HDRINCL) then\n"
+"function _pub.SetSocketOption.IP_HDRINCL(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_SO_NO_CHECK1 = 0\n"
-"  rc_lsocket_opt_set_SO_NO_CHECK1 = C.lsocket_opt_set_SO_NO_CHECK(sock1, value2)\n"
+"  local rc_lsocket_opt_set_IP_HDRINCL1 = 0\n"
+"  rc_lsocket_opt_set_IP_HDRINCL1 = C.lsocket_opt_set_IP_HDRINCL(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_SO_NO_CHECK1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_NO_CHECK1)\n"
+"  if (-1 == rc_lsocket_opt_set_IP_HDRINCL1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_IP_HDRINCL1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3740,6 +3485,51 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
+"-- method: SO_RCVLOWAT\n"
+"if (_pub.SetSocketOption.SO_RCVLOWAT) then\n"
+"function _pub.SetSocketOption.SO_RCVLOWAT(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_RCVLOWAT1 = 0\n"
+"  rc_lsocket_opt_set_SO_RCVLOWAT1 = C.lsocket_opt_set_SO_RCVLOWAT(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_RCVLOWAT1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_RCVLOWAT1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_SNDBUFFORCE\n"
+"if (_pub.SetSocketOption.SO_SNDBUFFORCE) then\n"
+"function _pub.SetSocketOption.SO_SNDBUFFORCE(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_SNDBUFFORCE1 = 0\n"
+"  rc_lsocket_opt_set_SO_SNDBUFFORCE1 = C.lsocket_opt_set_SO_SNDBUFFORCE(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_SNDBUFFORCE1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_SNDBUFFORCE1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_RCVBUF\n"
+"if (_pub.SetSocketOption.SO_RCVBUF) then\n"
+"function _pub.SetSocketOption.SO_RCVBUF(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_RCVBUF1 = 0\n"
+"  rc_lsocket_opt_set_SO_RCVBUF1 = C.lsocket_opt_set_SO_RCVBUF(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_RCVBUF1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_RCVBUF1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
 "-- method: SO_DONTROUTE\n"
 "if (_pub.SetSocketOption.SO_DONTROUTE) then\n"
 "function _pub.SetSocketOption.SO_DONTROUTE(sock1, value2)\n"
@@ -3755,16 +3545,211 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
+"-- method: SO_DEBUG\n"
+"if (_pub.SetSocketOption.SO_DEBUG) then\n"
+"function _pub.SetSocketOption.SO_DEBUG(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_DEBUG1 = 0\n"
+"  rc_lsocket_opt_set_SO_DEBUG1 = C.lsocket_opt_set_SO_DEBUG(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_DEBUG1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_DEBUG1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_TIMESTAMPNS\n"
+"if (_pub.SetSocketOption.SO_TIMESTAMPNS) then\n"
+"function _pub.SetSocketOption.SO_TIMESTAMPNS(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_TIMESTAMPNS1 = 0\n"
+"  rc_lsocket_opt_set_SO_TIMESTAMPNS1 = C.lsocket_opt_set_SO_TIMESTAMPNS(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_TIMESTAMPNS1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_TIMESTAMPNS1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_MARK\n"
+"if (_pub.SetSocketOption.SO_MARK) then\n"
+"function _pub.SetSocketOption.SO_MARK(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_MARK1 = 0\n"
+"  rc_lsocket_opt_set_SO_MARK1 = C.lsocket_opt_set_SO_MARK(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_MARK1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_MARK1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_TIMESTAMPING\n"
+"if (_pub.SetSocketOption.SO_TIMESTAMPING) then\n"
+"function _pub.SetSocketOption.SO_TIMESTAMPING(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_TIMESTAMPING1 = 0\n"
+"  rc_lsocket_opt_set_SO_TIMESTAMPING1 = C.lsocket_opt_set_SO_TIMESTAMPING(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_TIMESTAMPING1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_TIMESTAMPING1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_TIMESTAMP\n"
+"if (_pub.SetSocketOption.SO_TIMESTAMP) then\n"
+"function _pub.SetSocketOption.SO_TIMESTAMP(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_TIMESTAMP1 = 0\n"
+"  rc_lsocket_opt_set_SO_TIMESTAMP1 = C.lsocket_opt_set_SO_TIMESTAMP(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_TIMESTAMP1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_TIMESTAMP1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_BINDTODEVICE\n"
+"if (_pub.SetSocketOption.SO_BINDTODEVICE) then\n"
+"function _pub.SetSocketOption.SO_BINDTODEVICE(sock1, value2)\n"
+"  \n"
+"  local value_len2 = #value2\n"
+"  local rc_lsocket_opt_set_SO_BINDTODEVICE1 = 0\n"
+"  rc_lsocket_opt_set_SO_BINDTODEVICE1 = C.lsocket_opt_set_SO_BINDTODEVICE(sock1, value2, value_len2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_BINDTODEVICE1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_BINDTODEVICE1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_OOBINLINE\n"
+"if (_pub.SetSocketOption.SO_OOBINLINE) then\n"
+"function _pub.SetSocketOption.SO_OOBINLINE(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_OOBINLINE1 = 0\n"
+"  rc_lsocket_opt_set_SO_OOBINLINE1 = C.lsocket_opt_set_SO_OOBINLINE(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_OOBINLINE1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_OOBINLINE1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
 "-- method: SO_SNDBUF\n"
 "if (_pub.SetSocketOption.SO_SNDBUF) then\n"
 "function _pub.SetSocketOption.SO_SNDBUF(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_SO_SNDBUF1 = 0\n"
+"  local rc_lsocket_opt_set_SO_SNDBUF1 = 0\n", /* ----- CUT ----- */
 "  rc_lsocket_opt_set_SO_SNDBUF1 = C.lsocket_opt_set_SO_SNDBUF(sock1, value2)\n"
 "  -- check for error.\n"
 "  if (-1 == rc_lsocket_opt_set_SO_SNDBUF1) then\n"
 "    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_SNDBUF1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_BSDCOMPAT\n"
+"if (_pub.SetSocketOption.SO_BSDCOMPAT) then\n"
+"function _pub.SetSocketOption.SO_BSDCOMPAT(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_BSDCOMPAT1 = 0\n"
+"  rc_lsocket_opt_set_SO_BSDCOMPAT1 = C.lsocket_opt_set_SO_BSDCOMPAT(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_BSDCOMPAT1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_BSDCOMPAT1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_PRIORITY\n"
+"if (_pub.SetSocketOption.SO_PRIORITY) then\n"
+"function _pub.SetSocketOption.SO_PRIORITY(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_PRIORITY1 = 0\n"
+"  rc_lsocket_opt_set_SO_PRIORITY1 = C.lsocket_opt_set_SO_PRIORITY(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_PRIORITY1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_PRIORITY1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_RCVBUFFORCE\n"
+"if (_pub.SetSocketOption.SO_RCVBUFFORCE) then\n"
+"function _pub.SetSocketOption.SO_RCVBUFFORCE(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_RCVBUFFORCE1 = 0\n"
+"  rc_lsocket_opt_set_SO_RCVBUFFORCE1 = C.lsocket_opt_set_SO_RCVBUFFORCE(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_RCVBUFFORCE1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_RCVBUFFORCE1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_SNDLOWAT\n"
+"if (_pub.SetSocketOption.SO_SNDLOWAT) then\n"
+"function _pub.SetSocketOption.SO_SNDLOWAT(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_SNDLOWAT1 = 0\n"
+"  rc_lsocket_opt_set_SO_SNDLOWAT1 = C.lsocket_opt_set_SO_SNDLOWAT(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_SNDLOWAT1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_SNDLOWAT1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_PASSCRED\n"
+"if (_pub.SetSocketOption.SO_PASSCRED) then\n"
+"function _pub.SetSocketOption.SO_PASSCRED(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_PASSCRED1 = 0\n"
+"  rc_lsocket_opt_set_SO_PASSCRED1 = C.lsocket_opt_set_SO_PASSCRED(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_PASSCRED1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_PASSCRED1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: SO_NO_CHECK\n"
+"if (_pub.SetSocketOption.SO_NO_CHECK) then\n"
+"function _pub.SetSocketOption.SO_NO_CHECK(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_SO_NO_CHECK1 = 0\n"
+"  rc_lsocket_opt_set_SO_NO_CHECK1 = C.lsocket_opt_set_SO_NO_CHECK(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_SO_NO_CHECK1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_NO_CHECK1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3785,31 +3770,31 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: TCP_MAXSEG\n"
-"if (_pub.SetSocketOption.TCP_MAXSEG) then\n"
-"function _pub.SetSocketOption.TCP_MAXSEG(sock1, value2)\n"
+"-- method: SO_REUSEADDR\n"
+"if (_pub.SetSocketOption.SO_REUSEADDR) then\n"
+"function _pub.SetSocketOption.SO_REUSEADDR(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_TCP_MAXSEG1 = 0\n"
-"  rc_lsocket_opt_set_TCP_MAXSEG1 = C.lsocket_opt_set_TCP_MAXSEG(sock1, value2)\n"
+"  local rc_lsocket_opt_set_SO_REUSEADDR1 = 0\n"
+"  rc_lsocket_opt_set_SO_REUSEADDR1 = C.lsocket_opt_set_SO_REUSEADDR(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_TCP_MAXSEG1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_MAXSEG1)\n"
+"  if (-1 == rc_lsocket_opt_set_SO_REUSEADDR1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_SO_REUSEADDR1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: TCP_KEEPCNT\n"
-"if (_pub.SetSocketOption.TCP_KEEPCNT) then\n"
-"function _pub.SetSocketOption.TCP_KEEPCNT(sock1, value2)\n"
+"-- method: TCP_WINDOW_CLAMP\n"
+"if (_pub.SetSocketOption.TCP_WINDOW_CLAMP) then\n"
+"function _pub.SetSocketOption.TCP_WINDOW_CLAMP(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_TCP_KEEPCNT1 = 0\n"
-"  rc_lsocket_opt_set_TCP_KEEPCNT1 = C.lsocket_opt_set_TCP_KEEPCNT(sock1, value2)\n"
+"  local rc_lsocket_opt_set_TCP_WINDOW_CLAMP1 = 0\n"
+"  rc_lsocket_opt_set_TCP_WINDOW_CLAMP1 = C.lsocket_opt_set_TCP_WINDOW_CLAMP(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_TCP_KEEPCNT1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_KEEPCNT1)\n"
+"  if (-1 == rc_lsocket_opt_set_TCP_WINDOW_CLAMP1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_WINDOW_CLAMP1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3845,31 +3830,16 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: TCP_KEEPIDLE\n"
-"if (_pub.SetSocketOption.TCP_KEEPIDLE) then\n"
-"function _pub.SetSocketOption.TCP_KEEPIDLE(sock1, value2)\n"
+"-- method: TCP_KEEPCNT\n"
+"if (_pub.SetSocketOption.TCP_KEEPCNT) then\n"
+"function _pub.SetSocketOption.TCP_KEEPCNT(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_TCP_KEEPIDLE1 = 0\n"
-"  rc_lsocket_opt_set_TCP_KEEPIDLE1 = C.lsocket_opt_set_TCP_KEEPIDLE(sock1, value2)\n"
+"  local rc_lsocket_opt_set_TCP_KEEPCNT1 = 0\n"
+"  rc_lsocket_opt_set_TCP_KEEPCNT1 = C.lsocket_opt_set_TCP_KEEPCNT(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_TCP_KEEPIDLE1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_KEEPIDLE1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: TCP_CONGESTION\n"
-"if (_pub.SetSocketOption.TCP_CONGESTION) then\n"
-"function _pub.SetSocketOption.TCP_CONGESTION(sock1, value2)\n"
-"  \n"
-"  local value_len2 = #value2\n"
-"  local rc_lsocket_opt_set_TCP_CONGESTION1 = 0\n"
-"  rc_lsocket_opt_set_TCP_CONGESTION1 = C.lsocket_opt_set_TCP_CONGESTION(sock1, value2, value_len2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_TCP_CONGESTION1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_CONGESTION1)\n"
+"  if (-1 == rc_lsocket_opt_set_TCP_KEEPCNT1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_KEEPCNT1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3890,61 +3860,31 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: TCP_LINGER2\n"
-"if (_pub.SetSocketOption.TCP_LINGER2) then\n"
-"function _pub.SetSocketOption.TCP_LINGER2(sock1, value2)\n"
+"-- method: TCP_MAXSEG\n"
+"if (_pub.SetSocketOption.TCP_MAXSEG) then\n"
+"function _pub.SetSocketOption.TCP_MAXSEG(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_TCP_LINGER21 = 0\n"
-"  rc_lsocket_opt_set_TCP_LINGER21 = C.lsocket_opt_set_TCP_LINGER2(sock1, value2)\n"
+"  local rc_lsocket_opt_set_TCP_MAXSEG1 = 0\n"
+"  rc_lsocket_opt_set_TCP_MAXSEG1 = C.lsocket_opt_set_TCP_MAXSEG(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_TCP_LINGER21) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_LINGER21)\n"
+"  if (-1 == rc_lsocket_opt_set_TCP_MAXSEG1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_MAXSEG1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
 "end\n"
 "\n"
-"-- method: TCP_DEFER_ACCEPT\n"
-"if (_pub.SetSocketOption.TCP_DEFER_ACCEPT) then\n"
-"function _pub.SetSocketOption.TCP_DEFER_ACCEPT(sock1, value2)\n"
+"-- method: TCP_KEEPIDLE\n"
+"if (_pub.SetSocketOption.TCP_KEEPIDLE) then\n"
+"function _pub.SetSocketOption.TCP_KEEPIDLE(sock1, value2)\n"
 "  \n"
 "  \n"
-"  local rc_lsocket_opt_set_TCP_DEFER_ACCEPT1 = 0\n"
-"  rc_lsocket_opt_set_TCP_DEFER_ACCEPT1 = C.lsocket_opt_set_TCP_DEFER_ACCEPT(sock1, value2)\n"
+"  local rc_lsocket_opt_set_TCP_KEEPIDLE1 = 0\n"
+"  rc_lsocket_opt_set_TCP_KEEPIDLE1 = C.lsocket_opt_set_TCP_KEEPIDLE(sock1, value2)\n"
 "  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_TCP_DEFER_ACCEPT1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_DEFER_ACCEPT1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: TCP_WINDOW_CLAMP\n"
-"if (_pub.SetSocketOption.TCP_WINDOW_CLAMP) then\n"
-"function _pub.SetSocketOption.TCP_WINDOW_CLAMP(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_TCP_WINDOW_CLAMP1 = 0\n"
-"  rc_lsocket_opt_set_TCP_WINDOW_CLAMP1 = C.lsocket_opt_set_TCP_WINDOW_CLAMP(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_TCP_WINDOW_CLAMP1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_WINDOW_CLAMP1)\n"
-"  end\n"
-"  return true\n"
-"end\n"
-"end\n"
-"\n"
-"-- method: TCP_NODELAY\n"
-"if (_pub.SetSocketOption.TCP_NODELAY) then\n"
-"function _pub.SetSocketOption.TCP_NODELAY(sock1, value2)\n"
-"  \n"
-"  \n"
-"  local rc_lsocket_opt_set_TCP_NODELAY1 = 0\n"
-"  rc_lsocket_opt_set_TCP_NODELAY1 = C.lsocket_opt_set_TCP_NODELAY(sock1, value2)\n"
-"  -- check for error.\n"
-"  if (-1 == rc_lsocket_opt_set_TCP_NODELAY1) then\n"
-"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_NODELAY1)\n"
+"  if (-1 == rc_lsocket_opt_set_TCP_KEEPIDLE1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_KEEPIDLE1)\n"
 "  end\n"
 "  return true\n"
 "end\n"
@@ -3965,21 +3905,86 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
+"-- method: TCP_CONGESTION\n"
+"if (_pub.SetSocketOption.TCP_CONGESTION) then\n"
+"function _pub.SetSocketOption.TCP_CONGESTION(sock1, value2)\n"
+"  \n"
+"  local value_len2 = #value2\n"
+"  local rc_lsocket_opt_set_TCP_CONGESTION1 = 0\n"
+"  rc_lsocket_opt_set_TCP_CONGESTION1 = C.lsocket_opt_set_TCP_CONGESTION(sock1, value2, value_len2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_TCP_CONGESTION1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_CONGESTION1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: TCP_DEFER_ACCEPT\n"
+"if (_pub.SetSocketOption.TCP_DEFER_ACCEPT) then\n"
+"function _pub.SetSocketOption.TCP_DEFER_ACCEPT(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_TCP_DEFER_ACCEPT1 = 0\n"
+"  rc_lsocket_opt_set_TCP_DEFER_ACCEPT1 = C.lsocket_opt_set_TCP_DEFER_ACCEPT(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_TCP_DEFER_ACCEPT1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_DEFER_ACCEPT1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: TCP_NODELAY\n"
+"if (_pub.SetSocketOption.TCP_NODELAY) then\n"
+"function _pub.SetSocketOption.TCP_NODELAY(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_TCP_NODELAY1 = 0\n"
+"  rc_lsocket_opt_set_TCP_NODELAY1 = C.lsocket_opt_set_TCP_NODELAY(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_TCP_NODELAY1) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_NODELAY1)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
+"-- method: TCP_LINGER2\n"
+"if (_pub.SetSocketOption.TCP_LINGER2) then\n"
+"function _pub.SetSocketOption.TCP_LINGER2(sock1, value2)\n"
+"  \n"
+"  \n"
+"  local rc_lsocket_opt_set_TCP_LINGER21 = 0\n"
+"  rc_lsocket_opt_set_TCP_LINGER21 = C.lsocket_opt_set_TCP_LINGER2(sock1, value2)\n"
+"  -- check for error.\n"
+"  if (-1 == rc_lsocket_opt_set_TCP_LINGER21) then\n"
+"    return nil, error_code__errno_rc__push(rc_lsocket_opt_set_TCP_LINGER21)\n"
+"  end\n"
+"  return true\n"
+"end\n"
+"end\n"
+"\n"
 "-- End \"SetSocketOption\" FFI interface\n"
 "\n"
 "\n"
 "-- Start \"GetSocketOption\" FFI interface\n"
-"-- method: IPV6_NEXTHOP\n"
-"if (_pub.GetSocketOption.IPV6_NEXTHOP) then\n"
-"function _pub.GetSocketOption.IPV6_NEXTHOP(sock1)\n"
+"do\n"
+"  local IPV6_MTU_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IPV6_MTU\n"
+"if (_pub.GetSocketOption.IPV6_MTU) then\n"
+"function _pub.GetSocketOption.IPV6_MTU(sock1)\n"
 "  \n"
-"  local value1 = ffi.new(\"LSockAddr\")\n"
-"  local rc_lsocket_opt_get_IPV6_NEXTHOP2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_NEXTHOP2 = C.lsocket_opt_get_IPV6_NEXTHOP(sock1, value1)\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_NEXTHOP2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_NEXTHOP2)\n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IPV6_MTU2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_MTU2 = C.lsocket_opt_get_IPV6_MTU(sock1, IPV6_MTU_value_tmp)\n"
+"  value1 = IPV6_MTU_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_MTU2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_MTU2)\n"
 "  end\n"
-"  return obj_type_LSockAddr_push(value1)\n"
+"  return value1\n"
+"end\n"
 "end\n"
 "end\n"
 "\n"
@@ -4003,18 +4008,56 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IPV6_RECVPKTINFO_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IPV6_CHECKSUM_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: IPV6_RECVPKTINFO\n"
-"if (_pub.GetSocketOption.IPV6_RECVPKTINFO) then\n"
-"function _pub.GetSocketOption.IPV6_RECVPKTINFO(sock1)\n"
+"-- method: IPV6_CHECKSUM\n"
+"if (_pub.GetSocketOption.IPV6_CHECKSUM) then\n"
+"function _pub.GetSocketOption.IPV6_CHECKSUM(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_RECVPKTINFO2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_RECVPKTINFO2 = C.lsocket_opt_get_IPV6_RECVPKTINFO(sock1, IPV6_RECVPKTINFO_value_tmp)\n"
-"  value1 = IPV6_RECVPKTINFO_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_RECVPKTINFO2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVPKTINFO2)\n"
+"  local rc_lsocket_opt_get_IPV6_CHECKSUM2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_CHECKSUM2 = C.lsocket_opt_get_IPV6_CHECKSUM(sock1, IPV6_CHECKSUM_value_tmp)\n"
+"  value1 = IPV6_CHECKSUM_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_CHECKSUM2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_CHECKSUM2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IPV6_RECVDSTOPTS_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IPV6_RECVDSTOPTS\n"
+"if (_pub.GetSocketOption.IPV6_RECVDSTOPTS) then\n"
+"function _pub.GetSocketOption.IPV6_RECVDSTOPTS(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IPV6_RECVDSTOPTS2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_RECVDSTOPTS2 = C.lsocket_opt_get_IPV6_RECVDSTOPTS(sock1, IPV6_RECVDSTOPTS_value_tmp)\n"
+"  value1 = IPV6_RECVDSTOPTS_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_RECVDSTOPTS2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVDSTOPTS2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IPV6_ROUTER_ALERT_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IPV6_ROUTER_ALERT\n"
+"if (_pub.GetSocketOption.IPV6_ROUTER_ALERT) then\n"
+"function _pub.GetSocketOption.IPV6_ROUTER_ALERT(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IPV6_ROUTER_ALERT2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_ROUTER_ALERT2 = C.lsocket_opt_get_IPV6_ROUTER_ALERT(sock1, IPV6_ROUTER_ALERT_value_tmp)\n"
+"  value1 = IPV6_ROUTER_ALERT_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_ROUTER_ALERT2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_ROUTER_ALERT2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4041,44 +4084,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IPV6_MTU_DISCOVER_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IPV6_MTU_DISCOVER\n"
-"if (_pub.GetSocketOption.IPV6_MTU_DISCOVER) then\n"
-"function _pub.GetSocketOption.IPV6_MTU_DISCOVER(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_MTU_DISCOVER2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_MTU_DISCOVER2 = C.lsocket_opt_get_IPV6_MTU_DISCOVER(sock1, IPV6_MTU_DISCOVER_value_tmp)\n"
-"  value1 = IPV6_MTU_DISCOVER_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_MTU_DISCOVER2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_MTU_DISCOVER2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IPV6_HOPLIMIT_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IPV6_HOPLIMIT\n"
-"if (_pub.GetSocketOption.IPV6_HOPLIMIT) then\n"
-"function _pub.GetSocketOption.IPV6_HOPLIMIT(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_HOPLIMIT2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_HOPLIMIT2 = C.lsocket_opt_get_IPV6_HOPLIMIT(sock1, IPV6_HOPLIMIT_value_tmp)\n"
-"  value1 = IPV6_HOPLIMIT_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_HOPLIMIT2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_HOPLIMIT2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
 "  local IPV6_UNICAST_HOPS_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: IPV6_UNICAST_HOPS\n"
@@ -4097,19 +4102,71 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "end\n"
 "\n"
-"do\n"
-"  local IPV6_CHECKSUM_value_tmp = ffi.new(\"int[1]\")\n"
+"-- method: IPV6_NEXTHOP\n"
+"if (_pub.GetSocketOption.IPV6_NEXTHOP) then\n"
+"function _pub.GetSocketOption.IPV6_NEXTHOP(sock1)\n"
+"  \n"
+"  local value1 = ffi.new(\"LSockAddr\")\n"
+"  local rc_lsocket_opt_get_IPV6_NEXTHOP2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_NEXTHOP2 = C.lsocket_opt_get_IPV6_NEXTHOP(sock1, value1)\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_NEXTHOP2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_NEXTHOP2)\n"
+"  end\n"
+"  return obj_type_LSockAddr_push(value1)\n"
+"end\n"
+"end\n"
 "\n"
-"-- method: IPV6_CHECKSUM\n"
-"if (_pub.GetSocketOption.IPV6_CHECKSUM) then\n"
-"function _pub.GetSocketOption.IPV6_CHECKSUM(sock1)\n"
+"do\n"
+"  local IPV6_RECVERR_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IPV6_RECVERR\n"
+"if (_pub.GetSocketOption.IPV6_RECVERR) then\n"
+"function _pub.GetSocketOption.IPV6_RECVERR(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_CHECKSUM2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_CHECKSUM2 = C.lsocket_opt_get_IPV6_CHECKSUM(sock1, IPV6_CHECKSUM_value_tmp)\n"
-"  value1 = IPV6_CHECKSUM_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_CHECKSUM2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_CHECKSUM2)\n"
+"  local rc_lsocket_opt_get_IPV6_RECVERR2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_RECVERR2 = C.lsocket_opt_get_IPV6_RECVERR(sock1, IPV6_RECVERR_value_tmp)\n"
+"  value1 = IPV6_RECVERR_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_RECVERR2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVERR2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IPV6_HOPLIMIT_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IPV6_HOPLIMIT\n"
+"if (_pub.GetSocketOption.IPV6_HOPLIMIT) then\n"
+"function _pub.GetSocketOption.IPV6_HOPLIMIT(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IPV6_HOPLIMIT2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_HOPLIMIT2 = C.lsocket_opt_get_IPV6_HOPLIMIT(sock1, IPV6_HOPLIMIT_value_tmp)\n"
+"  value1 = IPV6_HOPLIMIT_value_tmp[0]\n", /* ----- CUT ----- */
+"  if (-1 == rc_lsocket_opt_get_IPV6_HOPLIMIT2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_HOPLIMIT2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IPV6_RECVPKTINFO_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IPV6_RECVPKTINFO\n"
+"if (_pub.GetSocketOption.IPV6_RECVPKTINFO) then\n"
+"function _pub.GetSocketOption.IPV6_RECVPKTINFO(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IPV6_RECVPKTINFO2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_RECVPKTINFO2 = C.lsocket_opt_get_IPV6_RECVPKTINFO(sock1, IPV6_RECVPKTINFO_value_tmp)\n"
+"  value1 = IPV6_RECVPKTINFO_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_RECVPKTINFO2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVPKTINFO2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4143,30 +4200,11 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "function _pub.GetSocketOption.IPV6_MULTICAST_HOPS(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_MULTICAST_HOPS2 = 0\n", /* ----- CUT ----- */
+"  local rc_lsocket_opt_get_IPV6_MULTICAST_HOPS2 = 0\n"
 "  rc_lsocket_opt_get_IPV6_MULTICAST_HOPS2 = C.lsocket_opt_get_IPV6_MULTICAST_HOPS(sock1, IPV6_MULTICAST_HOPS_value_tmp)\n"
 "  value1 = IPV6_MULTICAST_HOPS_value_tmp[0]\n"
 "  if (-1 == rc_lsocket_opt_get_IPV6_MULTICAST_HOPS2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_MULTICAST_HOPS2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IPV6_ROUTER_ALERT_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IPV6_ROUTER_ALERT\n"
-"if (_pub.GetSocketOption.IPV6_ROUTER_ALERT) then\n"
-"function _pub.GetSocketOption.IPV6_ROUTER_ALERT(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_ROUTER_ALERT2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_ROUTER_ALERT2 = C.lsocket_opt_get_IPV6_ROUTER_ALERT(sock1, IPV6_ROUTER_ALERT_value_tmp)\n"
-"  value1 = IPV6_ROUTER_ALERT_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_ROUTER_ALERT2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_ROUTER_ALERT2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4193,25 +4231,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IPV6_RECVERR_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IPV6_RECVERR\n"
-"if (_pub.GetSocketOption.IPV6_RECVERR) then\n"
-"function _pub.GetSocketOption.IPV6_RECVERR(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_RECVERR2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_RECVERR2 = C.lsocket_opt_get_IPV6_RECVERR(sock1, IPV6_RECVERR_value_tmp)\n"
-"  value1 = IPV6_RECVERR_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_RECVERR2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVERR2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
 "  local IPV6_TCLASS_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: IPV6_TCLASS\n"
@@ -4224,63 +4243,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  value1 = IPV6_TCLASS_value_tmp[0]\n"
 "  if (-1 == rc_lsocket_opt_get_IPV6_TCLASS2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_TCLASS2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IPV6_MULTICAST_IF_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IPV6_MULTICAST_IF\n"
-"if (_pub.GetSocketOption.IPV6_MULTICAST_IF) then\n"
-"function _pub.GetSocketOption.IPV6_MULTICAST_IF(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = C.lsocket_opt_get_IPV6_MULTICAST_IF(sock1, IPV6_MULTICAST_IF_value_tmp)\n"
-"  value1 = IPV6_MULTICAST_IF_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_MULTICAST_IF2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_MULTICAST_IF2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IPV6_RECVRTHDR_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IPV6_RECVRTHDR\n"
-"if (_pub.GetSocketOption.IPV6_RECVRTHDR) then\n"
-"function _pub.GetSocketOption.IPV6_RECVRTHDR(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_RECVRTHDR2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_RECVRTHDR2 = C.lsocket_opt_get_IPV6_RECVRTHDR(sock1, IPV6_RECVRTHDR_value_tmp)\n"
-"  value1 = IPV6_RECVRTHDR_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_RECVRTHDR2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVRTHDR2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IPV6_RECVDSTOPTS_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IPV6_RECVDSTOPTS\n"
-"if (_pub.GetSocketOption.IPV6_RECVDSTOPTS) then\n"
-"function _pub.GetSocketOption.IPV6_RECVDSTOPTS(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_RECVDSTOPTS2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_RECVDSTOPTS2 = C.lsocket_opt_get_IPV6_RECVDSTOPTS(sock1, IPV6_RECVDSTOPTS_value_tmp)\n"
-"  value1 = IPV6_RECVDSTOPTS_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_RECVDSTOPTS2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVDSTOPTS2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4307,18 +4269,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IPV6_MTU_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IPV6_RECVRTHDR_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: IPV6_MTU\n"
-"if (_pub.GetSocketOption.IPV6_MTU) then\n"
-"function _pub.GetSocketOption.IPV6_MTU(sock1)\n"
+"-- method: IPV6_RECVRTHDR\n"
+"if (_pub.GetSocketOption.IPV6_RECVRTHDR) then\n"
+"function _pub.GetSocketOption.IPV6_RECVRTHDR(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IPV6_MTU2 = 0\n"
-"  rc_lsocket_opt_get_IPV6_MTU2 = C.lsocket_opt_get_IPV6_MTU(sock1, IPV6_MTU_value_tmp)\n"
-"  value1 = IPV6_MTU_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IPV6_MTU2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_MTU2)\n"
+"  local rc_lsocket_opt_get_IPV6_RECVRTHDR2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_RECVRTHDR2 = C.lsocket_opt_get_IPV6_RECVRTHDR(sock1, IPV6_RECVRTHDR_value_tmp)\n"
+"  value1 = IPV6_RECVRTHDR_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_RECVRTHDR2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_RECVRTHDR2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4326,18 +4288,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IP_MTU_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IPV6_MTU_DISCOVER_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: IP_MTU\n"
-"if (_pub.GetSocketOption.IP_MTU) then\n"
-"function _pub.GetSocketOption.IP_MTU(sock1)\n"
+"-- method: IPV6_MTU_DISCOVER\n"
+"if (_pub.GetSocketOption.IPV6_MTU_DISCOVER) then\n"
+"function _pub.GetSocketOption.IPV6_MTU_DISCOVER(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IP_MTU2 = 0\n"
-"  rc_lsocket_opt_get_IP_MTU2 = C.lsocket_opt_get_IP_MTU(sock1, IP_MTU_value_tmp)\n"
-"  value1 = IP_MTU_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_MTU2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MTU2)\n"
+"  local rc_lsocket_opt_get_IPV6_MTU_DISCOVER2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_MTU_DISCOVER2 = C.lsocket_opt_get_IPV6_MTU_DISCOVER(sock1, IPV6_MTU_DISCOVER_value_tmp)\n"
+"  value1 = IPV6_MTU_DISCOVER_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_MTU_DISCOVER2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_MTU_DISCOVER2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4345,18 +4307,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IP_RECVTOS_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IPV6_MULTICAST_IF_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: IP_RECVTOS\n"
-"if (_pub.GetSocketOption.IP_RECVTOS) then\n"
-"function _pub.GetSocketOption.IP_RECVTOS(sock1)\n"
+"-- method: IPV6_MULTICAST_IF\n"
+"if (_pub.GetSocketOption.IPV6_MULTICAST_IF) then\n"
+"function _pub.GetSocketOption.IPV6_MULTICAST_IF(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IP_RECVTOS2 = 0\n"
-"  rc_lsocket_opt_get_IP_RECVTOS2 = C.lsocket_opt_get_IP_RECVTOS(sock1, IP_RECVTOS_value_tmp)\n"
-"  value1 = IP_RECVTOS_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_RECVTOS2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVTOS2)\n"
+"  local rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = 0\n"
+"  rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = C.lsocket_opt_get_IPV6_MULTICAST_IF(sock1, IPV6_MULTICAST_IF_value_tmp)\n"
+"  value1 = IPV6_MULTICAST_IF_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IPV6_MULTICAST_IF2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IPV6_MULTICAST_IF2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4364,18 +4326,113 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IP_PKTINFO_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_MULTICAST_LOOP_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: IP_PKTINFO\n"
-"if (_pub.GetSocketOption.IP_PKTINFO) then\n"
-"function _pub.GetSocketOption.IP_PKTINFO(sock1)\n"
+"-- method: IP_MULTICAST_LOOP\n"
+"if (_pub.GetSocketOption.IP_MULTICAST_LOOP) then\n"
+"function _pub.GetSocketOption.IP_MULTICAST_LOOP(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IP_PKTINFO2 = 0\n"
-"  rc_lsocket_opt_get_IP_PKTINFO2 = C.lsocket_opt_get_IP_PKTINFO(sock1, IP_PKTINFO_value_tmp)\n"
-"  value1 = IP_PKTINFO_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_PKTINFO2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_PKTINFO2)\n"
+"  local rc_lsocket_opt_get_IP_MULTICAST_LOOP2 = 0\n"
+"  rc_lsocket_opt_get_IP_MULTICAST_LOOP2 = C.lsocket_opt_get_IP_MULTICAST_LOOP(sock1, IP_MULTICAST_LOOP_value_tmp)\n"
+"  value1 = IP_MULTICAST_LOOP_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_MULTICAST_LOOP2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MULTICAST_LOOP2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IP_MINTTL_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IP_MINTTL\n"
+"if (_pub.GetSocketOption.IP_MINTTL) then\n"
+"function _pub.GetSocketOption.IP_MINTTL(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IP_MINTTL2 = 0\n"
+"  rc_lsocket_opt_get_IP_MINTTL2 = C.lsocket_opt_get_IP_MINTTL(sock1, IP_MINTTL_value_tmp)\n"
+"  value1 = IP_MINTTL_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_MINTTL2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MINTTL2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IP_MULTICAST_TTL_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IP_MULTICAST_TTL\n"
+"if (_pub.GetSocketOption.IP_MULTICAST_TTL) then\n"
+"function _pub.GetSocketOption.IP_MULTICAST_TTL(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IP_MULTICAST_TTL2 = 0\n"
+"  rc_lsocket_opt_get_IP_MULTICAST_TTL2 = C.lsocket_opt_get_IP_MULTICAST_TTL(sock1, IP_MULTICAST_TTL_value_tmp)\n"
+"  value1 = IP_MULTICAST_TTL_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_MULTICAST_TTL2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MULTICAST_TTL2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IP_RECVTTL_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IP_RECVTTL\n"
+"if (_pub.GetSocketOption.IP_RECVTTL) then\n"
+"function _pub.GetSocketOption.IP_RECVTTL(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IP_RECVTTL2 = 0\n"
+"  rc_lsocket_opt_get_IP_RECVTTL2 = C.lsocket_opt_get_IP_RECVTTL(sock1, IP_RECVTTL_value_tmp)\n"
+"  value1 = IP_RECVTTL_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_RECVTTL2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVTTL2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IP_RECVOPTS_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IP_RECVOPTS\n"
+"if (_pub.GetSocketOption.IP_RECVOPTS) then\n"
+"function _pub.GetSocketOption.IP_RECVOPTS(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IP_RECVOPTS2 = 0\n"
+"  rc_lsocket_opt_get_IP_RECVOPTS2 = C.lsocket_opt_get_IP_RECVOPTS(sock1, IP_RECVOPTS_value_tmp)\n"
+"  value1 = IP_RECVOPTS_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_RECVOPTS2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVOPTS2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IP_RECVRETOPTS_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IP_RECVRETOPTS\n"
+"if (_pub.GetSocketOption.IP_RECVRETOPTS) then\n"
+"function _pub.GetSocketOption.IP_RECVRETOPTS(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IP_RECVRETOPTS2 = 0\n"
+"  rc_lsocket_opt_get_IP_RECVRETOPTS2 = C.lsocket_opt_get_IP_RECVRETOPTS(sock1, IP_RECVRETOPTS_value_tmp)\n"
+"  value1 = IP_RECVRETOPTS_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_RECVRETOPTS2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVRETOPTS2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4421,102 +4478,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IP_RECVERR_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_RECVERR\n"
-"if (_pub.GetSocketOption.IP_RECVERR) then\n"
-"function _pub.GetSocketOption.IP_RECVERR(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_RECVERR2 = 0\n"
-"  rc_lsocket_opt_get_IP_RECVERR2 = C.lsocket_opt_get_IP_RECVERR(sock1, IP_RECVERR_value_tmp)\n"
-"  value1 = IP_RECVERR_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_RECVERR2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVERR2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_OPTIONS_value_len_tmp = ffi.new(\"socklen_t[1]\")\n"
-"\n"
-"-- method: IP_OPTIONS\n"
-"if (_pub.GetSocketOption.IP_OPTIONS) then\n"
-"function _pub.GetSocketOption.IP_OPTIONS(sock1)\n"
-"  \n"
-"  local value_len1 = 0\n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_OPTIONS2 = 0\n"
-"  rc_lsocket_opt_get_IP_OPTIONS2 = C.lsocket_opt_get_IP_OPTIONS(sock1, value1, IP_OPTIONS_value_len_tmp)\n"
-"  value_len1 = IP_OPTIONS_value_len_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_OPTIONS2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_OPTIONS2)\n"
-"  end\n"
-"  return value1 ~= nil and ffi_string(value1,value_len1) or nil\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_MULTICAST_LOOP_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_MULTICAST_LOOP\n"
-"if (_pub.GetSocketOption.IP_MULTICAST_LOOP) then\n"
-"function _pub.GetSocketOption.IP_MULTICAST_LOOP(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_MULTICAST_LOOP2 = 0\n"
-"  rc_lsocket_opt_get_IP_MULTICAST_LOOP2 = C.lsocket_opt_get_IP_MULTICAST_LOOP(sock1, IP_MULTICAST_LOOP_value_tmp)\n"
-"  value1 = IP_MULTICAST_LOOP_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_MULTICAST_LOOP2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MULTICAST_LOOP2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_MINTTL_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_MINTTL\n"
-"if (_pub.GetSocketOption.IP_MINTTL) then\n"
-"function _pub.GetSocketOption.IP_MINTTL(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_MINTTL2 = 0\n"
-"  rc_lsocket_opt_get_IP_MINTTL2 = C.lsocket_opt_get_IP_MINTTL(sock1, IP_MINTTL_value_tmp)\n"
-"  value1 = IP_MINTTL_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_MINTTL2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MINTTL2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_ROUTER_ALERT_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_ROUTER_ALERT\n"
-"if (_pub.GetSocketOption.IP_ROUTER_ALERT) then\n"
-"function _pub.GetSocketOption.IP_ROUTER_ALERT(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_ROUTER_ALERT2 = 0\n"
-"  rc_lsocket_opt_get_IP_ROUTER_ALERT2 = C.lsocket_opt_get_IP_ROUTER_ALERT(sock1, IP_ROUTER_ALERT_value_tmp)\n"
-"  value1 = IP_ROUTER_ALERT_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_ROUTER_ALERT2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_ROUTER_ALERT2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
 "  local IP_TTL_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: IP_TTL\n"
@@ -4536,18 +4497,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IP_RECVTTL_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_RECVTOS_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: IP_RECVTTL\n"
-"if (_pub.GetSocketOption.IP_RECVTTL) then\n"
-"function _pub.GetSocketOption.IP_RECVTTL(sock1)\n"
+"-- method: IP_RECVTOS\n"
+"if (_pub.GetSocketOption.IP_RECVTOS) then\n"
+"function _pub.GetSocketOption.IP_RECVTOS(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IP_RECVTTL2 = 0\n"
-"  rc_lsocket_opt_get_IP_RECVTTL2 = C.lsocket_opt_get_IP_RECVTTL(sock1, IP_RECVTTL_value_tmp)\n"
-"  value1 = IP_RECVTTL_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_RECVTTL2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVTTL2)\n"
+"  local rc_lsocket_opt_get_IP_RECVTOS2 = 0\n"
+"  rc_lsocket_opt_get_IP_RECVTOS2 = C.lsocket_opt_get_IP_RECVTOS(sock1, IP_RECVTOS_value_tmp)\n"
+"  value1 = IP_RECVTOS_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_RECVTOS2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVTOS2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4555,113 +4516,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local IP_RECVRETOPTS_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_RECVERR_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: IP_RECVRETOPTS\n"
-"if (_pub.GetSocketOption.IP_RECVRETOPTS) then\n"
-"function _pub.GetSocketOption.IP_RECVRETOPTS(sock1)\n"
+"-- method: IP_RECVERR\n"
+"if (_pub.GetSocketOption.IP_RECVERR) then\n"
+"function _pub.GetSocketOption.IP_RECVERR(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_IP_RECVRETOPTS2 = 0\n"
-"  rc_lsocket_opt_get_IP_RECVRETOPTS2 = C.lsocket_opt_get_IP_RECVRETOPTS(sock1, IP_RECVRETOPTS_value_tmp)\n"
-"  value1 = IP_RECVRETOPTS_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_RECVRETOPTS2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVRETOPTS2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_RECVOPTS_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_RECVOPTS\n"
-"if (_pub.GetSocketOption.IP_RECVOPTS) then\n"
-"function _pub.GetSocketOption.IP_RECVOPTS(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_RECVOPTS2 = 0\n"
-"  rc_lsocket_opt_get_IP_RECVOPTS2 = C.lsocket_opt_get_IP_RECVOPTS(sock1, IP_RECVOPTS_value_tmp)\n"
-"  value1 = IP_RECVOPTS_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_RECVOPTS2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVOPTS2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_HDRINCL_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_HDRINCL\n"
-"if (_pub.GetSocketOption.IP_HDRINCL) then\n"
-"function _pub.GetSocketOption.IP_HDRINCL(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_HDRINCL2 = 0\n"
-"  rc_lsocket_opt_get_IP_HDRINCL2 = C.lsocket_opt_get_IP_HDRINCL(sock1, IP_HDRINCL_value_tmp)\n"
-"  value1 = IP_HDRINCL_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_HDRINCL2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_HDRINCL2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_MULTICAST_TTL_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_MULTICAST_TTL\n"
-"if (_pub.GetSocketOption.IP_MULTICAST_TTL) then\n"
-"function _pub.GetSocketOption.IP_MULTICAST_TTL(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_MULTICAST_TTL2 = 0\n"
-"  rc_lsocket_opt_get_IP_MULTICAST_TTL2 = C.lsocket_opt_get_IP_MULTICAST_TTL(sock1, IP_MULTICAST_TTL_value_tmp)\n"
-"  value1 = IP_MULTICAST_TTL_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_MULTICAST_TTL2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MULTICAST_TTL2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_MTU_DISCOVER_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_MTU_DISCOVER\n"
-"if (_pub.GetSocketOption.IP_MTU_DISCOVER) then\n"
-"function _pub.GetSocketOption.IP_MTU_DISCOVER(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_MTU_DISCOVER2 = 0\n"
-"  rc_lsocket_opt_get_IP_MTU_DISCOVER2 = C.lsocket_opt_get_IP_MTU_DISCOVER(sock1, IP_MTU_DISCOVER_value_tmp)\n"
-"  value1 = IP_MTU_DISCOVER_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_MTU_DISCOVER2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MTU_DISCOVER2)\n"
-"  end\n", /* ----- CUT ----- */
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local IP_TOS_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: IP_TOS\n"
-"if (_pub.GetSocketOption.IP_TOS) then\n"
-"function _pub.GetSocketOption.IP_TOS(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_IP_TOS2 = 0\n"
-"  rc_lsocket_opt_get_IP_TOS2 = C.lsocket_opt_get_IP_TOS(sock1, IP_TOS_value_tmp)\n"
-"  value1 = IP_TOS_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_IP_TOS2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_TOS2)\n"
+"  local rc_lsocket_opt_get_IP_RECVERR2 = 0\n"
+"  rc_lsocket_opt_get_IP_RECVERR2 = C.lsocket_opt_get_IP_RECVERR(sock1, IP_RECVERR_value_tmp)\n"
+"  value1 = IP_RECVERR_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_RECVERR2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_RECVERR2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4689,18 +4555,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_PROTOCOL_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_TOS_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: SO_PROTOCOL\n"
-"if (_pub.GetSocketOption.SO_PROTOCOL) then\n"
-"function _pub.GetSocketOption.SO_PROTOCOL(sock1)\n"
+"-- method: IP_TOS\n"
+"if (_pub.GetSocketOption.IP_TOS) then\n"
+"function _pub.GetSocketOption.IP_TOS(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_PROTOCOL2 = 0\n"
-"  rc_lsocket_opt_get_SO_PROTOCOL2 = C.lsocket_opt_get_SO_PROTOCOL(sock1, SO_PROTOCOL_value_tmp)\n"
-"  value1 = SO_PROTOCOL_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_PROTOCOL2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_PROTOCOL2)\n"
+"  local rc_lsocket_opt_get_IP_TOS2 = 0\n"
+"  rc_lsocket_opt_get_IP_TOS2 = C.lsocket_opt_get_IP_TOS(sock1, IP_TOS_value_tmp)\n"
+"  value1 = IP_TOS_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_TOS2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_TOS2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4708,18 +4574,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_RCVBUFFORCE_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_MTU_DISCOVER_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: SO_RCVBUFFORCE\n"
-"if (_pub.GetSocketOption.SO_RCVBUFFORCE) then\n"
-"function _pub.GetSocketOption.SO_RCVBUFFORCE(sock1)\n"
+"-- method: IP_MTU_DISCOVER\n"
+"if (_pub.GetSocketOption.IP_MTU_DISCOVER) then\n"
+"function _pub.GetSocketOption.IP_MTU_DISCOVER(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_RCVBUFFORCE2 = 0\n"
-"  rc_lsocket_opt_get_SO_RCVBUFFORCE2 = C.lsocket_opt_get_SO_RCVBUFFORCE(sock1, SO_RCVBUFFORCE_value_tmp)\n"
-"  value1 = SO_RCVBUFFORCE_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_RCVBUFFORCE2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_RCVBUFFORCE2)\n"
+"  local rc_lsocket_opt_get_IP_MTU_DISCOVER2 = 0\n"
+"  rc_lsocket_opt_get_IP_MTU_DISCOVER2 = C.lsocket_opt_get_IP_MTU_DISCOVER(sock1, IP_MTU_DISCOVER_value_tmp)\n"
+"  value1 = IP_MTU_DISCOVER_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_MTU_DISCOVER2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MTU_DISCOVER2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4727,18 +4593,38 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_ERROR_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_OPTIONS_value_len_tmp = ffi.new(\"socklen_t[1]\")\n"
 "\n"
-"-- method: SO_ERROR\n"
-"if (_pub.GetSocketOption.SO_ERROR) then\n"
-"function _pub.GetSocketOption.SO_ERROR(sock1)\n"
+"-- method: IP_OPTIONS\n"
+"if (_pub.GetSocketOption.IP_OPTIONS) then\n"
+"function _pub.GetSocketOption.IP_OPTIONS(sock1)\n"
+"  \n"
+"  local value_len1 = 0\n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_IP_OPTIONS2 = 0\n"
+"  rc_lsocket_opt_get_IP_OPTIONS2 = C.lsocket_opt_get_IP_OPTIONS(sock1, value1, IP_OPTIONS_value_len_tmp)\n"
+"  value_len1 = IP_OPTIONS_value_len_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_OPTIONS2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_OPTIONS2)\n"
+"  end\n"
+"  return value1 ~= nil and ffi_string(value1,value_len1) or nil\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local IP_PKTINFO_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: IP_PKTINFO\n"
+"if (_pub.GetSocketOption.IP_PKTINFO) then\n"
+"function _pub.GetSocketOption.IP_PKTINFO(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_ERROR2 = 0\n"
-"  rc_lsocket_opt_get_SO_ERROR2 = C.lsocket_opt_get_SO_ERROR(sock1, SO_ERROR_value_tmp)\n"
-"  value1 = SO_ERROR_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_ERROR2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_ERROR2)\n"
+"  local rc_lsocket_opt_get_IP_PKTINFO2 = 0\n"
+"  rc_lsocket_opt_get_IP_PKTINFO2 = C.lsocket_opt_get_IP_PKTINFO(sock1, IP_PKTINFO_value_tmp)\n"
+"  value1 = IP_PKTINFO_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_PKTINFO2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_PKTINFO2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4746,18 +4632,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_DOMAIN_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_ROUTER_ALERT_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: SO_DOMAIN\n"
-"if (_pub.GetSocketOption.SO_DOMAIN) then\n"
-"function _pub.GetSocketOption.SO_DOMAIN(sock1)\n"
+"-- method: IP_ROUTER_ALERT\n"
+"if (_pub.GetSocketOption.IP_ROUTER_ALERT) then\n"
+"function _pub.GetSocketOption.IP_ROUTER_ALERT(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_DOMAIN2 = 0\n"
-"  rc_lsocket_opt_get_SO_DOMAIN2 = C.lsocket_opt_get_SO_DOMAIN(sock1, SO_DOMAIN_value_tmp)\n"
-"  value1 = SO_DOMAIN_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_DOMAIN2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DOMAIN2)\n"
+"  local rc_lsocket_opt_get_IP_ROUTER_ALERT2 = 0\n"
+"  rc_lsocket_opt_get_IP_ROUTER_ALERT2 = C.lsocket_opt_get_IP_ROUTER_ALERT(sock1, IP_ROUTER_ALERT_value_tmp)\n"
+"  value1 = IP_ROUTER_ALERT_value_tmp[0]\n", /* ----- CUT ----- */
+"  if (-1 == rc_lsocket_opt_get_IP_ROUTER_ALERT2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_ROUTER_ALERT2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4765,18 +4651,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_DEBUG_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_MTU_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: SO_DEBUG\n"
-"if (_pub.GetSocketOption.SO_DEBUG) then\n"
-"function _pub.GetSocketOption.SO_DEBUG(sock1)\n"
+"-- method: IP_MTU\n"
+"if (_pub.GetSocketOption.IP_MTU) then\n"
+"function _pub.GetSocketOption.IP_MTU(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_DEBUG2 = 0\n"
-"  rc_lsocket_opt_get_SO_DEBUG2 = C.lsocket_opt_get_SO_DEBUG(sock1, SO_DEBUG_value_tmp)\n"
-"  value1 = SO_DEBUG_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_DEBUG2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DEBUG2)\n"
+"  local rc_lsocket_opt_get_IP_MTU2 = 0\n"
+"  rc_lsocket_opt_get_IP_MTU2 = C.lsocket_opt_get_IP_MTU(sock1, IP_MTU_value_tmp)\n"
+"  value1 = IP_MTU_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_MTU2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_MTU2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4784,18 +4670,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_REUSEADDR_value_tmp = ffi.new(\"int[1]\")\n"
+"  local IP_HDRINCL_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: SO_REUSEADDR\n"
-"if (_pub.GetSocketOption.SO_REUSEADDR) then\n"
-"function _pub.GetSocketOption.SO_REUSEADDR(sock1)\n"
+"-- method: IP_HDRINCL\n"
+"if (_pub.GetSocketOption.IP_HDRINCL) then\n"
+"function _pub.GetSocketOption.IP_HDRINCL(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_REUSEADDR2 = 0\n"
-"  rc_lsocket_opt_get_SO_REUSEADDR2 = C.lsocket_opt_get_SO_REUSEADDR(sock1, SO_REUSEADDR_value_tmp)\n"
-"  value1 = SO_REUSEADDR_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_REUSEADDR2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_REUSEADDR2)\n"
+"  local rc_lsocket_opt_get_IP_HDRINCL2 = 0\n"
+"  rc_lsocket_opt_get_IP_HDRINCL2 = C.lsocket_opt_get_IP_HDRINCL(sock1, IP_HDRINCL_value_tmp)\n"
+"  value1 = IP_HDRINCL_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_IP_HDRINCL2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_IP_HDRINCL2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4803,75 +4689,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_PASSCRED_value_tmp = ffi.new(\"int[1]\")\n"
+"  local SO_KEEPALIVE_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: SO_PASSCRED\n"
-"if (_pub.GetSocketOption.SO_PASSCRED) then\n"
-"function _pub.GetSocketOption.SO_PASSCRED(sock1)\n"
+"-- method: SO_KEEPALIVE\n"
+"if (_pub.GetSocketOption.SO_KEEPALIVE) then\n"
+"function _pub.GetSocketOption.SO_KEEPALIVE(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_PASSCRED2 = 0\n"
-"  rc_lsocket_opt_get_SO_PASSCRED2 = C.lsocket_opt_get_SO_PASSCRED(sock1, SO_PASSCRED_value_tmp)\n"
-"  value1 = SO_PASSCRED_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_PASSCRED2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_PASSCRED2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local SO_SNDLOWAT_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_SNDLOWAT\n"
-"if (_pub.GetSocketOption.SO_SNDLOWAT) then\n"
-"function _pub.GetSocketOption.SO_SNDLOWAT(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_SNDLOWAT2 = 0\n"
-"  rc_lsocket_opt_get_SO_SNDLOWAT2 = C.lsocket_opt_get_SO_SNDLOWAT(sock1, SO_SNDLOWAT_value_tmp)\n"
-"  value1 = SO_SNDLOWAT_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_SNDLOWAT2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_SNDLOWAT2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local SO_SNDBUFFORCE_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_SNDBUFFORCE\n"
-"if (_pub.GetSocketOption.SO_SNDBUFFORCE) then\n"
-"function _pub.GetSocketOption.SO_SNDBUFFORCE(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_SNDBUFFORCE2 = 0\n"
-"  rc_lsocket_opt_get_SO_SNDBUFFORCE2 = C.lsocket_opt_get_SO_SNDBUFFORCE(sock1, SO_SNDBUFFORCE_value_tmp)\n"
-"  value1 = SO_SNDBUFFORCE_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_SNDBUFFORCE2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_SNDBUFFORCE2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local SO_MARK_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_MARK\n"
-"if (_pub.GetSocketOption.SO_MARK) then\n"
-"function _pub.GetSocketOption.SO_MARK(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_MARK2 = 0\n"
-"  rc_lsocket_opt_get_SO_MARK2 = C.lsocket_opt_get_SO_MARK(sock1, SO_MARK_value_tmp)\n"
-"  value1 = SO_MARK_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_MARK2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_MARK2)\n"
+"  local rc_lsocket_opt_get_SO_KEEPALIVE2 = 0\n"
+"  rc_lsocket_opt_get_SO_KEEPALIVE2 = C.lsocket_opt_get_SO_KEEPALIVE(sock1, SO_KEEPALIVE_value_tmp)\n"
+"  value1 = SO_KEEPALIVE_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_KEEPALIVE2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_KEEPALIVE2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4898,25 +4727,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_BSDCOMPAT_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_BSDCOMPAT\n"
-"if (_pub.GetSocketOption.SO_BSDCOMPAT) then\n"
-"function _pub.GetSocketOption.SO_BSDCOMPAT(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_BSDCOMPAT2 = 0\n"
-"  rc_lsocket_opt_get_SO_BSDCOMPAT2 = C.lsocket_opt_get_SO_BSDCOMPAT(sock1, SO_BSDCOMPAT_value_tmp)\n"
-"  value1 = SO_BSDCOMPAT_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_BSDCOMPAT2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_BSDCOMPAT2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
 "  local SO_TYPE_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: SO_TYPE\n"
@@ -4929,6 +4739,82 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  value1 = SO_TYPE_value_tmp[0]\n"
 "  if (-1 == rc_lsocket_opt_get_SO_TYPE2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_TYPE2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_SNDBUFFORCE_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_SNDBUFFORCE\n"
+"if (_pub.GetSocketOption.SO_SNDBUFFORCE) then\n"
+"function _pub.GetSocketOption.SO_SNDBUFFORCE(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_SNDBUFFORCE2 = 0\n"
+"  rc_lsocket_opt_get_SO_SNDBUFFORCE2 = C.lsocket_opt_get_SO_SNDBUFFORCE(sock1, SO_SNDBUFFORCE_value_tmp)\n"
+"  value1 = SO_SNDBUFFORCE_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_SNDBUFFORCE2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_SNDBUFFORCE2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_RCVBUF_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_RCVBUF\n"
+"if (_pub.GetSocketOption.SO_RCVBUF) then\n"
+"function _pub.GetSocketOption.SO_RCVBUF(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_RCVBUF2 = 0\n"
+"  rc_lsocket_opt_get_SO_RCVBUF2 = C.lsocket_opt_get_SO_RCVBUF(sock1, SO_RCVBUF_value_tmp)\n"
+"  value1 = SO_RCVBUF_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_RCVBUF2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_RCVBUF2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_DONTROUTE_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_DONTROUTE\n"
+"if (_pub.GetSocketOption.SO_DONTROUTE) then\n"
+"function _pub.GetSocketOption.SO_DONTROUTE(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_DONTROUTE2 = 0\n"
+"  rc_lsocket_opt_get_SO_DONTROUTE2 = C.lsocket_opt_get_SO_DONTROUTE(sock1, SO_DONTROUTE_value_tmp)\n"
+"  value1 = SO_DONTROUTE_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_DONTROUTE2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DONTROUTE2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_DEBUG_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_DEBUG\n"
+"if (_pub.GetSocketOption.SO_DEBUG) then\n"
+"function _pub.GetSocketOption.SO_DEBUG(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_DEBUG2 = 0\n"
+"  rc_lsocket_opt_get_SO_DEBUG2 = C.lsocket_opt_get_SO_DEBUG(sock1, SO_DEBUG_value_tmp)\n"
+"  value1 = SO_DEBUG_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_DEBUG2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DEBUG2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -4955,6 +4841,82 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
+"  local SO_PROTOCOL_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_PROTOCOL\n"
+"if (_pub.GetSocketOption.SO_PROTOCOL) then\n"
+"function _pub.GetSocketOption.SO_PROTOCOL(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_PROTOCOL2 = 0\n"
+"  rc_lsocket_opt_get_SO_PROTOCOL2 = C.lsocket_opt_get_SO_PROTOCOL(sock1, SO_PROTOCOL_value_tmp)\n"
+"  value1 = SO_PROTOCOL_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_PROTOCOL2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_PROTOCOL2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_MARK_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_MARK\n"
+"if (_pub.GetSocketOption.SO_MARK) then\n"
+"function _pub.GetSocketOption.SO_MARK(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_MARK2 = 0\n"
+"  rc_lsocket_opt_get_SO_MARK2 = C.lsocket_opt_get_SO_MARK(sock1, SO_MARK_value_tmp)\n"
+"  value1 = SO_MARK_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_MARK2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_MARK2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_TIMESTAMPING_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_TIMESTAMPING\n"
+"if (_pub.GetSocketOption.SO_TIMESTAMPING) then\n"
+"function _pub.GetSocketOption.SO_TIMESTAMPING(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_TIMESTAMPING2 = 0\n"
+"  rc_lsocket_opt_get_SO_TIMESTAMPING2 = C.lsocket_opt_get_SO_TIMESTAMPING(sock1, SO_TIMESTAMPING_value_tmp)\n"
+"  value1 = SO_TIMESTAMPING_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_TIMESTAMPING2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_TIMESTAMPING2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_DOMAIN_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_DOMAIN\n"
+"if (_pub.GetSocketOption.SO_DOMAIN) then\n"
+"function _pub.GetSocketOption.SO_DOMAIN(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_DOMAIN2 = 0\n"
+"  rc_lsocket_opt_get_SO_DOMAIN2 = C.lsocket_opt_get_SO_DOMAIN(sock1, SO_DOMAIN_value_tmp)\n"
+"  value1 = SO_DOMAIN_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_DOMAIN2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DOMAIN2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
 "  local SO_TIMESTAMP_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: SO_TIMESTAMP\n"
@@ -4967,44 +4929,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  value1 = SO_TIMESTAMP_value_tmp[0]\n"
 "  if (-1 == rc_lsocket_opt_get_SO_TIMESTAMP2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_TIMESTAMP2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local SO_ACCEPTCONN_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_ACCEPTCONN\n"
-"if (_pub.GetSocketOption.SO_ACCEPTCONN) then\n"
-"function _pub.GetSocketOption.SO_ACCEPTCONN(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_ACCEPTCONN2 = 0\n"
-"  rc_lsocket_opt_get_SO_ACCEPTCONN2 = C.lsocket_opt_get_SO_ACCEPTCONN(sock1, SO_ACCEPTCONN_value_tmp)\n"
-"  value1 = SO_ACCEPTCONN_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_ACCEPTCONN2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_ACCEPTCONN2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local SO_OOBINLINE_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_OOBINLINE\n"
-"if (_pub.GetSocketOption.SO_OOBINLINE) then\n"
-"function _pub.GetSocketOption.SO_OOBINLINE(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_OOBINLINE2 = 0\n"
-"  rc_lsocket_opt_get_SO_OOBINLINE2 = C.lsocket_opt_get_SO_OOBINLINE(sock1, SO_OOBINLINE_value_tmp)\n"
-"  value1 = SO_OOBINLINE_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_OOBINLINE2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_OOBINLINE2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -5032,18 +4956,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_RCVBUF_value_tmp = ffi.new(\"int[1]\")\n"
+"  local SO_OOBINLINE_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: SO_RCVBUF\n"
-"if (_pub.GetSocketOption.SO_RCVBUF) then\n"
-"function _pub.GetSocketOption.SO_RCVBUF(sock1)\n"
+"-- method: SO_OOBINLINE\n"
+"if (_pub.GetSocketOption.SO_OOBINLINE) then\n"
+"function _pub.GetSocketOption.SO_OOBINLINE(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_RCVBUF2 = 0\n"
-"  rc_lsocket_opt_get_SO_RCVBUF2 = C.lsocket_opt_get_SO_RCVBUF(sock1, SO_RCVBUF_value_tmp)\n"
-"  value1 = SO_RCVBUF_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_RCVBUF2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_RCVBUF2)\n"
+"  local rc_lsocket_opt_get_SO_OOBINLINE2 = 0\n"
+"  rc_lsocket_opt_get_SO_OOBINLINE2 = C.lsocket_opt_get_SO_OOBINLINE(sock1, SO_OOBINLINE_value_tmp)\n"
+"  value1 = SO_OOBINLINE_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_OOBINLINE2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_OOBINLINE2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -5051,18 +4975,75 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_TIMESTAMPING_value_tmp = ffi.new(\"int[1]\")\n"
+"  local SO_ERROR_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: SO_TIMESTAMPING\n"
-"if (_pub.GetSocketOption.SO_TIMESTAMPING) then\n"
-"function _pub.GetSocketOption.SO_TIMESTAMPING(sock1)\n"
+"-- method: SO_ERROR\n"
+"if (_pub.GetSocketOption.SO_ERROR) then\n"
+"function _pub.GetSocketOption.SO_ERROR(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_SO_TIMESTAMPING2 = 0\n"
-"  rc_lsocket_opt_get_SO_TIMESTAMPING2 = C.lsocket_opt_get_SO_TIMESTAMPING(sock1, SO_TIMESTAMPING_value_tmp)\n"
-"  value1 = SO_TIMESTAMPING_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_TIMESTAMPING2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_TIMESTAMPING2)\n"
+"  local rc_lsocket_opt_get_SO_ERROR2 = 0\n"
+"  rc_lsocket_opt_get_SO_ERROR2 = C.lsocket_opt_get_SO_ERROR(sock1, SO_ERROR_value_tmp)\n"
+"  value1 = SO_ERROR_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_ERROR2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_ERROR2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_SNDBUF_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_SNDBUF\n"
+"if (_pub.GetSocketOption.SO_SNDBUF) then\n"
+"function _pub.GetSocketOption.SO_SNDBUF(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_SNDBUF2 = 0\n"
+"  rc_lsocket_opt_get_SO_SNDBUF2 = C.lsocket_opt_get_SO_SNDBUF(sock1, SO_SNDBUF_value_tmp)\n"
+"  value1 = SO_SNDBUF_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_SNDBUF2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_SNDBUF2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_ACCEPTCONN_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_ACCEPTCONN\n"
+"if (_pub.GetSocketOption.SO_ACCEPTCONN) then\n"
+"function _pub.GetSocketOption.SO_ACCEPTCONN(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_ACCEPTCONN2 = 0\n"
+"  rc_lsocket_opt_get_SO_ACCEPTCONN2 = C.lsocket_opt_get_SO_ACCEPTCONN(sock1, SO_ACCEPTCONN_value_tmp)\n"
+"  value1 = SO_ACCEPTCONN_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_ACCEPTCONN2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_ACCEPTCONN2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_BSDCOMPAT_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_BSDCOMPAT\n"
+"if (_pub.GetSocketOption.SO_BSDCOMPAT) then\n"
+"function _pub.GetSocketOption.SO_BSDCOMPAT(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_BSDCOMPAT2 = 0\n"
+"  rc_lsocket_opt_get_SO_BSDCOMPAT2 = C.lsocket_opt_get_SO_BSDCOMPAT(sock1, SO_BSDCOMPAT_value_tmp)\n"
+"  value1 = SO_BSDCOMPAT_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_BSDCOMPAT2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_BSDCOMPAT2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -5089,6 +5070,63 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
+"  local SO_RCVBUFFORCE_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_RCVBUFFORCE\n"
+"if (_pub.GetSocketOption.SO_RCVBUFFORCE) then\n"
+"function _pub.GetSocketOption.SO_RCVBUFFORCE(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_RCVBUFFORCE2 = 0\n"
+"  rc_lsocket_opt_get_SO_RCVBUFFORCE2 = C.lsocket_opt_get_SO_RCVBUFFORCE(sock1, SO_RCVBUFFORCE_value_tmp)\n"
+"  value1 = SO_RCVBUFFORCE_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_RCVBUFFORCE2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_RCVBUFFORCE2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_SNDLOWAT_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_SNDLOWAT\n"
+"if (_pub.GetSocketOption.SO_SNDLOWAT) then\n"
+"function _pub.GetSocketOption.SO_SNDLOWAT(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_SNDLOWAT2 = 0\n"
+"  rc_lsocket_opt_get_SO_SNDLOWAT2 = C.lsocket_opt_get_SO_SNDLOWAT(sock1, SO_SNDLOWAT_value_tmp)\n"
+"  value1 = SO_SNDLOWAT_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_SNDLOWAT2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_SNDLOWAT2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local SO_PASSCRED_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: SO_PASSCRED\n"
+"if (_pub.GetSocketOption.SO_PASSCRED) then\n"
+"function _pub.GetSocketOption.SO_PASSCRED(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_SO_PASSCRED2 = 0\n"
+"  rc_lsocket_opt_get_SO_PASSCRED2 = C.lsocket_opt_get_SO_PASSCRED(sock1, SO_PASSCRED_value_tmp)\n"
+"  value1 = SO_PASSCRED_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_PASSCRED2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_PASSCRED2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
 "  local SO_NO_CHECK_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: SO_NO_CHECK\n"
@@ -5108,63 +5146,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local SO_KEEPALIVE_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_KEEPALIVE\n"
-"if (_pub.GetSocketOption.SO_KEEPALIVE) then\n"
-"function _pub.GetSocketOption.SO_KEEPALIVE(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_KEEPALIVE2 = 0\n"
-"  rc_lsocket_opt_get_SO_KEEPALIVE2 = C.lsocket_opt_get_SO_KEEPALIVE(sock1, SO_KEEPALIVE_value_tmp)\n"
-"  value1 = SO_KEEPALIVE_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_KEEPALIVE2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_KEEPALIVE2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local SO_DONTROUTE_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_DONTROUTE\n"
-"if (_pub.GetSocketOption.SO_DONTROUTE) then\n"
-"function _pub.GetSocketOption.SO_DONTROUTE(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_DONTROUTE2 = 0\n"
-"  rc_lsocket_opt_get_SO_DONTROUTE2 = C.lsocket_opt_get_SO_DONTROUTE(sock1, SO_DONTROUTE_value_tmp)\n"
-"  value1 = SO_DONTROUTE_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_DONTROUTE2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_DONTROUTE2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local SO_SNDBUF_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: SO_SNDBUF\n"
-"if (_pub.GetSocketOption.SO_SNDBUF) then\n"
-"function _pub.GetSocketOption.SO_SNDBUF(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_SO_SNDBUF2 = 0\n"
-"  rc_lsocket_opt_get_SO_SNDBUF2 = C.lsocket_opt_get_SO_SNDBUF(sock1, SO_SNDBUF_value_tmp)\n"
-"  value1 = SO_SNDBUF_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_SNDBUF2) then\n", /* ----- CUT ----- */
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_SNDBUF2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
 "  local SO_BROADCAST_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: SO_BROADCAST\n"
@@ -5175,7 +5156,7 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  local rc_lsocket_opt_get_SO_BROADCAST2 = 0\n"
 "  rc_lsocket_opt_get_SO_BROADCAST2 = C.lsocket_opt_get_SO_BROADCAST(sock1, SO_BROADCAST_value_tmp)\n"
 "  value1 = SO_BROADCAST_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_SO_BROADCAST2) then\n"
+"  if (-1 == rc_lsocket_opt_get_SO_BROADCAST2) then\n", /* ----- CUT ----- */
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_BROADCAST2)\n"
 "  end\n"
 "  return value1\n"
@@ -5184,18 +5165,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local TCP_MAXSEG_value_tmp = ffi.new(\"int[1]\")\n"
+"  local SO_REUSEADDR_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: TCP_MAXSEG\n"
-"if (_pub.GetSocketOption.TCP_MAXSEG) then\n"
-"function _pub.GetSocketOption.TCP_MAXSEG(sock1)\n"
+"-- method: SO_REUSEADDR\n"
+"if (_pub.GetSocketOption.SO_REUSEADDR) then\n"
+"function _pub.GetSocketOption.SO_REUSEADDR(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_TCP_MAXSEG2 = 0\n"
-"  rc_lsocket_opt_get_TCP_MAXSEG2 = C.lsocket_opt_get_TCP_MAXSEG(sock1, TCP_MAXSEG_value_tmp)\n"
-"  value1 = TCP_MAXSEG_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_TCP_MAXSEG2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_MAXSEG2)\n"
+"  local rc_lsocket_opt_get_SO_REUSEADDR2 = 0\n"
+"  rc_lsocket_opt_get_SO_REUSEADDR2 = C.lsocket_opt_get_SO_REUSEADDR(sock1, SO_REUSEADDR_value_tmp)\n"
+"  value1 = SO_REUSEADDR_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_SO_REUSEADDR2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_SO_REUSEADDR2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -5203,18 +5184,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local TCP_KEEPCNT_value_tmp = ffi.new(\"int[1]\")\n"
+"  local TCP_WINDOW_CLAMP_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: TCP_KEEPCNT\n"
-"if (_pub.GetSocketOption.TCP_KEEPCNT) then\n"
-"function _pub.GetSocketOption.TCP_KEEPCNT(sock1)\n"
+"-- method: TCP_WINDOW_CLAMP\n"
+"if (_pub.GetSocketOption.TCP_WINDOW_CLAMP) then\n"
+"function _pub.GetSocketOption.TCP_WINDOW_CLAMP(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_TCP_KEEPCNT2 = 0\n"
-"  rc_lsocket_opt_get_TCP_KEEPCNT2 = C.lsocket_opt_get_TCP_KEEPCNT(sock1, TCP_KEEPCNT_value_tmp)\n"
-"  value1 = TCP_KEEPCNT_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_TCP_KEEPCNT2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_KEEPCNT2)\n"
+"  local rc_lsocket_opt_get_TCP_WINDOW_CLAMP2 = 0\n"
+"  rc_lsocket_opt_get_TCP_WINDOW_CLAMP2 = C.lsocket_opt_get_TCP_WINDOW_CLAMP(sock1, TCP_WINDOW_CLAMP_value_tmp)\n"
+"  value1 = TCP_WINDOW_CLAMP_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_TCP_WINDOW_CLAMP2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_WINDOW_CLAMP2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -5260,6 +5241,63 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
+"  local TCP_KEEPCNT_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: TCP_KEEPCNT\n"
+"if (_pub.GetSocketOption.TCP_KEEPCNT) then\n"
+"function _pub.GetSocketOption.TCP_KEEPCNT(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_TCP_KEEPCNT2 = 0\n"
+"  rc_lsocket_opt_get_TCP_KEEPCNT2 = C.lsocket_opt_get_TCP_KEEPCNT(sock1, TCP_KEEPCNT_value_tmp)\n"
+"  value1 = TCP_KEEPCNT_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_TCP_KEEPCNT2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_KEEPCNT2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local TCP_CORK_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: TCP_CORK\n"
+"if (_pub.GetSocketOption.TCP_CORK) then\n"
+"function _pub.GetSocketOption.TCP_CORK(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_TCP_CORK2 = 0\n"
+"  rc_lsocket_opt_get_TCP_CORK2 = C.lsocket_opt_get_TCP_CORK(sock1, TCP_CORK_value_tmp)\n"
+"  value1 = TCP_CORK_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_TCP_CORK2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_CORK2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local TCP_MAXSEG_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: TCP_MAXSEG\n"
+"if (_pub.GetSocketOption.TCP_MAXSEG) then\n"
+"function _pub.GetSocketOption.TCP_MAXSEG(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_TCP_MAXSEG2 = 0\n"
+"  rc_lsocket_opt_get_TCP_MAXSEG2 = C.lsocket_opt_get_TCP_MAXSEG(sock1, TCP_MAXSEG_value_tmp)\n"
+"  value1 = TCP_MAXSEG_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_TCP_MAXSEG2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_MAXSEG2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
 "  local TCP_KEEPIDLE_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: TCP_KEEPIDLE\n"
@@ -5272,6 +5310,25 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  value1 = TCP_KEEPIDLE_value_tmp[0]\n"
 "  if (-1 == rc_lsocket_opt_get_TCP_KEEPIDLE2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_KEEPIDLE2)\n"
+"  end\n"
+"  return value1\n"
+"end\n"
+"end\n"
+"end\n"
+"\n"
+"do\n"
+"  local TCP_SYNCNT_value_tmp = ffi.new(\"int[1]\")\n"
+"\n"
+"-- method: TCP_SYNCNT\n"
+"if (_pub.GetSocketOption.TCP_SYNCNT) then\n"
+"function _pub.GetSocketOption.TCP_SYNCNT(sock1)\n"
+"  \n"
+"  local value1\n"
+"  local rc_lsocket_opt_get_TCP_SYNCNT2 = 0\n"
+"  rc_lsocket_opt_get_TCP_SYNCNT2 = C.lsocket_opt_get_TCP_SYNCNT(sock1, TCP_SYNCNT_value_tmp)\n"
+"  value1 = TCP_SYNCNT_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_TCP_SYNCNT2) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_SYNCNT2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -5299,44 +5356,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local TCP_CORK_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: TCP_CORK\n"
-"if (_pub.GetSocketOption.TCP_CORK) then\n"
-"function _pub.GetSocketOption.TCP_CORK(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_TCP_CORK2 = 0\n"
-"  rc_lsocket_opt_get_TCP_CORK2 = C.lsocket_opt_get_TCP_CORK(sock1, TCP_CORK_value_tmp)\n"
-"  value1 = TCP_CORK_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_TCP_CORK2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_CORK2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local TCP_LINGER2_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: TCP_LINGER2\n"
-"if (_pub.GetSocketOption.TCP_LINGER2) then\n"
-"function _pub.GetSocketOption.TCP_LINGER2(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_TCP_LINGER22 = 0\n"
-"  rc_lsocket_opt_get_TCP_LINGER22 = C.lsocket_opt_get_TCP_LINGER2(sock1, TCP_LINGER2_value_tmp)\n"
-"  value1 = TCP_LINGER2_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_TCP_LINGER22) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_LINGER22)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
 "  local TCP_DEFER_ACCEPT_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
 "-- method: TCP_DEFER_ACCEPT\n"
@@ -5349,25 +5368,6 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "  value1 = TCP_DEFER_ACCEPT_value_tmp[0]\n"
 "  if (-1 == rc_lsocket_opt_get_TCP_DEFER_ACCEPT2) then\n"
 "    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_DEFER_ACCEPT2)\n"
-"  end\n"
-"  return value1\n"
-"end\n"
-"end\n"
-"end\n"
-"\n"
-"do\n"
-"  local TCP_WINDOW_CLAMP_value_tmp = ffi.new(\"int[1]\")\n"
-"\n"
-"-- method: TCP_WINDOW_CLAMP\n"
-"if (_pub.GetSocketOption.TCP_WINDOW_CLAMP) then\n"
-"function _pub.GetSocketOption.TCP_WINDOW_CLAMP(sock1)\n"
-"  \n"
-"  local value1\n"
-"  local rc_lsocket_opt_get_TCP_WINDOW_CLAMP2 = 0\n"
-"  rc_lsocket_opt_get_TCP_WINDOW_CLAMP2 = C.lsocket_opt_get_TCP_WINDOW_CLAMP(sock1, TCP_WINDOW_CLAMP_value_tmp)\n"
-"  value1 = TCP_WINDOW_CLAMP_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_TCP_WINDOW_CLAMP2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_WINDOW_CLAMP2)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -5394,18 +5394,18 @@ static const char *llnet_ffi_lua_code[] = { "local ffi=require\"ffi\"\n"
 "end\n"
 "\n"
 "do\n"
-"  local TCP_SYNCNT_value_tmp = ffi.new(\"int[1]\")\n"
+"  local TCP_LINGER2_value_tmp = ffi.new(\"int[1]\")\n"
 "\n"
-"-- method: TCP_SYNCNT\n"
-"if (_pub.GetSocketOption.TCP_SYNCNT) then\n"
-"function _pub.GetSocketOption.TCP_SYNCNT(sock1)\n"
+"-- method: TCP_LINGER2\n"
+"if (_pub.GetSocketOption.TCP_LINGER2) then\n"
+"function _pub.GetSocketOption.TCP_LINGER2(sock1)\n"
 "  \n"
 "  local value1\n"
-"  local rc_lsocket_opt_get_TCP_SYNCNT2 = 0\n"
-"  rc_lsocket_opt_get_TCP_SYNCNT2 = C.lsocket_opt_get_TCP_SYNCNT(sock1, TCP_SYNCNT_value_tmp)\n"
-"  value1 = TCP_SYNCNT_value_tmp[0]\n"
-"  if (-1 == rc_lsocket_opt_get_TCP_SYNCNT2) then\n"
-"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_SYNCNT2)\n"
+"  local rc_lsocket_opt_get_TCP_LINGER22 = 0\n"
+"  rc_lsocket_opt_get_TCP_LINGER22 = C.lsocket_opt_get_TCP_LINGER2(sock1, TCP_LINGER2_value_tmp)\n"
+"  value1 = TCP_LINGER2_value_tmp[0]\n"
+"  if (-1 == rc_lsocket_opt_get_TCP_LINGER22) then\n"
+"    return nil,error_code__errno_rc__push(rc_lsocket_opt_get_TCP_LINGER22)\n"
 "  end\n"
 "  return value1\n"
 "end\n"
@@ -6030,9 +6030,72 @@ static void lsock_init_winsock2(lua_State *L) {
 #define lsock_init_winsock2(L)
 #endif
 
+#ifdef IPV6_MTU
+errno_rc lsocket_opt_set_IPV6_MTU(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_MTU, value);
+}
+errno_rc lsocket_opt_get_IPV6_MTU(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_MTU, value);
+}
+
+#endif
 #ifdef IPV6_ADDRFORM
 errno_rc lsocket_opt_set_IPV6_ADDRFORM(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_ADDRFORM, value);
+}
+
+#endif
+#ifdef IPV6_MULTICAST_LOOP
+errno_rc lsocket_opt_set_IPV6_MULTICAST_LOOP(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_MULTICAST_LOOP, value);
+}
+errno_rc lsocket_opt_get_IPV6_MULTICAST_LOOP(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_MULTICAST_LOOP, value);
+}
+
+#endif
+#ifdef IPV6_CHECKSUM
+errno_rc lsocket_opt_set_IPV6_CHECKSUM(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_CHECKSUM, value);
+}
+errno_rc lsocket_opt_get_IPV6_CHECKSUM(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_CHECKSUM, value);
+}
+
+#endif
+#ifdef IPV6_RECVDSTOPTS
+errno_rc lsocket_opt_set_IPV6_RECVDSTOPTS(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVDSTOPTS, value);
+}
+errno_rc lsocket_opt_get_IPV6_RECVDSTOPTS(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVDSTOPTS, value);
+}
+
+#endif
+#ifdef IPV6_ROUTER_ALERT
+errno_rc lsocket_opt_set_IPV6_ROUTER_ALERT(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_ROUTER_ALERT, value);
+}
+errno_rc lsocket_opt_get_IPV6_ROUTER_ALERT(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_ROUTER_ALERT, value);
+}
+
+#endif
+#ifdef IPV6_V6ONLY
+errno_rc lsocket_opt_set_IPV6_V6ONLY(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_V6ONLY, value);
+}
+errno_rc lsocket_opt_get_IPV6_V6ONLY(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_V6ONLY, value);
+}
+
+#endif
+#ifdef IPV6_UNICAST_HOPS
+errno_rc lsocket_opt_set_IPV6_UNICAST_HOPS(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_UNICAST_HOPS, value);
+}
+errno_rc lsocket_opt_get_IPV6_UNICAST_HOPS(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_UNICAST_HOPS, value);
 }
 
 #endif
@@ -6050,39 +6113,12 @@ errno_rc lsocket_opt_get_IPV6_NEXTHOP(LSocket * sock, LSockAddr *addr) {
 }
 
 #endif
-#ifdef IPV6_MULTICAST_LOOP
-errno_rc lsocket_opt_set_IPV6_MULTICAST_LOOP(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_MULTICAST_LOOP, value);
+#ifdef IPV6_RECVERR
+errno_rc lsocket_opt_set_IPV6_RECVERR(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVERR, value);
 }
-errno_rc lsocket_opt_get_IPV6_MULTICAST_LOOP(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_MULTICAST_LOOP, value);
-}
-
-#endif
-#ifdef IPV6_RECVPKTINFO
-errno_rc lsocket_opt_set_IPV6_RECVPKTINFO(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVPKTINFO, value);
-}
-errno_rc lsocket_opt_get_IPV6_RECVPKTINFO(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVPKTINFO, value);
-}
-
-#endif
-#ifdef IPV6_V6ONLY
-errno_rc lsocket_opt_set_IPV6_V6ONLY(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_V6ONLY, value);
-}
-errno_rc lsocket_opt_get_IPV6_V6ONLY(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_V6ONLY, value);
-}
-
-#endif
-#ifdef IPV6_MTU_DISCOVER
-errno_rc lsocket_opt_set_IPV6_MTU_DISCOVER(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_MTU_DISCOVER, value);
-}
-errno_rc lsocket_opt_get_IPV6_MTU_DISCOVER(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_MTU_DISCOVER, value);
+errno_rc lsocket_opt_get_IPV6_RECVERR(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVERR, value);
 }
 
 #endif
@@ -6095,21 +6131,12 @@ errno_rc lsocket_opt_get_IPV6_HOPLIMIT(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef IPV6_UNICAST_HOPS
-errno_rc lsocket_opt_set_IPV6_UNICAST_HOPS(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_UNICAST_HOPS, value);
+#ifdef IPV6_RECVPKTINFO
+errno_rc lsocket_opt_set_IPV6_RECVPKTINFO(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVPKTINFO, value);
 }
-errno_rc lsocket_opt_get_IPV6_UNICAST_HOPS(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_UNICAST_HOPS, value);
-}
-
-#endif
-#ifdef IPV6_CHECKSUM
-errno_rc lsocket_opt_set_IPV6_CHECKSUM(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_CHECKSUM, value);
-}
-errno_rc lsocket_opt_get_IPV6_CHECKSUM(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_CHECKSUM, value);
+errno_rc lsocket_opt_get_IPV6_RECVPKTINFO(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVPKTINFO, value);
 }
 
 #endif
@@ -6131,30 +6158,12 @@ errno_rc lsocket_opt_get_IPV6_MULTICAST_HOPS(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef IPV6_ROUTER_ALERT
-errno_rc lsocket_opt_set_IPV6_ROUTER_ALERT(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_ROUTER_ALERT, value);
-}
-errno_rc lsocket_opt_get_IPV6_ROUTER_ALERT(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_ROUTER_ALERT, value);
-}
-
-#endif
 #ifdef IPV6_RECVHOPOPTS
 errno_rc lsocket_opt_set_IPV6_RECVHOPOPTS(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVHOPOPTS, value);
 }
 errno_rc lsocket_opt_get_IPV6_RECVHOPOPTS(LSocket * sock, int *value) {
 	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVHOPOPTS, value);
-}
-
-#endif
-#ifdef IPV6_RECVERR
-errno_rc lsocket_opt_set_IPV6_RECVERR(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVERR, value);
-}
-errno_rc lsocket_opt_get_IPV6_RECVERR(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVERR, value);
 }
 
 #endif
@@ -6167,12 +6176,12 @@ errno_rc lsocket_opt_get_IPV6_TCLASS(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef IPV6_MULTICAST_IF
-errno_rc lsocket_opt_set_IPV6_MULTICAST_IF(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_MULTICAST_IF, value);
+#ifdef IPV6_RECVHOPLIMIT
+errno_rc lsocket_opt_set_IPV6_RECVHOPLIMIT(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVHOPLIMIT, value);
 }
-errno_rc lsocket_opt_get_IPV6_MULTICAST_IF(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_MULTICAST_IF, value);
+errno_rc lsocket_opt_get_IPV6_RECVHOPLIMIT(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVHOPLIMIT, value);
 }
 
 #endif
@@ -6185,96 +6194,21 @@ errno_rc lsocket_opt_get_IPV6_RECVRTHDR(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef IPV6_RECVDSTOPTS
-errno_rc lsocket_opt_set_IPV6_RECVDSTOPTS(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVDSTOPTS, value);
+#ifdef IPV6_MTU_DISCOVER
+errno_rc lsocket_opt_set_IPV6_MTU_DISCOVER(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_MTU_DISCOVER, value);
 }
-errno_rc lsocket_opt_get_IPV6_RECVDSTOPTS(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVDSTOPTS, value);
-}
-
-#endif
-#ifdef IPV6_RECVHOPLIMIT
-errno_rc lsocket_opt_set_IPV6_RECVHOPLIMIT(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_RECVHOPLIMIT, value);
-}
-errno_rc lsocket_opt_get_IPV6_RECVHOPLIMIT(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_RECVHOPLIMIT, value);
+errno_rc lsocket_opt_get_IPV6_MTU_DISCOVER(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_MTU_DISCOVER, value);
 }
 
 #endif
-#ifdef IPV6_MTU
-errno_rc lsocket_opt_set_IPV6_MTU(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_MTU, value);
+#ifdef IPV6_MULTICAST_IF
+errno_rc lsocket_opt_set_IPV6_MULTICAST_IF(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IPV6, IPV6_MULTICAST_IF, value);
 }
-errno_rc lsocket_opt_get_IPV6_MTU(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_MTU, value);
-}
-
-#endif
-#ifdef IP_MTU
-errno_rc lsocket_opt_set_IP_MTU(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_MTU, value);
-}
-errno_rc lsocket_opt_get_IP_MTU(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_MTU, value);
-}
-
-#endif
-#ifdef IP_RECVTOS
-errno_rc lsocket_opt_set_IP_RECVTOS(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_RECVTOS, value);
-}
-errno_rc lsocket_opt_get_IP_RECVTOS(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_RECVTOS, value);
-}
-
-#endif
-#ifdef IP_PKTINFO
-errno_rc lsocket_opt_set_IP_PKTINFO(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_PKTINFO, value);
-}
-errno_rc lsocket_opt_get_IP_PKTINFO(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_PKTINFO, value);
-}
-
-#endif
-#ifdef IP_RECVORIGDSTADDR
-errno_rc lsocket_opt_set_IP_RECVORIGDSTADDR(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_RECVORIGDSTADDR, value);
-}
-errno_rc lsocket_opt_get_IP_RECVORIGDSTADDR(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_RECVORIGDSTADDR, value);
-}
-
-#endif
-#ifdef IP_FREEBIND
-errno_rc lsocket_opt_set_IP_FREEBIND(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_FREEBIND, value);
-}
-errno_rc lsocket_opt_get_IP_FREEBIND(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_FREEBIND, value);
-}
-
-#endif
-#ifdef IP_RECVERR
-errno_rc lsocket_opt_set_IP_RECVERR(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_RECVERR, value);
-}
-errno_rc lsocket_opt_get_IP_RECVERR(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_RECVERR, value);
-}
-
-#endif
-#ifdef IP_OPTIONS
-errno_rc lsocket_opt_set_IP_OPTIONS(LSocket * sock, const char *value, size_t len) {
-	return l_socket_set_option(sock, SOL_IP, IP_OPTIONS, value, len);
-}
-errno_rc lsocket_opt_get_IP_OPTIONS(LSocket * sock, char *value, size_t *len) {
-	socklen_t slen = *len;
-	int rc = l_socket_get_option(sock, SOL_IP, IP_OPTIONS, value, &slen);
-	*len = slen;
-	return rc;
+errno_rc lsocket_opt_get_IPV6_MULTICAST_IF(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IPV6, IPV6_MULTICAST_IF, value);
 }
 
 #endif
@@ -6296,21 +6230,12 @@ errno_rc lsocket_opt_get_IP_MINTTL(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef IP_ROUTER_ALERT
-errno_rc lsocket_opt_set_IP_ROUTER_ALERT(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_ROUTER_ALERT, value);
+#ifdef IP_MULTICAST_TTL
+errno_rc lsocket_opt_set_IP_MULTICAST_TTL(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_MULTICAST_TTL, value);
 }
-errno_rc lsocket_opt_get_IP_ROUTER_ALERT(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_ROUTER_ALERT, value);
-}
-
-#endif
-#ifdef IP_TTL
-errno_rc lsocket_opt_set_IP_TTL(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_TTL, value);
-}
-errno_rc lsocket_opt_get_IP_TTL(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_TTL, value);
+errno_rc lsocket_opt_get_IP_MULTICAST_TTL(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_MULTICAST_TTL, value);
 }
 
 #endif
@@ -6323,15 +6248,6 @@ errno_rc lsocket_opt_get_IP_RECVTTL(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef IP_RECVRETOPTS
-errno_rc lsocket_opt_set_IP_RECVRETOPTS(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_RECVRETOPTS, value);
-}
-errno_rc lsocket_opt_get_IP_RECVRETOPTS(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_RECVRETOPTS, value);
-}
-
-#endif
 #ifdef IP_RECVOPTS
 errno_rc lsocket_opt_set_IP_RECVOPTS(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, SOL_IP, IP_RECVOPTS, value);
@@ -6341,39 +6257,57 @@ errno_rc lsocket_opt_get_IP_RECVOPTS(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef IP_HDRINCL
-errno_rc lsocket_opt_set_IP_HDRINCL(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_HDRINCL, value);
+#ifdef IP_RECVRETOPTS
+errno_rc lsocket_opt_set_IP_RECVRETOPTS(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_RECVRETOPTS, value);
 }
-errno_rc lsocket_opt_get_IP_HDRINCL(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_HDRINCL, value);
-}
-
-#endif
-#ifdef IP_MULTICAST_TTL
-errno_rc lsocket_opt_set_IP_MULTICAST_TTL(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_MULTICAST_TTL, value);
-}
-errno_rc lsocket_opt_get_IP_MULTICAST_TTL(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_MULTICAST_TTL, value);
+errno_rc lsocket_opt_get_IP_RECVRETOPTS(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_RECVRETOPTS, value);
 }
 
 #endif
-#ifdef IP_MTU_DISCOVER
-errno_rc lsocket_opt_set_IP_MTU_DISCOVER(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_MTU_DISCOVER, value);
+#ifdef IP_RECVORIGDSTADDR
+errno_rc lsocket_opt_set_IP_RECVORIGDSTADDR(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_RECVORIGDSTADDR, value);
 }
-errno_rc lsocket_opt_get_IP_MTU_DISCOVER(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_MTU_DISCOVER, value);
+errno_rc lsocket_opt_get_IP_RECVORIGDSTADDR(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_RECVORIGDSTADDR, value);
 }
 
 #endif
-#ifdef IP_TOS
-errno_rc lsocket_opt_set_IP_TOS(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_IP, IP_TOS, value);
+#ifdef IP_FREEBIND
+errno_rc lsocket_opt_set_IP_FREEBIND(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_FREEBIND, value);
 }
-errno_rc lsocket_opt_get_IP_TOS(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_IP, IP_TOS, value);
+errno_rc lsocket_opt_get_IP_FREEBIND(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_FREEBIND, value);
+}
+
+#endif
+#ifdef IP_TTL
+errno_rc lsocket_opt_set_IP_TTL(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_TTL, value);
+}
+errno_rc lsocket_opt_get_IP_TTL(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_TTL, value);
+}
+
+#endif
+#ifdef IP_RECVTOS
+errno_rc lsocket_opt_set_IP_RECVTOS(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_RECVTOS, value);
+}
+errno_rc lsocket_opt_get_IP_RECVTOS(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_RECVTOS, value);
+}
+
+#endif
+#ifdef IP_RECVERR
+errno_rc lsocket_opt_set_IP_RECVERR(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_RECVERR, value);
+}
+errno_rc lsocket_opt_get_IP_RECVERR(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_RECVERR, value);
 }
 
 #endif
@@ -6389,84 +6323,78 @@ errno_rc lsocket_opt_get_IP_RETOPTS(LSocket * sock, char *value, size_t *len) {
 }
 
 #endif
-#ifdef SO_PROTOCOL
-errno_rc lsocket_opt_get_SO_PROTOCOL(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_PROTOCOL, value);
+#ifdef IP_TOS
+errno_rc lsocket_opt_set_IP_TOS(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_TOS, value);
+}
+errno_rc lsocket_opt_get_IP_TOS(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_TOS, value);
 }
 
 #endif
-#ifdef SO_RCVBUFFORCE
-errno_rc lsocket_opt_set_SO_RCVBUFFORCE(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_RCVBUFFORCE, value);
+#ifdef IP_MTU_DISCOVER
+errno_rc lsocket_opt_set_IP_MTU_DISCOVER(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_MTU_DISCOVER, value);
 }
-errno_rc lsocket_opt_get_SO_RCVBUFFORCE(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_RCVBUFFORCE, value);
-}
-
-#endif
-#ifdef SO_ERROR
-errno_rc lsocket_opt_get_SO_ERROR(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_ERROR, value);
+errno_rc lsocket_opt_get_IP_MTU_DISCOVER(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_MTU_DISCOVER, value);
 }
 
 #endif
-#ifdef SO_DOMAIN
-errno_rc lsocket_opt_get_SO_DOMAIN(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_DOMAIN, value);
+#ifdef IP_OPTIONS
+errno_rc lsocket_opt_set_IP_OPTIONS(LSocket * sock, const char *value, size_t len) {
+	return l_socket_set_option(sock, SOL_IP, IP_OPTIONS, value, len);
+}
+errno_rc lsocket_opt_get_IP_OPTIONS(LSocket * sock, char *value, size_t *len) {
+	socklen_t slen = *len;
+	int rc = l_socket_get_option(sock, SOL_IP, IP_OPTIONS, value, &slen);
+	*len = slen;
+	return rc;
 }
 
 #endif
-#ifdef SO_DEBUG
-errno_rc lsocket_opt_set_SO_DEBUG(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_DEBUG, value);
+#ifdef IP_PKTINFO
+errno_rc lsocket_opt_set_IP_PKTINFO(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_PKTINFO, value);
 }
-errno_rc lsocket_opt_get_SO_DEBUG(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_DEBUG, value);
-}
-
-#endif
-#ifdef SO_REUSEADDR
-errno_rc lsocket_opt_set_SO_REUSEADDR(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_REUSEADDR, value);
-}
-errno_rc lsocket_opt_get_SO_REUSEADDR(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_REUSEADDR, value);
+errno_rc lsocket_opt_get_IP_PKTINFO(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_PKTINFO, value);
 }
 
 #endif
-#ifdef SO_PASSCRED
-errno_rc lsocket_opt_set_SO_PASSCRED(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_PASSCRED, value);
+#ifdef IP_ROUTER_ALERT
+errno_rc lsocket_opt_set_IP_ROUTER_ALERT(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_ROUTER_ALERT, value);
 }
-errno_rc lsocket_opt_get_SO_PASSCRED(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_PASSCRED, value);
-}
-
-#endif
-#ifdef SO_SNDLOWAT
-errno_rc lsocket_opt_set_SO_SNDLOWAT(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_SNDLOWAT, value);
-}
-errno_rc lsocket_opt_get_SO_SNDLOWAT(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_SNDLOWAT, value);
+errno_rc lsocket_opt_get_IP_ROUTER_ALERT(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_ROUTER_ALERT, value);
 }
 
 #endif
-#ifdef SO_SNDBUFFORCE
-errno_rc lsocket_opt_set_SO_SNDBUFFORCE(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_SNDBUFFORCE, value);
+#ifdef IP_MTU
+errno_rc lsocket_opt_set_IP_MTU(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_MTU, value);
 }
-errno_rc lsocket_opt_get_SO_SNDBUFFORCE(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_SNDBUFFORCE, value);
+errno_rc lsocket_opt_get_IP_MTU(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_MTU, value);
 }
 
 #endif
-#ifdef SO_MARK
-errno_rc lsocket_opt_set_SO_MARK(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_MARK, value);
+#ifdef IP_HDRINCL
+errno_rc lsocket_opt_set_IP_HDRINCL(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_IP, IP_HDRINCL, value);
 }
-errno_rc lsocket_opt_get_SO_MARK(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_MARK, value);
+errno_rc lsocket_opt_get_IP_HDRINCL(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_IP, IP_HDRINCL, value);
+}
+
+#endif
+#ifdef SO_KEEPALIVE
+errno_rc lsocket_opt_set_SO_KEEPALIVE(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_KEEPALIVE, value);
+}
+errno_rc lsocket_opt_get_SO_KEEPALIVE(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_KEEPALIVE, value);
 }
 
 #endif
@@ -6479,18 +6407,45 @@ errno_rc lsocket_opt_get_SO_RCVLOWAT(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef SO_BSDCOMPAT
-errno_rc lsocket_opt_set_SO_BSDCOMPAT(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_BSDCOMPAT, value);
-}
-errno_rc lsocket_opt_get_SO_BSDCOMPAT(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_BSDCOMPAT, value);
-}
-
-#endif
 #ifdef SO_TYPE
 errno_rc lsocket_opt_get_SO_TYPE(LSocket * sock, int *value) {
 	return l_socket_get_int_option(sock, SOL_SOCKET, SO_TYPE, value);
+}
+
+#endif
+#ifdef SO_SNDBUFFORCE
+errno_rc lsocket_opt_set_SO_SNDBUFFORCE(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_SNDBUFFORCE, value);
+}
+errno_rc lsocket_opt_get_SO_SNDBUFFORCE(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_SNDBUFFORCE, value);
+}
+
+#endif
+#ifdef SO_RCVBUF
+errno_rc lsocket_opt_set_SO_RCVBUF(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_RCVBUF, value);
+}
+errno_rc lsocket_opt_get_SO_RCVBUF(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_RCVBUF, value);
+}
+
+#endif
+#ifdef SO_DONTROUTE
+errno_rc lsocket_opt_set_SO_DONTROUTE(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_DONTROUTE, value);
+}
+errno_rc lsocket_opt_get_SO_DONTROUTE(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_DONTROUTE, value);
+}
+
+#endif
+#ifdef SO_DEBUG
+errno_rc lsocket_opt_set_SO_DEBUG(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_DEBUG, value);
+}
+errno_rc lsocket_opt_get_SO_DEBUG(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_DEBUG, value);
 }
 
 #endif
@@ -6503,27 +6458,42 @@ errno_rc lsocket_opt_get_SO_TIMESTAMPNS(LSocket * sock, int *value) {
 }
 
 #endif
+#ifdef SO_PROTOCOL
+errno_rc lsocket_opt_get_SO_PROTOCOL(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_PROTOCOL, value);
+}
+
+#endif
+#ifdef SO_MARK
+errno_rc lsocket_opt_set_SO_MARK(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_MARK, value);
+}
+errno_rc lsocket_opt_get_SO_MARK(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_MARK, value);
+}
+
+#endif
+#ifdef SO_TIMESTAMPING
+errno_rc lsocket_opt_set_SO_TIMESTAMPING(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_TIMESTAMPING, value);
+}
+errno_rc lsocket_opt_get_SO_TIMESTAMPING(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_TIMESTAMPING, value);
+}
+
+#endif
+#ifdef SO_DOMAIN
+errno_rc lsocket_opt_get_SO_DOMAIN(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_DOMAIN, value);
+}
+
+#endif
 #ifdef SO_TIMESTAMP
 errno_rc lsocket_opt_set_SO_TIMESTAMP(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, SOL_SOCKET, SO_TIMESTAMP, value);
 }
 errno_rc lsocket_opt_get_SO_TIMESTAMP(LSocket * sock, int *value) {
 	return l_socket_get_int_option(sock, SOL_SOCKET, SO_TIMESTAMP, value);
-}
-
-#endif
-#ifdef SO_ACCEPTCONN
-errno_rc lsocket_opt_get_SO_ACCEPTCONN(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_ACCEPTCONN, value);
-}
-
-#endif
-#ifdef SO_OOBINLINE
-errno_rc lsocket_opt_set_SO_OOBINLINE(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_OOBINLINE, value);
-}
-errno_rc lsocket_opt_get_SO_OOBINLINE(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_OOBINLINE, value);
 }
 
 #endif
@@ -6539,57 +6509,18 @@ errno_rc lsocket_opt_get_SO_BINDTODEVICE(LSocket * sock, char *value, size_t *le
 }
 
 #endif
-#ifdef SO_RCVBUF
-errno_rc lsocket_opt_set_SO_RCVBUF(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_RCVBUF, value);
+#ifdef SO_OOBINLINE
+errno_rc lsocket_opt_set_SO_OOBINLINE(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_OOBINLINE, value);
 }
-errno_rc lsocket_opt_get_SO_RCVBUF(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_RCVBUF, value);
-}
-
-#endif
-#ifdef SO_TIMESTAMPING
-errno_rc lsocket_opt_set_SO_TIMESTAMPING(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_TIMESTAMPING, value);
-}
-errno_rc lsocket_opt_get_SO_TIMESTAMPING(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_TIMESTAMPING, value);
+errno_rc lsocket_opt_get_SO_OOBINLINE(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_OOBINLINE, value);
 }
 
 #endif
-#ifdef SO_PRIORITY
-errno_rc lsocket_opt_set_SO_PRIORITY(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_PRIORITY, value);
-}
-errno_rc lsocket_opt_get_SO_PRIORITY(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_PRIORITY, value);
-}
-
-#endif
-#ifdef SO_NO_CHECK
-errno_rc lsocket_opt_set_SO_NO_CHECK(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_NO_CHECK, value);
-}
-errno_rc lsocket_opt_get_SO_NO_CHECK(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_NO_CHECK, value);
-}
-
-#endif
-#ifdef SO_KEEPALIVE
-errno_rc lsocket_opt_set_SO_KEEPALIVE(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_KEEPALIVE, value);
-}
-errno_rc lsocket_opt_get_SO_KEEPALIVE(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_KEEPALIVE, value);
-}
-
-#endif
-#ifdef SO_DONTROUTE
-errno_rc lsocket_opt_set_SO_DONTROUTE(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_SOCKET, SO_DONTROUTE, value);
-}
-errno_rc lsocket_opt_get_SO_DONTROUTE(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_SOCKET, SO_DONTROUTE, value);
+#ifdef SO_ERROR
+errno_rc lsocket_opt_get_SO_ERROR(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_ERROR, value);
 }
 
 #endif
@@ -6602,6 +6533,66 @@ errno_rc lsocket_opt_get_SO_SNDBUF(LSocket * sock, int *value) {
 }
 
 #endif
+#ifdef SO_ACCEPTCONN
+errno_rc lsocket_opt_get_SO_ACCEPTCONN(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_ACCEPTCONN, value);
+}
+
+#endif
+#ifdef SO_BSDCOMPAT
+errno_rc lsocket_opt_set_SO_BSDCOMPAT(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_BSDCOMPAT, value);
+}
+errno_rc lsocket_opt_get_SO_BSDCOMPAT(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_BSDCOMPAT, value);
+}
+
+#endif
+#ifdef SO_PRIORITY
+errno_rc lsocket_opt_set_SO_PRIORITY(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_PRIORITY, value);
+}
+errno_rc lsocket_opt_get_SO_PRIORITY(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_PRIORITY, value);
+}
+
+#endif
+#ifdef SO_RCVBUFFORCE
+errno_rc lsocket_opt_set_SO_RCVBUFFORCE(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_RCVBUFFORCE, value);
+}
+errno_rc lsocket_opt_get_SO_RCVBUFFORCE(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_RCVBUFFORCE, value);
+}
+
+#endif
+#ifdef SO_SNDLOWAT
+errno_rc lsocket_opt_set_SO_SNDLOWAT(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_SNDLOWAT, value);
+}
+errno_rc lsocket_opt_get_SO_SNDLOWAT(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_SNDLOWAT, value);
+}
+
+#endif
+#ifdef SO_PASSCRED
+errno_rc lsocket_opt_set_SO_PASSCRED(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_PASSCRED, value);
+}
+errno_rc lsocket_opt_get_SO_PASSCRED(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_PASSCRED, value);
+}
+
+#endif
+#ifdef SO_NO_CHECK
+errno_rc lsocket_opt_set_SO_NO_CHECK(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_NO_CHECK, value);
+}
+errno_rc lsocket_opt_get_SO_NO_CHECK(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_NO_CHECK, value);
+}
+
+#endif
 #ifdef SO_BROADCAST
 errno_rc lsocket_opt_set_SO_BROADCAST(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, SOL_SOCKET, SO_BROADCAST, value);
@@ -6611,21 +6602,21 @@ errno_rc lsocket_opt_get_SO_BROADCAST(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef TCP_MAXSEG
-errno_rc lsocket_opt_set_TCP_MAXSEG(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_TCP, TCP_MAXSEG, value);
+#ifdef SO_REUSEADDR
+errno_rc lsocket_opt_set_SO_REUSEADDR(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_SOCKET, SO_REUSEADDR, value);
 }
-errno_rc lsocket_opt_get_TCP_MAXSEG(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_TCP, TCP_MAXSEG, value);
+errno_rc lsocket_opt_get_SO_REUSEADDR(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_SOCKET, SO_REUSEADDR, value);
 }
 
 #endif
-#ifdef TCP_KEEPCNT
-errno_rc lsocket_opt_set_TCP_KEEPCNT(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_TCP, TCP_KEEPCNT, value);
+#ifdef TCP_WINDOW_CLAMP
+errno_rc lsocket_opt_set_TCP_WINDOW_CLAMP(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_TCP, TCP_WINDOW_CLAMP, value);
 }
-errno_rc lsocket_opt_get_TCP_KEEPCNT(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_TCP, TCP_KEEPCNT, value);
+errno_rc lsocket_opt_get_TCP_WINDOW_CLAMP(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_TCP, TCP_WINDOW_CLAMP, value);
 }
 
 #endif
@@ -6647,12 +6638,48 @@ errno_rc lsocket_opt_get_TCP_QUICKACK(LSocket * sock, int *value) {
 }
 
 #endif
+#ifdef TCP_KEEPCNT
+errno_rc lsocket_opt_set_TCP_KEEPCNT(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_TCP, TCP_KEEPCNT, value);
+}
+errno_rc lsocket_opt_get_TCP_KEEPCNT(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_TCP, TCP_KEEPCNT, value);
+}
+
+#endif
+#ifdef TCP_CORK
+errno_rc lsocket_opt_set_TCP_CORK(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_TCP, TCP_CORK, value);
+}
+errno_rc lsocket_opt_get_TCP_CORK(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_TCP, TCP_CORK, value);
+}
+
+#endif
+#ifdef TCP_MAXSEG
+errno_rc lsocket_opt_set_TCP_MAXSEG(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_TCP, TCP_MAXSEG, value);
+}
+errno_rc lsocket_opt_get_TCP_MAXSEG(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_TCP, TCP_MAXSEG, value);
+}
+
+#endif
 #ifdef TCP_KEEPIDLE
 errno_rc lsocket_opt_set_TCP_KEEPIDLE(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, SOL_TCP, TCP_KEEPIDLE, value);
 }
 errno_rc lsocket_opt_get_TCP_KEEPIDLE(LSocket * sock, int *value) {
 	return l_socket_get_int_option(sock, SOL_TCP, TCP_KEEPIDLE, value);
+}
+
+#endif
+#ifdef TCP_SYNCNT
+errno_rc lsocket_opt_set_TCP_SYNCNT(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_TCP, TCP_SYNCNT, value);
+}
+errno_rc lsocket_opt_get_TCP_SYNCNT(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_TCP, TCP_SYNCNT, value);
 }
 
 #endif
@@ -6668,39 +6695,12 @@ errno_rc lsocket_opt_get_TCP_CONGESTION(LSocket * sock, char *value, size_t *len
 }
 
 #endif
-#ifdef TCP_CORK
-errno_rc lsocket_opt_set_TCP_CORK(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_TCP, TCP_CORK, value);
-}
-errno_rc lsocket_opt_get_TCP_CORK(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_TCP, TCP_CORK, value);
-}
-
-#endif
-#ifdef TCP_LINGER2
-errno_rc lsocket_opt_set_TCP_LINGER2(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_TCP, TCP_LINGER2, value);
-}
-errno_rc lsocket_opt_get_TCP_LINGER2(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_TCP, TCP_LINGER2, value);
-}
-
-#endif
 #ifdef TCP_DEFER_ACCEPT
 errno_rc lsocket_opt_set_TCP_DEFER_ACCEPT(LSocket * sock, int value) {
 	return l_socket_set_int_option(sock, SOL_TCP, TCP_DEFER_ACCEPT, value);
 }
 errno_rc lsocket_opt_get_TCP_DEFER_ACCEPT(LSocket * sock, int *value) {
 	return l_socket_get_int_option(sock, SOL_TCP, TCP_DEFER_ACCEPT, value);
-}
-
-#endif
-#ifdef TCP_WINDOW_CLAMP
-errno_rc lsocket_opt_set_TCP_WINDOW_CLAMP(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_TCP, TCP_WINDOW_CLAMP, value);
-}
-errno_rc lsocket_opt_get_TCP_WINDOW_CLAMP(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_TCP, TCP_WINDOW_CLAMP, value);
 }
 
 #endif
@@ -6713,12 +6713,12 @@ errno_rc lsocket_opt_get_TCP_NODELAY(LSocket * sock, int *value) {
 }
 
 #endif
-#ifdef TCP_SYNCNT
-errno_rc lsocket_opt_set_TCP_SYNCNT(LSocket * sock, int value) {
-	return l_socket_set_int_option(sock, SOL_TCP, TCP_SYNCNT, value);
+#ifdef TCP_LINGER2
+errno_rc lsocket_opt_set_TCP_LINGER2(LSocket * sock, int value) {
+	return l_socket_set_int_option(sock, SOL_TCP, TCP_LINGER2, value);
 }
-errno_rc lsocket_opt_get_TCP_SYNCNT(LSocket * sock, int *value) {
-	return l_socket_get_int_option(sock, SOL_TCP, TCP_SYNCNT, value);
+errno_rc lsocket_opt_get_TCP_LINGER2(LSocket * sock, int *value) {
+	return l_socket_get_int_option(sock, SOL_TCP, TCP_LINGER2, value);
 }
 
 #endif
@@ -7463,6 +7463,27 @@ static int LAddrInfo__next__meth(lua_State *L) {
   return 1;
 }
 
+/* method: IPV6_MTU */
+#if (IPV6_MTU)
+static int SetSocketOption__IPV6_MTU__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_IPV6_MTU1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_IPV6_MTU1 = lsocket_opt_set_IPV6_MTU(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_IPV6_MTU1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_MTU1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
 /* method: IPV6_ADDRFORM */
 #if (IPV6_ADDRFORM)
 static int SetSocketOption__IPV6_ADDRFORM__func(lua_State *L) {
@@ -7476,27 +7497,6 @@ static int SetSocketOption__IPV6_ADDRFORM__func(lua_State *L) {
   if((-1 == rc_lsocket_opt_set_IPV6_ADDRFORM1)) {
     lua_pushnil(L);
       error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_ADDRFORM1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IPV6_NEXTHOP */
-#if (IPV6_NEXTHOP)
-static int SetSocketOption__IPV6_NEXTHOP__func(lua_State *L) {
-  LSocket * sock1;
-  LSockAddr * value2;
-  errno_rc rc_lsocket_opt_set_IPV6_NEXTHOP1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = obj_type_LSockAddr_check(L,2);
-  rc_lsocket_opt_set_IPV6_NEXTHOP1 = lsocket_opt_set_IPV6_NEXTHOP(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_NEXTHOP1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_NEXTHOP1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -7526,19 +7526,61 @@ static int SetSocketOption__IPV6_MULTICAST_LOOP__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_RECVPKTINFO */
-#if (IPV6_RECVPKTINFO)
-static int SetSocketOption__IPV6_RECVPKTINFO__func(lua_State *L) {
+/* method: IPV6_CHECKSUM */
+#if (IPV6_CHECKSUM)
+static int SetSocketOption__IPV6_CHECKSUM__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_RECVPKTINFO1 = 0;
+  errno_rc rc_lsocket_opt_set_IPV6_CHECKSUM1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_RECVPKTINFO1 = lsocket_opt_set_IPV6_RECVPKTINFO(sock1, value2);
+  rc_lsocket_opt_set_IPV6_CHECKSUM1 = lsocket_opt_set_IPV6_CHECKSUM(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_RECVPKTINFO1)) {
+  if((-1 == rc_lsocket_opt_set_IPV6_CHECKSUM1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVPKTINFO1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_CHECKSUM1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: IPV6_RECVDSTOPTS */
+#if (IPV6_RECVDSTOPTS)
+static int SetSocketOption__IPV6_RECVDSTOPTS__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_IPV6_RECVDSTOPTS1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_IPV6_RECVDSTOPTS1 = lsocket_opt_set_IPV6_RECVDSTOPTS(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_IPV6_RECVDSTOPTS1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVDSTOPTS1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: IPV6_ROUTER_ALERT */
+#if (IPV6_ROUTER_ALERT)
+static int SetSocketOption__IPV6_ROUTER_ALERT__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_IPV6_ROUTER_ALERT1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_IPV6_ROUTER_ALERT1 = lsocket_opt_set_IPV6_ROUTER_ALERT(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_IPV6_ROUTER_ALERT1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_ROUTER_ALERT1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -7568,19 +7610,61 @@ static int SetSocketOption__IPV6_V6ONLY__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_MTU_DISCOVER */
-#if (IPV6_MTU_DISCOVER)
-static int SetSocketOption__IPV6_MTU_DISCOVER__func(lua_State *L) {
+/* method: IPV6_UNICAST_HOPS */
+#if (IPV6_UNICAST_HOPS)
+static int SetSocketOption__IPV6_UNICAST_HOPS__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_MTU_DISCOVER1 = 0;
+  errno_rc rc_lsocket_opt_set_IPV6_UNICAST_HOPS1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_MTU_DISCOVER1 = lsocket_opt_set_IPV6_MTU_DISCOVER(sock1, value2);
+  rc_lsocket_opt_set_IPV6_UNICAST_HOPS1 = lsocket_opt_set_IPV6_UNICAST_HOPS(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_MTU_DISCOVER1)) {
+  if((-1 == rc_lsocket_opt_set_IPV6_UNICAST_HOPS1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_MTU_DISCOVER1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_UNICAST_HOPS1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: IPV6_NEXTHOP */
+#if (IPV6_NEXTHOP)
+static int SetSocketOption__IPV6_NEXTHOP__func(lua_State *L) {
+  LSocket * sock1;
+  LSockAddr * value2;
+  errno_rc rc_lsocket_opt_set_IPV6_NEXTHOP1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = obj_type_LSockAddr_check(L,2);
+  rc_lsocket_opt_set_IPV6_NEXTHOP1 = lsocket_opt_set_IPV6_NEXTHOP(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_IPV6_NEXTHOP1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_NEXTHOP1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: IPV6_RECVERR */
+#if (IPV6_RECVERR)
+static int SetSocketOption__IPV6_RECVERR__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_IPV6_RECVERR1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_IPV6_RECVERR1 = lsocket_opt_set_IPV6_RECVERR(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_IPV6_RECVERR1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVERR1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -7610,40 +7694,19 @@ static int SetSocketOption__IPV6_HOPLIMIT__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_UNICAST_HOPS */
-#if (IPV6_UNICAST_HOPS)
-static int SetSocketOption__IPV6_UNICAST_HOPS__func(lua_State *L) {
+/* method: IPV6_RECVPKTINFO */
+#if (IPV6_RECVPKTINFO)
+static int SetSocketOption__IPV6_RECVPKTINFO__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_UNICAST_HOPS1 = 0;
+  errno_rc rc_lsocket_opt_set_IPV6_RECVPKTINFO1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_UNICAST_HOPS1 = lsocket_opt_set_IPV6_UNICAST_HOPS(sock1, value2);
+  rc_lsocket_opt_set_IPV6_RECVPKTINFO1 = lsocket_opt_set_IPV6_RECVPKTINFO(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_UNICAST_HOPS1)) {
+  if((-1 == rc_lsocket_opt_set_IPV6_RECVPKTINFO1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_UNICAST_HOPS1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IPV6_CHECKSUM */
-#if (IPV6_CHECKSUM)
-static int SetSocketOption__IPV6_CHECKSUM__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_CHECKSUM1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_CHECKSUM1 = lsocket_opt_set_IPV6_CHECKSUM(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_CHECKSUM1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_CHECKSUM1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVPKTINFO1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -7694,27 +7757,6 @@ static int SetSocketOption__IPV6_MULTICAST_HOPS__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_ROUTER_ALERT */
-#if (IPV6_ROUTER_ALERT)
-static int SetSocketOption__IPV6_ROUTER_ALERT__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_ROUTER_ALERT1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_ROUTER_ALERT1 = lsocket_opt_set_IPV6_ROUTER_ALERT(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_ROUTER_ALERT1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_ROUTER_ALERT1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
 /* method: IPV6_RECVHOPOPTS */
 #if (IPV6_RECVHOPOPTS)
 static int SetSocketOption__IPV6_RECVHOPOPTS__func(lua_State *L) {
@@ -7728,27 +7770,6 @@ static int SetSocketOption__IPV6_RECVHOPOPTS__func(lua_State *L) {
   if((-1 == rc_lsocket_opt_set_IPV6_RECVHOPOPTS1)) {
     lua_pushnil(L);
       error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVHOPOPTS1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IPV6_RECVERR */
-#if (IPV6_RECVERR)
-static int SetSocketOption__IPV6_RECVERR__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_RECVERR1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_RECVERR1 = lsocket_opt_set_IPV6_RECVERR(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_RECVERR1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVERR1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -7778,19 +7799,19 @@ static int SetSocketOption__IPV6_TCLASS__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_MULTICAST_IF */
-#if (IPV6_MULTICAST_IF)
-static int SetSocketOption__IPV6_MULTICAST_IF__func(lua_State *L) {
+/* method: IPV6_RECVHOPLIMIT */
+#if (IPV6_RECVHOPLIMIT)
+static int SetSocketOption__IPV6_RECVHOPLIMIT__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_MULTICAST_IF1 = 0;
+  errno_rc rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_MULTICAST_IF1 = lsocket_opt_set_IPV6_MULTICAST_IF(sock1, value2);
+  rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1 = lsocket_opt_set_IPV6_RECVHOPLIMIT(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_MULTICAST_IF1)) {
+  if((-1 == rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_MULTICAST_IF1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -7820,19 +7841,19 @@ static int SetSocketOption__IPV6_RECVRTHDR__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_RECVDSTOPTS */
-#if (IPV6_RECVDSTOPTS)
-static int SetSocketOption__IPV6_RECVDSTOPTS__func(lua_State *L) {
+/* method: IPV6_MTU_DISCOVER */
+#if (IPV6_MTU_DISCOVER)
+static int SetSocketOption__IPV6_MTU_DISCOVER__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_RECVDSTOPTS1 = 0;
+  errno_rc rc_lsocket_opt_set_IPV6_MTU_DISCOVER1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_RECVDSTOPTS1 = lsocket_opt_set_IPV6_RECVDSTOPTS(sock1, value2);
+  rc_lsocket_opt_set_IPV6_MTU_DISCOVER1 = lsocket_opt_set_IPV6_MTU_DISCOVER(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_RECVDSTOPTS1)) {
+  if((-1 == rc_lsocket_opt_set_IPV6_MTU_DISCOVER1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVDSTOPTS1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_MTU_DISCOVER1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -7841,188 +7862,19 @@ static int SetSocketOption__IPV6_RECVDSTOPTS__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_RECVHOPLIMIT */
-#if (IPV6_RECVHOPLIMIT)
-static int SetSocketOption__IPV6_RECVHOPLIMIT__func(lua_State *L) {
+/* method: IPV6_MULTICAST_IF */
+#if (IPV6_MULTICAST_IF)
+static int SetSocketOption__IPV6_MULTICAST_IF__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1 = 0;
+  errno_rc rc_lsocket_opt_set_IPV6_MULTICAST_IF1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1 = lsocket_opt_set_IPV6_RECVHOPLIMIT(sock1, value2);
+  rc_lsocket_opt_set_IPV6_MULTICAST_IF1 = lsocket_opt_set_IPV6_MULTICAST_IF(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1)) {
+  if((-1 == rc_lsocket_opt_set_IPV6_MULTICAST_IF1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_RECVHOPLIMIT1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IPV6_MTU */
-#if (IPV6_MTU)
-static int SetSocketOption__IPV6_MTU__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IPV6_MTU1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IPV6_MTU1 = lsocket_opt_set_IPV6_MTU(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IPV6_MTU1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_MTU1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IP_MTU */
-#if (IP_MTU)
-static int SetSocketOption__IP_MTU__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IP_MTU1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_MTU1 = lsocket_opt_set_IP_MTU(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_MTU1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_MTU1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IP_RECVTOS */
-#if (IP_RECVTOS)
-static int SetSocketOption__IP_RECVTOS__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IP_RECVTOS1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_RECVTOS1 = lsocket_opt_set_IP_RECVTOS(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_RECVTOS1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_RECVTOS1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IP_PKTINFO */
-#if (IP_PKTINFO)
-static int SetSocketOption__IP_PKTINFO__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IP_PKTINFO1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_PKTINFO1 = lsocket_opt_set_IP_PKTINFO(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_PKTINFO1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_PKTINFO1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IP_RECVORIGDSTADDR */
-#if (IP_RECVORIGDSTADDR)
-static int SetSocketOption__IP_RECVORIGDSTADDR__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IP_RECVORIGDSTADDR1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_RECVORIGDSTADDR1 = lsocket_opt_set_IP_RECVORIGDSTADDR(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_RECVORIGDSTADDR1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_RECVORIGDSTADDR1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IP_FREEBIND */
-#if (IP_FREEBIND)
-static int SetSocketOption__IP_FREEBIND__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IP_FREEBIND1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_FREEBIND1 = lsocket_opt_set_IP_FREEBIND(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_FREEBIND1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_FREEBIND1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IP_RECVERR */
-#if (IP_RECVERR)
-static int SetSocketOption__IP_RECVERR__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IP_RECVERR1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_RECVERR1 = lsocket_opt_set_IP_RECVERR(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_RECVERR1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_RECVERR1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IP_OPTIONS */
-#if (IP_OPTIONS)
-static int SetSocketOption__IP_OPTIONS__func(lua_State *L) {
-  LSocket * sock1;
-  size_t value_len2;
-  const char * value2;
-  errno_rc rc_lsocket_opt_set_IP_OPTIONS1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checklstring(L,2,&(value_len2));
-  rc_lsocket_opt_set_IP_OPTIONS1 = lsocket_opt_set_IP_OPTIONS(sock1, value2, value_len2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_OPTIONS1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_OPTIONS1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IPV6_MULTICAST_IF1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8073,40 +7925,19 @@ static int SetSocketOption__IP_MINTTL__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_ROUTER_ALERT */
-#if (IP_ROUTER_ALERT)
-static int SetSocketOption__IP_ROUTER_ALERT__func(lua_State *L) {
+/* method: IP_MULTICAST_TTL */
+#if (IP_MULTICAST_TTL)
+static int SetSocketOption__IP_MULTICAST_TTL__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IP_ROUTER_ALERT1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_MULTICAST_TTL1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_ROUTER_ALERT1 = lsocket_opt_set_IP_ROUTER_ALERT(sock1, value2);
+  rc_lsocket_opt_set_IP_MULTICAST_TTL1 = lsocket_opt_set_IP_MULTICAST_TTL(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_ROUTER_ALERT1)) {
+  if((-1 == rc_lsocket_opt_set_IP_MULTICAST_TTL1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_ROUTER_ALERT1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: IP_TTL */
-#if (IP_TTL)
-static int SetSocketOption__IP_TTL__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IP_TTL1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_TTL1 = lsocket_opt_set_IP_TTL(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_TTL1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_TTL1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_MULTICAST_TTL1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8136,27 +7967,6 @@ static int SetSocketOption__IP_RECVTTL__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_RECVRETOPTS */
-#if (IP_RECVRETOPTS)
-static int SetSocketOption__IP_RECVRETOPTS__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_IP_RECVRETOPTS1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_RECVRETOPTS1 = lsocket_opt_set_IP_RECVRETOPTS(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_RECVRETOPTS1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_RECVRETOPTS1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
 /* method: IP_RECVOPTS */
 #if (IP_RECVOPTS)
 static int SetSocketOption__IP_RECVOPTS__func(lua_State *L) {
@@ -8178,19 +7988,19 @@ static int SetSocketOption__IP_RECVOPTS__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_HDRINCL */
-#if (IP_HDRINCL)
-static int SetSocketOption__IP_HDRINCL__func(lua_State *L) {
+/* method: IP_RECVRETOPTS */
+#if (IP_RECVRETOPTS)
+static int SetSocketOption__IP_RECVRETOPTS__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IP_HDRINCL1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_RECVRETOPTS1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_HDRINCL1 = lsocket_opt_set_IP_HDRINCL(sock1, value2);
+  rc_lsocket_opt_set_IP_RECVRETOPTS1 = lsocket_opt_set_IP_RECVRETOPTS(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_HDRINCL1)) {
+  if((-1 == rc_lsocket_opt_set_IP_RECVRETOPTS1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_HDRINCL1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_RECVRETOPTS1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8199,19 +8009,19 @@ static int SetSocketOption__IP_HDRINCL__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_MULTICAST_TTL */
-#if (IP_MULTICAST_TTL)
-static int SetSocketOption__IP_MULTICAST_TTL__func(lua_State *L) {
+/* method: IP_RECVORIGDSTADDR */
+#if (IP_RECVORIGDSTADDR)
+static int SetSocketOption__IP_RECVORIGDSTADDR__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IP_MULTICAST_TTL1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_RECVORIGDSTADDR1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_MULTICAST_TTL1 = lsocket_opt_set_IP_MULTICAST_TTL(sock1, value2);
+  rc_lsocket_opt_set_IP_RECVORIGDSTADDR1 = lsocket_opt_set_IP_RECVORIGDSTADDR(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_MULTICAST_TTL1)) {
+  if((-1 == rc_lsocket_opt_set_IP_RECVORIGDSTADDR1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_MULTICAST_TTL1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_RECVORIGDSTADDR1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8220,19 +8030,19 @@ static int SetSocketOption__IP_MULTICAST_TTL__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_MTU_DISCOVER */
-#if (IP_MTU_DISCOVER)
-static int SetSocketOption__IP_MTU_DISCOVER__func(lua_State *L) {
+/* method: IP_FREEBIND */
+#if (IP_FREEBIND)
+static int SetSocketOption__IP_FREEBIND__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IP_MTU_DISCOVER1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_FREEBIND1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_MTU_DISCOVER1 = lsocket_opt_set_IP_MTU_DISCOVER(sock1, value2);
+  rc_lsocket_opt_set_IP_FREEBIND1 = lsocket_opt_set_IP_FREEBIND(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_MTU_DISCOVER1)) {
+  if((-1 == rc_lsocket_opt_set_IP_FREEBIND1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_MTU_DISCOVER1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_FREEBIND1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8241,19 +8051,61 @@ static int SetSocketOption__IP_MTU_DISCOVER__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_TOS */
-#if (IP_TOS)
-static int SetSocketOption__IP_TOS__func(lua_State *L) {
+/* method: IP_TTL */
+#if (IP_TTL)
+static int SetSocketOption__IP_TTL__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_IP_TOS1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_TTL1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_IP_TOS1 = lsocket_opt_set_IP_TOS(sock1, value2);
+  rc_lsocket_opt_set_IP_TTL1 = lsocket_opt_set_IP_TTL(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_IP_TOS1)) {
+  if((-1 == rc_lsocket_opt_set_IP_TTL1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_TOS1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_TTL1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: IP_RECVTOS */
+#if (IP_RECVTOS)
+static int SetSocketOption__IP_RECVTOS__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_IP_RECVTOS1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_IP_RECVTOS1 = lsocket_opt_set_IP_RECVTOS(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_IP_RECVTOS1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_RECVTOS1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: IP_RECVERR */
+#if (IP_RECVERR)
+static int SetSocketOption__IP_RECVERR__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_IP_RECVERR1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_IP_RECVERR1 = lsocket_opt_set_IP_RECVERR(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_IP_RECVERR1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_RECVERR1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8284,19 +8136,19 @@ static int SetSocketOption__IP_RETOPTS__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_RCVBUFFORCE */
-#if (SO_RCVBUFFORCE)
-static int SetSocketOption__SO_RCVBUFFORCE__func(lua_State *L) {
+/* method: IP_TOS */
+#if (IP_TOS)
+static int SetSocketOption__IP_TOS__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_SO_RCVBUFFORCE1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_TOS1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_RCVBUFFORCE1 = lsocket_opt_set_SO_RCVBUFFORCE(sock1, value2);
+  rc_lsocket_opt_set_IP_TOS1 = lsocket_opt_set_IP_TOS(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_RCVBUFFORCE1)) {
+  if((-1 == rc_lsocket_opt_set_IP_TOS1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_RCVBUFFORCE1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_TOS1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8305,19 +8157,19 @@ static int SetSocketOption__SO_RCVBUFFORCE__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_DEBUG */
-#if (SO_DEBUG)
-static int SetSocketOption__SO_DEBUG__func(lua_State *L) {
+/* method: IP_MTU_DISCOVER */
+#if (IP_MTU_DISCOVER)
+static int SetSocketOption__IP_MTU_DISCOVER__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_SO_DEBUG1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_MTU_DISCOVER1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_DEBUG1 = lsocket_opt_set_SO_DEBUG(sock1, value2);
+  rc_lsocket_opt_set_IP_MTU_DISCOVER1 = lsocket_opt_set_IP_MTU_DISCOVER(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_DEBUG1)) {
+  if((-1 == rc_lsocket_opt_set_IP_MTU_DISCOVER1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_DEBUG1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_MTU_DISCOVER1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8326,19 +8178,20 @@ static int SetSocketOption__SO_DEBUG__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_REUSEADDR */
-#if (SO_REUSEADDR)
-static int SetSocketOption__SO_REUSEADDR__func(lua_State *L) {
+/* method: IP_OPTIONS */
+#if (IP_OPTIONS)
+static int SetSocketOption__IP_OPTIONS__func(lua_State *L) {
   LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_SO_REUSEADDR1 = 0;
+  size_t value_len2;
+  const char * value2;
+  errno_rc rc_lsocket_opt_set_IP_OPTIONS1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_REUSEADDR1 = lsocket_opt_set_SO_REUSEADDR(sock1, value2);
+  value2 = luaL_checklstring(L,2,&(value_len2));
+  rc_lsocket_opt_set_IP_OPTIONS1 = lsocket_opt_set_IP_OPTIONS(sock1, value2, value_len2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_REUSEADDR1)) {
+  if((-1 == rc_lsocket_opt_set_IP_OPTIONS1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_REUSEADDR1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_OPTIONS1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8347,19 +8200,19 @@ static int SetSocketOption__SO_REUSEADDR__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_PASSCRED */
-#if (SO_PASSCRED)
-static int SetSocketOption__SO_PASSCRED__func(lua_State *L) {
+/* method: IP_PKTINFO */
+#if (IP_PKTINFO)
+static int SetSocketOption__IP_PKTINFO__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_SO_PASSCRED1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_PKTINFO1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_PASSCRED1 = lsocket_opt_set_SO_PASSCRED(sock1, value2);
+  rc_lsocket_opt_set_IP_PKTINFO1 = lsocket_opt_set_IP_PKTINFO(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_PASSCRED1)) {
+  if((-1 == rc_lsocket_opt_set_IP_PKTINFO1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_PASSCRED1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_PKTINFO1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8368,19 +8221,19 @@ static int SetSocketOption__SO_PASSCRED__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_SNDLOWAT */
-#if (SO_SNDLOWAT)
-static int SetSocketOption__SO_SNDLOWAT__func(lua_State *L) {
+/* method: IP_ROUTER_ALERT */
+#if (IP_ROUTER_ALERT)
+static int SetSocketOption__IP_ROUTER_ALERT__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_SO_SNDLOWAT1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_ROUTER_ALERT1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_SNDLOWAT1 = lsocket_opt_set_SO_SNDLOWAT(sock1, value2);
+  rc_lsocket_opt_set_IP_ROUTER_ALERT1 = lsocket_opt_set_IP_ROUTER_ALERT(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_SNDLOWAT1)) {
+  if((-1 == rc_lsocket_opt_set_IP_ROUTER_ALERT1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_SNDLOWAT1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_ROUTER_ALERT1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8389,19 +8242,19 @@ static int SetSocketOption__SO_SNDLOWAT__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_SNDBUFFORCE */
-#if (SO_SNDBUFFORCE)
-static int SetSocketOption__SO_SNDBUFFORCE__func(lua_State *L) {
+/* method: IP_MTU */
+#if (IP_MTU)
+static int SetSocketOption__IP_MTU__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_SO_SNDBUFFORCE1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_MTU1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_SNDBUFFORCE1 = lsocket_opt_set_SO_SNDBUFFORCE(sock1, value2);
+  rc_lsocket_opt_set_IP_MTU1 = lsocket_opt_set_IP_MTU(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_SNDBUFFORCE1)) {
+  if((-1 == rc_lsocket_opt_set_IP_MTU1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_SNDBUFFORCE1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_MTU1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8410,19 +8263,40 @@ static int SetSocketOption__SO_SNDBUFFORCE__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_MARK */
-#if (SO_MARK)
-static int SetSocketOption__SO_MARK__func(lua_State *L) {
+/* method: IP_HDRINCL */
+#if (IP_HDRINCL)
+static int SetSocketOption__IP_HDRINCL__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_SO_MARK1 = 0;
+  errno_rc rc_lsocket_opt_set_IP_HDRINCL1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_MARK1 = lsocket_opt_set_SO_MARK(sock1, value2);
+  rc_lsocket_opt_set_IP_HDRINCL1 = lsocket_opt_set_IP_HDRINCL(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_MARK1)) {
+  if((-1 == rc_lsocket_opt_set_IP_HDRINCL1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_MARK1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_IP_HDRINCL1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_KEEPALIVE */
+#if (SO_KEEPALIVE)
+static int SetSocketOption__SO_KEEPALIVE__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_KEEPALIVE1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_KEEPALIVE1 = lsocket_opt_set_SO_KEEPALIVE(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_KEEPALIVE1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_KEEPALIVE1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8452,19 +8326,82 @@ static int SetSocketOption__SO_RCVLOWAT__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_BSDCOMPAT */
-#if (SO_BSDCOMPAT)
-static int SetSocketOption__SO_BSDCOMPAT__func(lua_State *L) {
+/* method: SO_SNDBUFFORCE */
+#if (SO_SNDBUFFORCE)
+static int SetSocketOption__SO_SNDBUFFORCE__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_SO_BSDCOMPAT1 = 0;
+  errno_rc rc_lsocket_opt_set_SO_SNDBUFFORCE1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_BSDCOMPAT1 = lsocket_opt_set_SO_BSDCOMPAT(sock1, value2);
+  rc_lsocket_opt_set_SO_SNDBUFFORCE1 = lsocket_opt_set_SO_SNDBUFFORCE(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_BSDCOMPAT1)) {
+  if((-1 == rc_lsocket_opt_set_SO_SNDBUFFORCE1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_BSDCOMPAT1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_SNDBUFFORCE1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_RCVBUF */
+#if (SO_RCVBUF)
+static int SetSocketOption__SO_RCVBUF__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_RCVBUF1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_RCVBUF1 = lsocket_opt_set_SO_RCVBUF(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_RCVBUF1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_RCVBUF1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_DONTROUTE */
+#if (SO_DONTROUTE)
+static int SetSocketOption__SO_DONTROUTE__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_DONTROUTE1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_DONTROUTE1 = lsocket_opt_set_SO_DONTROUTE(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_DONTROUTE1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_DONTROUTE1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_DEBUG */
+#if (SO_DEBUG)
+static int SetSocketOption__SO_DEBUG__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_DEBUG1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_DEBUG1 = lsocket_opt_set_SO_DEBUG(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_DEBUG1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_DEBUG1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8494,6 +8431,48 @@ static int SetSocketOption__SO_TIMESTAMPNS__func(lua_State *L) {
 }
 #endif
 
+/* method: SO_MARK */
+#if (SO_MARK)
+static int SetSocketOption__SO_MARK__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_MARK1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_MARK1 = lsocket_opt_set_SO_MARK(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_MARK1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_MARK1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_TIMESTAMPING */
+#if (SO_TIMESTAMPING)
+static int SetSocketOption__SO_TIMESTAMPING__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_TIMESTAMPING1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_TIMESTAMPING1 = lsocket_opt_set_SO_TIMESTAMPING(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_TIMESTAMPING1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_TIMESTAMPING1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
 /* method: SO_TIMESTAMP */
 #if (SO_TIMESTAMP)
 static int SetSocketOption__SO_TIMESTAMP__func(lua_State *L) {
@@ -8507,27 +8486,6 @@ static int SetSocketOption__SO_TIMESTAMP__func(lua_State *L) {
   if((-1 == rc_lsocket_opt_set_SO_TIMESTAMP1)) {
     lua_pushnil(L);
       error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_TIMESTAMP1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: SO_OOBINLINE */
-#if (SO_OOBINLINE)
-static int SetSocketOption__SO_OOBINLINE__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_SO_OOBINLINE1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_OOBINLINE1 = lsocket_opt_set_SO_OOBINLINE(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_OOBINLINE1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_OOBINLINE1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8558,124 +8516,19 @@ static int SetSocketOption__SO_BINDTODEVICE__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_RCVBUF */
-#if (SO_RCVBUF)
-static int SetSocketOption__SO_RCVBUF__func(lua_State *L) {
+/* method: SO_OOBINLINE */
+#if (SO_OOBINLINE)
+static int SetSocketOption__SO_OOBINLINE__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_SO_RCVBUF1 = 0;
+  errno_rc rc_lsocket_opt_set_SO_OOBINLINE1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_RCVBUF1 = lsocket_opt_set_SO_RCVBUF(sock1, value2);
+  rc_lsocket_opt_set_SO_OOBINLINE1 = lsocket_opt_set_SO_OOBINLINE(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_RCVBUF1)) {
+  if((-1 == rc_lsocket_opt_set_SO_OOBINLINE1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_RCVBUF1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: SO_TIMESTAMPING */
-#if (SO_TIMESTAMPING)
-static int SetSocketOption__SO_TIMESTAMPING__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_SO_TIMESTAMPING1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_TIMESTAMPING1 = lsocket_opt_set_SO_TIMESTAMPING(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_TIMESTAMPING1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_TIMESTAMPING1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: SO_PRIORITY */
-#if (SO_PRIORITY)
-static int SetSocketOption__SO_PRIORITY__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_SO_PRIORITY1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_PRIORITY1 = lsocket_opt_set_SO_PRIORITY(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_PRIORITY1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_PRIORITY1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: SO_NO_CHECK */
-#if (SO_NO_CHECK)
-static int SetSocketOption__SO_NO_CHECK__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_SO_NO_CHECK1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_NO_CHECK1 = lsocket_opt_set_SO_NO_CHECK(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_NO_CHECK1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_NO_CHECK1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: SO_KEEPALIVE */
-#if (SO_KEEPALIVE)
-static int SetSocketOption__SO_KEEPALIVE__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_SO_KEEPALIVE1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_KEEPALIVE1 = lsocket_opt_set_SO_KEEPALIVE(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_KEEPALIVE1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_KEEPALIVE1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: SO_DONTROUTE */
-#if (SO_DONTROUTE)
-static int SetSocketOption__SO_DONTROUTE__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_SO_DONTROUTE1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_SO_DONTROUTE1 = lsocket_opt_set_SO_DONTROUTE(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_SO_DONTROUTE1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_DONTROUTE1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_OOBINLINE1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8705,6 +8558,132 @@ static int SetSocketOption__SO_SNDBUF__func(lua_State *L) {
 }
 #endif
 
+/* method: SO_BSDCOMPAT */
+#if (SO_BSDCOMPAT)
+static int SetSocketOption__SO_BSDCOMPAT__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_BSDCOMPAT1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_BSDCOMPAT1 = lsocket_opt_set_SO_BSDCOMPAT(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_BSDCOMPAT1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_BSDCOMPAT1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_PRIORITY */
+#if (SO_PRIORITY)
+static int SetSocketOption__SO_PRIORITY__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_PRIORITY1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_PRIORITY1 = lsocket_opt_set_SO_PRIORITY(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_PRIORITY1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_PRIORITY1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_RCVBUFFORCE */
+#if (SO_RCVBUFFORCE)
+static int SetSocketOption__SO_RCVBUFFORCE__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_RCVBUFFORCE1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_RCVBUFFORCE1 = lsocket_opt_set_SO_RCVBUFFORCE(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_RCVBUFFORCE1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_RCVBUFFORCE1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_SNDLOWAT */
+#if (SO_SNDLOWAT)
+static int SetSocketOption__SO_SNDLOWAT__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_SNDLOWAT1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_SNDLOWAT1 = lsocket_opt_set_SO_SNDLOWAT(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_SNDLOWAT1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_SNDLOWAT1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_PASSCRED */
+#if (SO_PASSCRED)
+static int SetSocketOption__SO_PASSCRED__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_PASSCRED1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_PASSCRED1 = lsocket_opt_set_SO_PASSCRED(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_PASSCRED1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_PASSCRED1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: SO_NO_CHECK */
+#if (SO_NO_CHECK)
+static int SetSocketOption__SO_NO_CHECK__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_SO_NO_CHECK1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_SO_NO_CHECK1 = lsocket_opt_set_SO_NO_CHECK(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_SO_NO_CHECK1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_NO_CHECK1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
 /* method: SO_BROADCAST */
 #if (SO_BROADCAST)
 static int SetSocketOption__SO_BROADCAST__func(lua_State *L) {
@@ -8726,19 +8705,19 @@ static int SetSocketOption__SO_BROADCAST__func(lua_State *L) {
 }
 #endif
 
-/* method: TCP_MAXSEG */
-#if (TCP_MAXSEG)
-static int SetSocketOption__TCP_MAXSEG__func(lua_State *L) {
+/* method: SO_REUSEADDR */
+#if (SO_REUSEADDR)
+static int SetSocketOption__SO_REUSEADDR__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_TCP_MAXSEG1 = 0;
+  errno_rc rc_lsocket_opt_set_SO_REUSEADDR1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_TCP_MAXSEG1 = lsocket_opt_set_TCP_MAXSEG(sock1, value2);
+  rc_lsocket_opt_set_SO_REUSEADDR1 = lsocket_opt_set_SO_REUSEADDR(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_TCP_MAXSEG1)) {
+  if((-1 == rc_lsocket_opt_set_SO_REUSEADDR1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_MAXSEG1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_SO_REUSEADDR1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8747,19 +8726,19 @@ static int SetSocketOption__TCP_MAXSEG__func(lua_State *L) {
 }
 #endif
 
-/* method: TCP_KEEPCNT */
-#if (TCP_KEEPCNT)
-static int SetSocketOption__TCP_KEEPCNT__func(lua_State *L) {
+/* method: TCP_WINDOW_CLAMP */
+#if (TCP_WINDOW_CLAMP)
+static int SetSocketOption__TCP_WINDOW_CLAMP__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_TCP_KEEPCNT1 = 0;
+  errno_rc rc_lsocket_opt_set_TCP_WINDOW_CLAMP1 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_TCP_KEEPCNT1 = lsocket_opt_set_TCP_KEEPCNT(sock1, value2);
+  rc_lsocket_opt_set_TCP_WINDOW_CLAMP1 = lsocket_opt_set_TCP_WINDOW_CLAMP(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_TCP_KEEPCNT1)) {
+  if((-1 == rc_lsocket_opt_set_TCP_WINDOW_CLAMP1)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_KEEPCNT1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_WINDOW_CLAMP1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8810,6 +8789,69 @@ static int SetSocketOption__TCP_QUICKACK__func(lua_State *L) {
 }
 #endif
 
+/* method: TCP_KEEPCNT */
+#if (TCP_KEEPCNT)
+static int SetSocketOption__TCP_KEEPCNT__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_TCP_KEEPCNT1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_TCP_KEEPCNT1 = lsocket_opt_set_TCP_KEEPCNT(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_TCP_KEEPCNT1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_KEEPCNT1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: TCP_CORK */
+#if (TCP_CORK)
+static int SetSocketOption__TCP_CORK__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_TCP_CORK1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_TCP_CORK1 = lsocket_opt_set_TCP_CORK(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_TCP_CORK1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_CORK1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: TCP_MAXSEG */
+#if (TCP_MAXSEG)
+static int SetSocketOption__TCP_MAXSEG__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_TCP_MAXSEG1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_TCP_MAXSEG1 = lsocket_opt_set_TCP_MAXSEG(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_TCP_MAXSEG1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_MAXSEG1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
 /* method: TCP_KEEPIDLE */
 #if (TCP_KEEPIDLE)
 static int SetSocketOption__TCP_KEEPIDLE__func(lua_State *L) {
@@ -8823,6 +8865,27 @@ static int SetSocketOption__TCP_KEEPIDLE__func(lua_State *L) {
   if((-1 == rc_lsocket_opt_set_TCP_KEEPIDLE1)) {
     lua_pushnil(L);
       error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_KEEPIDLE1);
+  } else {
+    lua_pushboolean(L, 1);
+    lua_pushnil(L);
+  }
+  return 2;
+}
+#endif
+
+/* method: TCP_SYNCNT */
+#if (TCP_SYNCNT)
+static int SetSocketOption__TCP_SYNCNT__func(lua_State *L) {
+  LSocket * sock1;
+  int value2;
+  errno_rc rc_lsocket_opt_set_TCP_SYNCNT1 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  value2 = luaL_checkinteger(L,2);
+  rc_lsocket_opt_set_TCP_SYNCNT1 = lsocket_opt_set_TCP_SYNCNT(sock1, value2);
+  /* check for error. */
+  if((-1 == rc_lsocket_opt_set_TCP_SYNCNT1)) {
+    lua_pushnil(L);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_SYNCNT1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8853,48 +8916,6 @@ static int SetSocketOption__TCP_CONGESTION__func(lua_State *L) {
 }
 #endif
 
-/* method: TCP_CORK */
-#if (TCP_CORK)
-static int SetSocketOption__TCP_CORK__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_TCP_CORK1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_TCP_CORK1 = lsocket_opt_set_TCP_CORK(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_TCP_CORK1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_CORK1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: TCP_LINGER2 */
-#if (TCP_LINGER2)
-static int SetSocketOption__TCP_LINGER2__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_TCP_LINGER21 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_TCP_LINGER21 = lsocket_opt_set_TCP_LINGER2(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_TCP_LINGER21)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_LINGER21);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
 /* method: TCP_DEFER_ACCEPT */
 #if (TCP_DEFER_ACCEPT)
 static int SetSocketOption__TCP_DEFER_ACCEPT__func(lua_State *L) {
@@ -8908,27 +8929,6 @@ static int SetSocketOption__TCP_DEFER_ACCEPT__func(lua_State *L) {
   if((-1 == rc_lsocket_opt_set_TCP_DEFER_ACCEPT1)) {
     lua_pushnil(L);
       error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_DEFER_ACCEPT1);
-  } else {
-    lua_pushboolean(L, 1);
-    lua_pushnil(L);
-  }
-  return 2;
-}
-#endif
-
-/* method: TCP_WINDOW_CLAMP */
-#if (TCP_WINDOW_CLAMP)
-static int SetSocketOption__TCP_WINDOW_CLAMP__func(lua_State *L) {
-  LSocket * sock1;
-  int value2;
-  errno_rc rc_lsocket_opt_set_TCP_WINDOW_CLAMP1 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_TCP_WINDOW_CLAMP1 = lsocket_opt_set_TCP_WINDOW_CLAMP(sock1, value2);
-  /* check for error. */
-  if((-1 == rc_lsocket_opt_set_TCP_WINDOW_CLAMP1)) {
-    lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_WINDOW_CLAMP1);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
@@ -8958,23 +8958,149 @@ static int SetSocketOption__TCP_NODELAY__func(lua_State *L) {
 }
 #endif
 
-/* method: TCP_SYNCNT */
-#if (TCP_SYNCNT)
-static int SetSocketOption__TCP_SYNCNT__func(lua_State *L) {
+/* method: TCP_LINGER2 */
+#if (TCP_LINGER2)
+static int SetSocketOption__TCP_LINGER2__func(lua_State *L) {
   LSocket * sock1;
   int value2;
-  errno_rc rc_lsocket_opt_set_TCP_SYNCNT1 = 0;
+  errno_rc rc_lsocket_opt_set_TCP_LINGER21 = 0;
   sock1 = obj_type_LSocket_check(L,1);
   value2 = luaL_checkinteger(L,2);
-  rc_lsocket_opt_set_TCP_SYNCNT1 = lsocket_opt_set_TCP_SYNCNT(sock1, value2);
+  rc_lsocket_opt_set_TCP_LINGER21 = lsocket_opt_set_TCP_LINGER2(sock1, value2);
   /* check for error. */
-  if((-1 == rc_lsocket_opt_set_TCP_SYNCNT1)) {
+  if((-1 == rc_lsocket_opt_set_TCP_LINGER21)) {
     lua_pushnil(L);
-      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_SYNCNT1);
+      error_code__errno_rc__push(L, rc_lsocket_opt_set_TCP_LINGER21);
   } else {
     lua_pushboolean(L, 1);
     lua_pushnil(L);
   }
+  return 2;
+}
+#endif
+
+/* method: IPV6_MTU */
+#if (IPV6_MTU)
+static int GetSocketOption__IPV6_MTU__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_MTU2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IPV6_MTU2 = lsocket_opt_get_IPV6_MTU(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_MTU2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_MTU2);
+  return 2;
+}
+#endif
+
+/* method: IPV6_MULTICAST_LOOP */
+#if (IPV6_MULTICAST_LOOP)
+static int GetSocketOption__IPV6_MULTICAST_LOOP__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_MULTICAST_LOOP2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IPV6_MULTICAST_LOOP2 = lsocket_opt_get_IPV6_MULTICAST_LOOP(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_MULTICAST_LOOP2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_MULTICAST_LOOP2);
+  return 2;
+}
+#endif
+
+/* method: IPV6_CHECKSUM */
+#if (IPV6_CHECKSUM)
+static int GetSocketOption__IPV6_CHECKSUM__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_CHECKSUM2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IPV6_CHECKSUM2 = lsocket_opt_get_IPV6_CHECKSUM(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_CHECKSUM2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_CHECKSUM2);
+  return 2;
+}
+#endif
+
+/* method: IPV6_RECVDSTOPTS */
+#if (IPV6_RECVDSTOPTS)
+static int GetSocketOption__IPV6_RECVDSTOPTS__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_RECVDSTOPTS2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IPV6_RECVDSTOPTS2 = lsocket_opt_get_IPV6_RECVDSTOPTS(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_RECVDSTOPTS2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVDSTOPTS2);
+  return 2;
+}
+#endif
+
+/* method: IPV6_ROUTER_ALERT */
+#if (IPV6_ROUTER_ALERT)
+static int GetSocketOption__IPV6_ROUTER_ALERT__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_ROUTER_ALERT2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IPV6_ROUTER_ALERT2 = lsocket_opt_get_IPV6_ROUTER_ALERT(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_ROUTER_ALERT2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_ROUTER_ALERT2);
+  return 2;
+}
+#endif
+
+/* method: IPV6_V6ONLY */
+#if (IPV6_V6ONLY)
+static int GetSocketOption__IPV6_V6ONLY__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_V6ONLY2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IPV6_V6ONLY2 = lsocket_opt_get_IPV6_V6ONLY(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_V6ONLY2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_V6ONLY2);
+  return 2;
+}
+#endif
+
+/* method: IPV6_UNICAST_HOPS */
+#if (IPV6_UNICAST_HOPS)
+static int GetSocketOption__IPV6_UNICAST_HOPS__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_UNICAST_HOPS2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IPV6_UNICAST_HOPS2 = lsocket_opt_get_IPV6_UNICAST_HOPS(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_UNICAST_HOPS2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_UNICAST_HOPS2);
   return 2;
 }
 #endif
@@ -8998,74 +9124,20 @@ static int GetSocketOption__IPV6_NEXTHOP__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_MULTICAST_LOOP */
-#if (IPV6_MULTICAST_LOOP)
-static int GetSocketOption__IPV6_MULTICAST_LOOP__func(lua_State *L) {
+/* method: IPV6_RECVERR */
+#if (IPV6_RECVERR)
+static int GetSocketOption__IPV6_RECVERR__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_MULTICAST_LOOP2 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_RECVERR2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_MULTICAST_LOOP2 = lsocket_opt_get_IPV6_MULTICAST_LOOP(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_MULTICAST_LOOP2)) {
+  rc_lsocket_opt_get_IPV6_RECVERR2 = lsocket_opt_get_IPV6_RECVERR(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_RECVERR2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_MULTICAST_LOOP2);
-  return 2;
-}
-#endif
-
-/* method: IPV6_RECVPKTINFO */
-#if (IPV6_RECVPKTINFO)
-static int GetSocketOption__IPV6_RECVPKTINFO__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_RECVPKTINFO2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_RECVPKTINFO2 = lsocket_opt_get_IPV6_RECVPKTINFO(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_RECVPKTINFO2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVPKTINFO2);
-  return 2;
-}
-#endif
-
-/* method: IPV6_V6ONLY */
-#if (IPV6_V6ONLY)
-static int GetSocketOption__IPV6_V6ONLY__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_V6ONLY2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_V6ONLY2 = lsocket_opt_get_IPV6_V6ONLY(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_V6ONLY2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_V6ONLY2);
-  return 2;
-}
-#endif
-
-/* method: IPV6_MTU_DISCOVER */
-#if (IPV6_MTU_DISCOVER)
-static int GetSocketOption__IPV6_MTU_DISCOVER__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_MTU_DISCOVER2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_MTU_DISCOVER2 = lsocket_opt_get_IPV6_MTU_DISCOVER(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_MTU_DISCOVER2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_MTU_DISCOVER2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVERR2);
   return 2;
 }
 #endif
@@ -9088,38 +9160,20 @@ static int GetSocketOption__IPV6_HOPLIMIT__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_UNICAST_HOPS */
-#if (IPV6_UNICAST_HOPS)
-static int GetSocketOption__IPV6_UNICAST_HOPS__func(lua_State *L) {
+/* method: IPV6_RECVPKTINFO */
+#if (IPV6_RECVPKTINFO)
+static int GetSocketOption__IPV6_RECVPKTINFO__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_UNICAST_HOPS2 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_RECVPKTINFO2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_UNICAST_HOPS2 = lsocket_opt_get_IPV6_UNICAST_HOPS(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_UNICAST_HOPS2)) {
+  rc_lsocket_opt_get_IPV6_RECVPKTINFO2 = lsocket_opt_get_IPV6_RECVPKTINFO(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_RECVPKTINFO2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_UNICAST_HOPS2);
-  return 2;
-}
-#endif
-
-/* method: IPV6_CHECKSUM */
-#if (IPV6_CHECKSUM)
-static int GetSocketOption__IPV6_CHECKSUM__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_CHECKSUM2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_CHECKSUM2 = lsocket_opt_get_IPV6_CHECKSUM(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_CHECKSUM2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_CHECKSUM2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVPKTINFO2);
   return 2;
 }
 #endif
@@ -9160,24 +9214,6 @@ static int GetSocketOption__IPV6_MULTICAST_HOPS__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_ROUTER_ALERT */
-#if (IPV6_ROUTER_ALERT)
-static int GetSocketOption__IPV6_ROUTER_ALERT__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_ROUTER_ALERT2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_ROUTER_ALERT2 = lsocket_opt_get_IPV6_ROUTER_ALERT(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_ROUTER_ALERT2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_ROUTER_ALERT2);
-  return 2;
-}
-#endif
-
 /* method: IPV6_RECVHOPOPTS */
 #if (IPV6_RECVHOPOPTS)
 static int GetSocketOption__IPV6_RECVHOPOPTS__func(lua_State *L) {
@@ -9192,24 +9228,6 @@ static int GetSocketOption__IPV6_RECVHOPOPTS__func(lua_State *L) {
     lua_pushnil(L);
   }
   error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVHOPOPTS2);
-  return 2;
-}
-#endif
-
-/* method: IPV6_RECVERR */
-#if (IPV6_RECVERR)
-static int GetSocketOption__IPV6_RECVERR__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_RECVERR2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_RECVERR2 = lsocket_opt_get_IPV6_RECVERR(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_RECVERR2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVERR2);
   return 2;
 }
 #endif
@@ -9232,20 +9250,20 @@ static int GetSocketOption__IPV6_TCLASS__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_MULTICAST_IF */
-#if (IPV6_MULTICAST_IF)
-static int GetSocketOption__IPV6_MULTICAST_IF__func(lua_State *L) {
+/* method: IPV6_RECVHOPLIMIT */
+#if (IPV6_RECVHOPLIMIT)
+static int GetSocketOption__IPV6_RECVHOPLIMIT__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_RECVHOPLIMIT2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = lsocket_opt_get_IPV6_MULTICAST_IF(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_MULTICAST_IF2)) {
+  rc_lsocket_opt_get_IPV6_RECVHOPLIMIT2 = lsocket_opt_get_IPV6_RECVHOPLIMIT(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_RECVHOPLIMIT2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_MULTICAST_IF2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVHOPLIMIT2);
   return 2;
 }
 #endif
@@ -9268,183 +9286,38 @@ static int GetSocketOption__IPV6_RECVRTHDR__func(lua_State *L) {
 }
 #endif
 
-/* method: IPV6_RECVDSTOPTS */
-#if (IPV6_RECVDSTOPTS)
-static int GetSocketOption__IPV6_RECVDSTOPTS__func(lua_State *L) {
+/* method: IPV6_MTU_DISCOVER */
+#if (IPV6_MTU_DISCOVER)
+static int GetSocketOption__IPV6_MTU_DISCOVER__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_RECVDSTOPTS2 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_MTU_DISCOVER2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_RECVDSTOPTS2 = lsocket_opt_get_IPV6_RECVDSTOPTS(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_RECVDSTOPTS2)) {
+  rc_lsocket_opt_get_IPV6_MTU_DISCOVER2 = lsocket_opt_get_IPV6_MTU_DISCOVER(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_MTU_DISCOVER2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVDSTOPTS2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_MTU_DISCOVER2);
   return 2;
 }
 #endif
 
-/* method: IPV6_RECVHOPLIMIT */
-#if (IPV6_RECVHOPLIMIT)
-static int GetSocketOption__IPV6_RECVHOPLIMIT__func(lua_State *L) {
+/* method: IPV6_MULTICAST_IF */
+#if (IPV6_MULTICAST_IF)
+static int GetSocketOption__IPV6_MULTICAST_IF__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_RECVHOPLIMIT2 = 0;
+  errno_rc rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_RECVHOPLIMIT2 = lsocket_opt_get_IPV6_RECVHOPLIMIT(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_RECVHOPLIMIT2)) {
+  rc_lsocket_opt_get_IPV6_MULTICAST_IF2 = lsocket_opt_get_IPV6_MULTICAST_IF(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IPV6_MULTICAST_IF2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_RECVHOPLIMIT2);
-  return 2;
-}
-#endif
-
-/* method: IPV6_MTU */
-#if (IPV6_MTU)
-static int GetSocketOption__IPV6_MTU__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IPV6_MTU2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IPV6_MTU2 = lsocket_opt_get_IPV6_MTU(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IPV6_MTU2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_MTU2);
-  return 2;
-}
-#endif
-
-/* method: IP_MTU */
-#if (IP_MTU)
-static int GetSocketOption__IP_MTU__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_MTU2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_MTU2 = lsocket_opt_get_IP_MTU(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_MTU2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_MTU2);
-  return 2;
-}
-#endif
-
-/* method: IP_RECVTOS */
-#if (IP_RECVTOS)
-static int GetSocketOption__IP_RECVTOS__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_RECVTOS2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_RECVTOS2 = lsocket_opt_get_IP_RECVTOS(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_RECVTOS2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_RECVTOS2);
-  return 2;
-}
-#endif
-
-/* method: IP_PKTINFO */
-#if (IP_PKTINFO)
-static int GetSocketOption__IP_PKTINFO__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_PKTINFO2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_PKTINFO2 = lsocket_opt_get_IP_PKTINFO(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_PKTINFO2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_PKTINFO2);
-  return 2;
-}
-#endif
-
-/* method: IP_RECVORIGDSTADDR */
-#if (IP_RECVORIGDSTADDR)
-static int GetSocketOption__IP_RECVORIGDSTADDR__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_RECVORIGDSTADDR2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_RECVORIGDSTADDR2 = lsocket_opt_get_IP_RECVORIGDSTADDR(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_RECVORIGDSTADDR2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_RECVORIGDSTADDR2);
-  return 2;
-}
-#endif
-
-/* method: IP_FREEBIND */
-#if (IP_FREEBIND)
-static int GetSocketOption__IP_FREEBIND__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_FREEBIND2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_FREEBIND2 = lsocket_opt_get_IP_FREEBIND(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_FREEBIND2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_FREEBIND2);
-  return 2;
-}
-#endif
-
-/* method: IP_RECVERR */
-#if (IP_RECVERR)
-static int GetSocketOption__IP_RECVERR__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_RECVERR2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_RECVERR2 = lsocket_opt_get_IP_RECVERR(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_RECVERR2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_RECVERR2);
-  return 2;
-}
-#endif
-
-/* method: IP_OPTIONS */
-#if (IP_OPTIONS)
-static int GetSocketOption__IP_OPTIONS__func(lua_State *L) {
-  LSocket * sock1;
-  size_t value_len1 = 0;
-  char * value1 = NULL;
-  errno_rc rc_lsocket_opt_get_IP_OPTIONS2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_OPTIONS2 = lsocket_opt_get_IP_OPTIONS(sock1, value1, &(value_len1));
-  if(!(-1 == rc_lsocket_opt_get_IP_OPTIONS2)) {
-    if(value1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, value1,value_len1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_OPTIONS2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IPV6_MULTICAST_IF2);
   return 2;
 }
 #endif
@@ -9485,38 +9358,20 @@ static int GetSocketOption__IP_MINTTL__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_ROUTER_ALERT */
-#if (IP_ROUTER_ALERT)
-static int GetSocketOption__IP_ROUTER_ALERT__func(lua_State *L) {
+/* method: IP_MULTICAST_TTL */
+#if (IP_MULTICAST_TTL)
+static int GetSocketOption__IP_MULTICAST_TTL__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_ROUTER_ALERT2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_MULTICAST_TTL2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_ROUTER_ALERT2 = lsocket_opt_get_IP_ROUTER_ALERT(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_ROUTER_ALERT2)) {
+  rc_lsocket_opt_get_IP_MULTICAST_TTL2 = lsocket_opt_get_IP_MULTICAST_TTL(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_MULTICAST_TTL2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_ROUTER_ALERT2);
-  return 2;
-}
-#endif
-
-/* method: IP_TTL */
-#if (IP_TTL)
-static int GetSocketOption__IP_TTL__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_TTL2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_TTL2 = lsocket_opt_get_IP_TTL(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_TTL2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_TTL2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_MULTICAST_TTL2);
   return 2;
 }
 #endif
@@ -9539,24 +9394,6 @@ static int GetSocketOption__IP_RECVTTL__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_RECVRETOPTS */
-#if (IP_RECVRETOPTS)
-static int GetSocketOption__IP_RECVRETOPTS__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_RECVRETOPTS2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_RECVRETOPTS2 = lsocket_opt_get_IP_RECVRETOPTS(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_RECVRETOPTS2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_RECVRETOPTS2);
-  return 2;
-}
-#endif
-
 /* method: IP_RECVOPTS */
 #if (IP_RECVOPTS)
 static int GetSocketOption__IP_RECVOPTS__func(lua_State *L) {
@@ -9575,74 +9412,110 @@ static int GetSocketOption__IP_RECVOPTS__func(lua_State *L) {
 }
 #endif
 
-/* method: IP_HDRINCL */
-#if (IP_HDRINCL)
-static int GetSocketOption__IP_HDRINCL__func(lua_State *L) {
+/* method: IP_RECVRETOPTS */
+#if (IP_RECVRETOPTS)
+static int GetSocketOption__IP_RECVRETOPTS__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_HDRINCL2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_RECVRETOPTS2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_HDRINCL2 = lsocket_opt_get_IP_HDRINCL(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_HDRINCL2)) {
+  rc_lsocket_opt_get_IP_RECVRETOPTS2 = lsocket_opt_get_IP_RECVRETOPTS(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_RECVRETOPTS2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_HDRINCL2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_RECVRETOPTS2);
   return 2;
 }
 #endif
 
-/* method: IP_MULTICAST_TTL */
-#if (IP_MULTICAST_TTL)
-static int GetSocketOption__IP_MULTICAST_TTL__func(lua_State *L) {
+/* method: IP_RECVORIGDSTADDR */
+#if (IP_RECVORIGDSTADDR)
+static int GetSocketOption__IP_RECVORIGDSTADDR__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_MULTICAST_TTL2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_RECVORIGDSTADDR2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_MULTICAST_TTL2 = lsocket_opt_get_IP_MULTICAST_TTL(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_MULTICAST_TTL2)) {
+  rc_lsocket_opt_get_IP_RECVORIGDSTADDR2 = lsocket_opt_get_IP_RECVORIGDSTADDR(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_RECVORIGDSTADDR2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_MULTICAST_TTL2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_RECVORIGDSTADDR2);
   return 2;
 }
 #endif
 
-/* method: IP_MTU_DISCOVER */
-#if (IP_MTU_DISCOVER)
-static int GetSocketOption__IP_MTU_DISCOVER__func(lua_State *L) {
+/* method: IP_FREEBIND */
+#if (IP_FREEBIND)
+static int GetSocketOption__IP_FREEBIND__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_MTU_DISCOVER2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_FREEBIND2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_MTU_DISCOVER2 = lsocket_opt_get_IP_MTU_DISCOVER(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_MTU_DISCOVER2)) {
+  rc_lsocket_opt_get_IP_FREEBIND2 = lsocket_opt_get_IP_FREEBIND(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_FREEBIND2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_MTU_DISCOVER2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_FREEBIND2);
   return 2;
 }
 #endif
 
-/* method: IP_TOS */
-#if (IP_TOS)
-static int GetSocketOption__IP_TOS__func(lua_State *L) {
+/* method: IP_TTL */
+#if (IP_TTL)
+static int GetSocketOption__IP_TTL__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_IP_TOS2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_TTL2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_IP_TOS2 = lsocket_opt_get_IP_TOS(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_IP_TOS2)) {
+  rc_lsocket_opt_get_IP_TTL2 = lsocket_opt_get_IP_TTL(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_TTL2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_TOS2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_TTL2);
+  return 2;
+}
+#endif
+
+/* method: IP_RECVTOS */
+#if (IP_RECVTOS)
+static int GetSocketOption__IP_RECVTOS__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IP_RECVTOS2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IP_RECVTOS2 = lsocket_opt_get_IP_RECVTOS(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_RECVTOS2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_RECVTOS2);
+  return 2;
+}
+#endif
+
+/* method: IP_RECVERR */
+#if (IP_RECVERR)
+static int GetSocketOption__IP_RECVERR__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_IP_RECVERR2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_IP_RECVERR2 = lsocket_opt_get_IP_RECVERR(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_RECVERR2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_RECVERR2);
   return 2;
 }
 #endif
@@ -9666,182 +9539,147 @@ static int GetSocketOption__IP_RETOPTS__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_PROTOCOL */
-#if (SO_PROTOCOL)
-static int GetSocketOption__SO_PROTOCOL__func(lua_State *L) {
+/* method: IP_TOS */
+#if (IP_TOS)
+static int GetSocketOption__IP_TOS__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_PROTOCOL2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_TOS2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_PROTOCOL2 = lsocket_opt_get_SO_PROTOCOL(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_PROTOCOL2)) {
+  rc_lsocket_opt_get_IP_TOS2 = lsocket_opt_get_IP_TOS(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_TOS2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_PROTOCOL2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_TOS2);
   return 2;
 }
 #endif
 
-/* method: SO_RCVBUFFORCE */
-#if (SO_RCVBUFFORCE)
-static int GetSocketOption__SO_RCVBUFFORCE__func(lua_State *L) {
+/* method: IP_MTU_DISCOVER */
+#if (IP_MTU_DISCOVER)
+static int GetSocketOption__IP_MTU_DISCOVER__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_RCVBUFFORCE2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_MTU_DISCOVER2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_RCVBUFFORCE2 = lsocket_opt_get_SO_RCVBUFFORCE(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_RCVBUFFORCE2)) {
+  rc_lsocket_opt_get_IP_MTU_DISCOVER2 = lsocket_opt_get_IP_MTU_DISCOVER(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_MTU_DISCOVER2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_RCVBUFFORCE2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_MTU_DISCOVER2);
   return 2;
 }
 #endif
 
-/* method: SO_ERROR */
-#if (SO_ERROR)
-static int GetSocketOption__SO_ERROR__func(lua_State *L) {
+/* method: IP_OPTIONS */
+#if (IP_OPTIONS)
+static int GetSocketOption__IP_OPTIONS__func(lua_State *L) {
   LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_ERROR2 = 0;
+  size_t value_len1 = 0;
+  char * value1 = NULL;
+  errno_rc rc_lsocket_opt_get_IP_OPTIONS2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_ERROR2 = lsocket_opt_get_SO_ERROR(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_ERROR2)) {
-    lua_pushinteger(L, value1);
+  rc_lsocket_opt_get_IP_OPTIONS2 = lsocket_opt_get_IP_OPTIONS(sock1, value1, &(value_len1));
+  if(!(-1 == rc_lsocket_opt_get_IP_OPTIONS2)) {
+    if(value1 == NULL) lua_pushnil(L);  else lua_pushlstring(L, value1,value_len1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_ERROR2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_OPTIONS2);
   return 2;
 }
 #endif
 
-/* method: SO_DOMAIN */
-#if (SO_DOMAIN)
-static int GetSocketOption__SO_DOMAIN__func(lua_State *L) {
+/* method: IP_PKTINFO */
+#if (IP_PKTINFO)
+static int GetSocketOption__IP_PKTINFO__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_DOMAIN2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_PKTINFO2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_DOMAIN2 = lsocket_opt_get_SO_DOMAIN(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_DOMAIN2)) {
+  rc_lsocket_opt_get_IP_PKTINFO2 = lsocket_opt_get_IP_PKTINFO(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_PKTINFO2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_DOMAIN2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_PKTINFO2);
   return 2;
 }
 #endif
 
-/* method: SO_DEBUG */
-#if (SO_DEBUG)
-static int GetSocketOption__SO_DEBUG__func(lua_State *L) {
+/* method: IP_ROUTER_ALERT */
+#if (IP_ROUTER_ALERT)
+static int GetSocketOption__IP_ROUTER_ALERT__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_DEBUG2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_ROUTER_ALERT2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_DEBUG2 = lsocket_opt_get_SO_DEBUG(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_DEBUG2)) {
+  rc_lsocket_opt_get_IP_ROUTER_ALERT2 = lsocket_opt_get_IP_ROUTER_ALERT(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_ROUTER_ALERT2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_DEBUG2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_ROUTER_ALERT2);
   return 2;
 }
 #endif
 
-/* method: SO_REUSEADDR */
-#if (SO_REUSEADDR)
-static int GetSocketOption__SO_REUSEADDR__func(lua_State *L) {
+/* method: IP_MTU */
+#if (IP_MTU)
+static int GetSocketOption__IP_MTU__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_REUSEADDR2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_MTU2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_REUSEADDR2 = lsocket_opt_get_SO_REUSEADDR(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_REUSEADDR2)) {
+  rc_lsocket_opt_get_IP_MTU2 = lsocket_opt_get_IP_MTU(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_MTU2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_REUSEADDR2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_MTU2);
   return 2;
 }
 #endif
 
-/* method: SO_PASSCRED */
-#if (SO_PASSCRED)
-static int GetSocketOption__SO_PASSCRED__func(lua_State *L) {
+/* method: IP_HDRINCL */
+#if (IP_HDRINCL)
+static int GetSocketOption__IP_HDRINCL__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_PASSCRED2 = 0;
+  errno_rc rc_lsocket_opt_get_IP_HDRINCL2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_PASSCRED2 = lsocket_opt_get_SO_PASSCRED(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_PASSCRED2)) {
+  rc_lsocket_opt_get_IP_HDRINCL2 = lsocket_opt_get_IP_HDRINCL(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_IP_HDRINCL2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_PASSCRED2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_IP_HDRINCL2);
   return 2;
 }
 #endif
 
-/* method: SO_SNDLOWAT */
-#if (SO_SNDLOWAT)
-static int GetSocketOption__SO_SNDLOWAT__func(lua_State *L) {
+/* method: SO_KEEPALIVE */
+#if (SO_KEEPALIVE)
+static int GetSocketOption__SO_KEEPALIVE__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_SNDLOWAT2 = 0;
+  errno_rc rc_lsocket_opt_get_SO_KEEPALIVE2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_SNDLOWAT2 = lsocket_opt_get_SO_SNDLOWAT(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_SNDLOWAT2)) {
+  rc_lsocket_opt_get_SO_KEEPALIVE2 = lsocket_opt_get_SO_KEEPALIVE(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_KEEPALIVE2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_SNDLOWAT2);
-  return 2;
-}
-#endif
-
-/* method: SO_SNDBUFFORCE */
-#if (SO_SNDBUFFORCE)
-static int GetSocketOption__SO_SNDBUFFORCE__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_SNDBUFFORCE2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_SNDBUFFORCE2 = lsocket_opt_get_SO_SNDBUFFORCE(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_SNDBUFFORCE2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_SNDBUFFORCE2);
-  return 2;
-}
-#endif
-
-/* method: SO_MARK */
-#if (SO_MARK)
-static int GetSocketOption__SO_MARK__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_MARK2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_MARK2 = lsocket_opt_get_SO_MARK(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_MARK2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_MARK2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_KEEPALIVE2);
   return 2;
 }
 #endif
@@ -9864,24 +9702,6 @@ static int GetSocketOption__SO_RCVLOWAT__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_BSDCOMPAT */
-#if (SO_BSDCOMPAT)
-static int GetSocketOption__SO_BSDCOMPAT__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_BSDCOMPAT2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_BSDCOMPAT2 = lsocket_opt_get_SO_BSDCOMPAT(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_BSDCOMPAT2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_BSDCOMPAT2);
-  return 2;
-}
-#endif
-
 /* method: SO_TYPE */
 #if (SO_TYPE)
 static int GetSocketOption__SO_TYPE__func(lua_State *L) {
@@ -9896,6 +9716,78 @@ static int GetSocketOption__SO_TYPE__func(lua_State *L) {
     lua_pushnil(L);
   }
   error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_TYPE2);
+  return 2;
+}
+#endif
+
+/* method: SO_SNDBUFFORCE */
+#if (SO_SNDBUFFORCE)
+static int GetSocketOption__SO_SNDBUFFORCE__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_SNDBUFFORCE2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_SNDBUFFORCE2 = lsocket_opt_get_SO_SNDBUFFORCE(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_SNDBUFFORCE2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_SNDBUFFORCE2);
+  return 2;
+}
+#endif
+
+/* method: SO_RCVBUF */
+#if (SO_RCVBUF)
+static int GetSocketOption__SO_RCVBUF__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_RCVBUF2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_RCVBUF2 = lsocket_opt_get_SO_RCVBUF(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_RCVBUF2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_RCVBUF2);
+  return 2;
+}
+#endif
+
+/* method: SO_DONTROUTE */
+#if (SO_DONTROUTE)
+static int GetSocketOption__SO_DONTROUTE__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_DONTROUTE2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_DONTROUTE2 = lsocket_opt_get_SO_DONTROUTE(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_DONTROUTE2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_DONTROUTE2);
+  return 2;
+}
+#endif
+
+/* method: SO_DEBUG */
+#if (SO_DEBUG)
+static int GetSocketOption__SO_DEBUG__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_DEBUG2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_DEBUG2 = lsocket_opt_get_SO_DEBUG(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_DEBUG2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_DEBUG2);
   return 2;
 }
 #endif
@@ -9918,6 +9810,78 @@ static int GetSocketOption__SO_TIMESTAMPNS__func(lua_State *L) {
 }
 #endif
 
+/* method: SO_PROTOCOL */
+#if (SO_PROTOCOL)
+static int GetSocketOption__SO_PROTOCOL__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_PROTOCOL2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_PROTOCOL2 = lsocket_opt_get_SO_PROTOCOL(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_PROTOCOL2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_PROTOCOL2);
+  return 2;
+}
+#endif
+
+/* method: SO_MARK */
+#if (SO_MARK)
+static int GetSocketOption__SO_MARK__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_MARK2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_MARK2 = lsocket_opt_get_SO_MARK(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_MARK2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_MARK2);
+  return 2;
+}
+#endif
+
+/* method: SO_TIMESTAMPING */
+#if (SO_TIMESTAMPING)
+static int GetSocketOption__SO_TIMESTAMPING__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_TIMESTAMPING2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_TIMESTAMPING2 = lsocket_opt_get_SO_TIMESTAMPING(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_TIMESTAMPING2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_TIMESTAMPING2);
+  return 2;
+}
+#endif
+
+/* method: SO_DOMAIN */
+#if (SO_DOMAIN)
+static int GetSocketOption__SO_DOMAIN__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_DOMAIN2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_DOMAIN2 = lsocket_opt_get_SO_DOMAIN(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_DOMAIN2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_DOMAIN2);
+  return 2;
+}
+#endif
+
 /* method: SO_TIMESTAMP */
 #if (SO_TIMESTAMP)
 static int GetSocketOption__SO_TIMESTAMP__func(lua_State *L) {
@@ -9932,42 +9896,6 @@ static int GetSocketOption__SO_TIMESTAMP__func(lua_State *L) {
     lua_pushnil(L);
   }
   error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_TIMESTAMP2);
-  return 2;
-}
-#endif
-
-/* method: SO_ACCEPTCONN */
-#if (SO_ACCEPTCONN)
-static int GetSocketOption__SO_ACCEPTCONN__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_ACCEPTCONN2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_ACCEPTCONN2 = lsocket_opt_get_SO_ACCEPTCONN(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_ACCEPTCONN2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_ACCEPTCONN2);
-  return 2;
-}
-#endif
-
-/* method: SO_OOBINLINE */
-#if (SO_OOBINLINE)
-static int GetSocketOption__SO_OOBINLINE__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_OOBINLINE2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_OOBINLINE2 = lsocket_opt_get_SO_OOBINLINE(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_OOBINLINE2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_OOBINLINE2);
   return 2;
 }
 #endif
@@ -9991,110 +9919,38 @@ static int GetSocketOption__SO_BINDTODEVICE__func(lua_State *L) {
 }
 #endif
 
-/* method: SO_RCVBUF */
-#if (SO_RCVBUF)
-static int GetSocketOption__SO_RCVBUF__func(lua_State *L) {
+/* method: SO_OOBINLINE */
+#if (SO_OOBINLINE)
+static int GetSocketOption__SO_OOBINLINE__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_RCVBUF2 = 0;
+  errno_rc rc_lsocket_opt_get_SO_OOBINLINE2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_RCVBUF2 = lsocket_opt_get_SO_RCVBUF(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_RCVBUF2)) {
+  rc_lsocket_opt_get_SO_OOBINLINE2 = lsocket_opt_get_SO_OOBINLINE(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_OOBINLINE2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_RCVBUF2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_OOBINLINE2);
   return 2;
 }
 #endif
 
-/* method: SO_TIMESTAMPING */
-#if (SO_TIMESTAMPING)
-static int GetSocketOption__SO_TIMESTAMPING__func(lua_State *L) {
+/* method: SO_ERROR */
+#if (SO_ERROR)
+static int GetSocketOption__SO_ERROR__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_TIMESTAMPING2 = 0;
+  errno_rc rc_lsocket_opt_get_SO_ERROR2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_TIMESTAMPING2 = lsocket_opt_get_SO_TIMESTAMPING(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_TIMESTAMPING2)) {
+  rc_lsocket_opt_get_SO_ERROR2 = lsocket_opt_get_SO_ERROR(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_ERROR2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_TIMESTAMPING2);
-  return 2;
-}
-#endif
-
-/* method: SO_PRIORITY */
-#if (SO_PRIORITY)
-static int GetSocketOption__SO_PRIORITY__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_PRIORITY2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_PRIORITY2 = lsocket_opt_get_SO_PRIORITY(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_PRIORITY2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_PRIORITY2);
-  return 2;
-}
-#endif
-
-/* method: SO_NO_CHECK */
-#if (SO_NO_CHECK)
-static int GetSocketOption__SO_NO_CHECK__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_NO_CHECK2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_NO_CHECK2 = lsocket_opt_get_SO_NO_CHECK(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_NO_CHECK2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_NO_CHECK2);
-  return 2;
-}
-#endif
-
-/* method: SO_KEEPALIVE */
-#if (SO_KEEPALIVE)
-static int GetSocketOption__SO_KEEPALIVE__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_KEEPALIVE2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_KEEPALIVE2 = lsocket_opt_get_SO_KEEPALIVE(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_KEEPALIVE2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_KEEPALIVE2);
-  return 2;
-}
-#endif
-
-/* method: SO_DONTROUTE */
-#if (SO_DONTROUTE)
-static int GetSocketOption__SO_DONTROUTE__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_SO_DONTROUTE2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_SO_DONTROUTE2 = lsocket_opt_get_SO_DONTROUTE(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_SO_DONTROUTE2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_DONTROUTE2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_ERROR2);
   return 2;
 }
 #endif
@@ -10117,6 +9973,132 @@ static int GetSocketOption__SO_SNDBUF__func(lua_State *L) {
 }
 #endif
 
+/* method: SO_ACCEPTCONN */
+#if (SO_ACCEPTCONN)
+static int GetSocketOption__SO_ACCEPTCONN__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_ACCEPTCONN2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_ACCEPTCONN2 = lsocket_opt_get_SO_ACCEPTCONN(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_ACCEPTCONN2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_ACCEPTCONN2);
+  return 2;
+}
+#endif
+
+/* method: SO_BSDCOMPAT */
+#if (SO_BSDCOMPAT)
+static int GetSocketOption__SO_BSDCOMPAT__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_BSDCOMPAT2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_BSDCOMPAT2 = lsocket_opt_get_SO_BSDCOMPAT(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_BSDCOMPAT2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_BSDCOMPAT2);
+  return 2;
+}
+#endif
+
+/* method: SO_PRIORITY */
+#if (SO_PRIORITY)
+static int GetSocketOption__SO_PRIORITY__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_PRIORITY2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_PRIORITY2 = lsocket_opt_get_SO_PRIORITY(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_PRIORITY2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_PRIORITY2);
+  return 2;
+}
+#endif
+
+/* method: SO_RCVBUFFORCE */
+#if (SO_RCVBUFFORCE)
+static int GetSocketOption__SO_RCVBUFFORCE__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_RCVBUFFORCE2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_RCVBUFFORCE2 = lsocket_opt_get_SO_RCVBUFFORCE(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_RCVBUFFORCE2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_RCVBUFFORCE2);
+  return 2;
+}
+#endif
+
+/* method: SO_SNDLOWAT */
+#if (SO_SNDLOWAT)
+static int GetSocketOption__SO_SNDLOWAT__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_SNDLOWAT2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_SNDLOWAT2 = lsocket_opt_get_SO_SNDLOWAT(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_SNDLOWAT2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_SNDLOWAT2);
+  return 2;
+}
+#endif
+
+/* method: SO_PASSCRED */
+#if (SO_PASSCRED)
+static int GetSocketOption__SO_PASSCRED__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_PASSCRED2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_PASSCRED2 = lsocket_opt_get_SO_PASSCRED(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_PASSCRED2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_PASSCRED2);
+  return 2;
+}
+#endif
+
+/* method: SO_NO_CHECK */
+#if (SO_NO_CHECK)
+static int GetSocketOption__SO_NO_CHECK__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_SO_NO_CHECK2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_SO_NO_CHECK2 = lsocket_opt_get_SO_NO_CHECK(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_NO_CHECK2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_NO_CHECK2);
+  return 2;
+}
+#endif
+
 /* method: SO_BROADCAST */
 #if (SO_BROADCAST)
 static int GetSocketOption__SO_BROADCAST__func(lua_State *L) {
@@ -10135,38 +10117,38 @@ static int GetSocketOption__SO_BROADCAST__func(lua_State *L) {
 }
 #endif
 
-/* method: TCP_MAXSEG */
-#if (TCP_MAXSEG)
-static int GetSocketOption__TCP_MAXSEG__func(lua_State *L) {
+/* method: SO_REUSEADDR */
+#if (SO_REUSEADDR)
+static int GetSocketOption__SO_REUSEADDR__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_TCP_MAXSEG2 = 0;
+  errno_rc rc_lsocket_opt_get_SO_REUSEADDR2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_TCP_MAXSEG2 = lsocket_opt_get_TCP_MAXSEG(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_TCP_MAXSEG2)) {
+  rc_lsocket_opt_get_SO_REUSEADDR2 = lsocket_opt_get_SO_REUSEADDR(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_SO_REUSEADDR2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_MAXSEG2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_SO_REUSEADDR2);
   return 2;
 }
 #endif
 
-/* method: TCP_KEEPCNT */
-#if (TCP_KEEPCNT)
-static int GetSocketOption__TCP_KEEPCNT__func(lua_State *L) {
+/* method: TCP_WINDOW_CLAMP */
+#if (TCP_WINDOW_CLAMP)
+static int GetSocketOption__TCP_WINDOW_CLAMP__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_TCP_KEEPCNT2 = 0;
+  errno_rc rc_lsocket_opt_get_TCP_WINDOW_CLAMP2 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_TCP_KEEPCNT2 = lsocket_opt_get_TCP_KEEPCNT(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_TCP_KEEPCNT2)) {
+  rc_lsocket_opt_get_TCP_WINDOW_CLAMP2 = lsocket_opt_get_TCP_WINDOW_CLAMP(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_TCP_WINDOW_CLAMP2)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_KEEPCNT2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_WINDOW_CLAMP2);
   return 2;
 }
 #endif
@@ -10207,6 +10189,60 @@ static int GetSocketOption__TCP_QUICKACK__func(lua_State *L) {
 }
 #endif
 
+/* method: TCP_KEEPCNT */
+#if (TCP_KEEPCNT)
+static int GetSocketOption__TCP_KEEPCNT__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_TCP_KEEPCNT2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_TCP_KEEPCNT2 = lsocket_opt_get_TCP_KEEPCNT(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_TCP_KEEPCNT2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_KEEPCNT2);
+  return 2;
+}
+#endif
+
+/* method: TCP_CORK */
+#if (TCP_CORK)
+static int GetSocketOption__TCP_CORK__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_TCP_CORK2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_TCP_CORK2 = lsocket_opt_get_TCP_CORK(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_TCP_CORK2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_CORK2);
+  return 2;
+}
+#endif
+
+/* method: TCP_MAXSEG */
+#if (TCP_MAXSEG)
+static int GetSocketOption__TCP_MAXSEG__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_TCP_MAXSEG2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_TCP_MAXSEG2 = lsocket_opt_get_TCP_MAXSEG(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_TCP_MAXSEG2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_MAXSEG2);
+  return 2;
+}
+#endif
+
 /* method: TCP_KEEPIDLE */
 #if (TCP_KEEPIDLE)
 static int GetSocketOption__TCP_KEEPIDLE__func(lua_State *L) {
@@ -10221,6 +10257,24 @@ static int GetSocketOption__TCP_KEEPIDLE__func(lua_State *L) {
     lua_pushnil(L);
   }
   error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_KEEPIDLE2);
+  return 2;
+}
+#endif
+
+/* method: TCP_SYNCNT */
+#if (TCP_SYNCNT)
+static int GetSocketOption__TCP_SYNCNT__func(lua_State *L) {
+  LSocket * sock1;
+  int value1 = 0;
+  errno_rc rc_lsocket_opt_get_TCP_SYNCNT2 = 0;
+  sock1 = obj_type_LSocket_check(L,1);
+  rc_lsocket_opt_get_TCP_SYNCNT2 = lsocket_opt_get_TCP_SYNCNT(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_TCP_SYNCNT2)) {
+    lua_pushinteger(L, value1);
+  } else {
+    lua_pushnil(L);
+  }
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_SYNCNT2);
   return 2;
 }
 #endif
@@ -10244,42 +10298,6 @@ static int GetSocketOption__TCP_CONGESTION__func(lua_State *L) {
 }
 #endif
 
-/* method: TCP_CORK */
-#if (TCP_CORK)
-static int GetSocketOption__TCP_CORK__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_TCP_CORK2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_TCP_CORK2 = lsocket_opt_get_TCP_CORK(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_TCP_CORK2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_CORK2);
-  return 2;
-}
-#endif
-
-/* method: TCP_LINGER2 */
-#if (TCP_LINGER2)
-static int GetSocketOption__TCP_LINGER2__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_TCP_LINGER22 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_TCP_LINGER22 = lsocket_opt_get_TCP_LINGER2(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_TCP_LINGER22)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_LINGER22);
-  return 2;
-}
-#endif
-
 /* method: TCP_DEFER_ACCEPT */
 #if (TCP_DEFER_ACCEPT)
 static int GetSocketOption__TCP_DEFER_ACCEPT__func(lua_State *L) {
@@ -10294,24 +10312,6 @@ static int GetSocketOption__TCP_DEFER_ACCEPT__func(lua_State *L) {
     lua_pushnil(L);
   }
   error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_DEFER_ACCEPT2);
-  return 2;
-}
-#endif
-
-/* method: TCP_WINDOW_CLAMP */
-#if (TCP_WINDOW_CLAMP)
-static int GetSocketOption__TCP_WINDOW_CLAMP__func(lua_State *L) {
-  LSocket * sock1;
-  int value1 = 0;
-  errno_rc rc_lsocket_opt_get_TCP_WINDOW_CLAMP2 = 0;
-  sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_TCP_WINDOW_CLAMP2 = lsocket_opt_get_TCP_WINDOW_CLAMP(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_TCP_WINDOW_CLAMP2)) {
-    lua_pushinteger(L, value1);
-  } else {
-    lua_pushnil(L);
-  }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_WINDOW_CLAMP2);
   return 2;
 }
 #endif
@@ -10334,20 +10334,20 @@ static int GetSocketOption__TCP_NODELAY__func(lua_State *L) {
 }
 #endif
 
-/* method: TCP_SYNCNT */
-#if (TCP_SYNCNT)
-static int GetSocketOption__TCP_SYNCNT__func(lua_State *L) {
+/* method: TCP_LINGER2 */
+#if (TCP_LINGER2)
+static int GetSocketOption__TCP_LINGER2__func(lua_State *L) {
   LSocket * sock1;
   int value1 = 0;
-  errno_rc rc_lsocket_opt_get_TCP_SYNCNT2 = 0;
+  errno_rc rc_lsocket_opt_get_TCP_LINGER22 = 0;
   sock1 = obj_type_LSocket_check(L,1);
-  rc_lsocket_opt_get_TCP_SYNCNT2 = lsocket_opt_get_TCP_SYNCNT(sock1, &(value1));
-  if(!(-1 == rc_lsocket_opt_get_TCP_SYNCNT2)) {
+  rc_lsocket_opt_get_TCP_LINGER22 = lsocket_opt_get_TCP_LINGER2(sock1, &(value1));
+  if(!(-1 == rc_lsocket_opt_get_TCP_LINGER22)) {
     lua_pushinteger(L, value1);
   } else {
     lua_pushnil(L);
   }
-  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_SYNCNT2);
+  error_code__errno_rc__push(L, rc_lsocket_opt_get_TCP_LINGER22);
   return 2;
 }
 #endif
@@ -11061,86 +11061,98 @@ static const luaL_Reg obj_Errors_metas[] = {
 };
 
 static const obj_const obj_Errors_constants[] = {
-#ifdef ECANCELED
-  {"ECANCELED", NULL, ECANCELED, CONST_NUMBER},
-#endif
-#ifdef ETOOMANYREFS
-  {"ETOOMANYREFS", NULL, ETOOMANYREFS, CONST_NUMBER},
-#endif
-#ifdef EHOSTDOWN
-  {"EHOSTDOWN", NULL, EHOSTDOWN, CONST_NUMBER},
-#endif
-#ifdef EINTR
-  {"EINTR", NULL, EINTR, CONST_NUMBER},
-#endif
-#ifdef ENOMEM
-  {"ENOMEM", NULL, ENOMEM, CONST_NUMBER},
-#endif
-#ifdef EILSEQ
-  {"EILSEQ", NULL, EILSEQ, CONST_NUMBER},
-#endif
-#ifdef ENOTRECOVERABLE
-  {"ENOTRECOVERABLE", NULL, ENOTRECOVERABLE, CONST_NUMBER},
-#endif
-#ifdef ENOSR
-  {"ENOSR", NULL, ENOSR, CONST_NUMBER},
-#endif
-#ifdef ENETRESET
-  {"ENETRESET", NULL, ENETRESET, CONST_NUMBER},
-#endif
-#ifdef ELIBEXEC
-  {"ELIBEXEC", NULL, ELIBEXEC, CONST_NUMBER},
-#endif
-#ifdef ECHRNG
-  {"ECHRNG", NULL, ECHRNG, CONST_NUMBER},
-#endif
 #ifdef ENOPROTOOPT
   {"ENOPROTOOPT", NULL, ENOPROTOOPT, CONST_NUMBER},
 #endif
-#ifdef ENOTDIR
-  {"ENOTDIR", NULL, ENOTDIR, CONST_NUMBER},
+#ifdef ESTRPIPE
+  {"ESTRPIPE", NULL, ESTRPIPE, CONST_NUMBER},
 #endif
-#ifdef EKEYREJECTED
-  {"EKEYREJECTED", NULL, EKEYREJECTED, CONST_NUMBER},
+#ifdef EISDIR
+  {"EISDIR", NULL, EISDIR, CONST_NUMBER},
 #endif
-#ifdef EEXIST
-  {"EEXIST", NULL, EEXIST, CONST_NUMBER},
+#ifdef EIO
+  {"EIO", NULL, EIO, CONST_NUMBER},
 #endif
-#ifdef ENOTTY
-  {"ENOTTY", NULL, ENOTTY, CONST_NUMBER},
+#ifdef EBADFD
+  {"EBADFD", NULL, EBADFD, CONST_NUMBER},
 #endif
-#ifdef ENOMSG
-  {"ENOMSG", NULL, ENOMSG, CONST_NUMBER},
+#ifdef ENAVAIL
+  {"ENAVAIL", NULL, ENAVAIL, CONST_NUMBER},
 #endif
-#ifdef EDESTADDRREQ
-  {"EDESTADDRREQ", NULL, EDESTADDRREQ, CONST_NUMBER},
+#ifdef ENOLINK
+  {"ENOLINK", NULL, ENOLINK, CONST_NUMBER},
 #endif
-#ifdef EBADRQC
-  {"EBADRQC", NULL, EBADRQC, CONST_NUMBER},
+#ifdef EADDRNOTAVAIL
+  {"EADDRNOTAVAIL", NULL, EADDRNOTAVAIL, CONST_NUMBER},
 #endif
-#ifdef EREMOTE
-  {"EREMOTE", NULL, EREMOTE, CONST_NUMBER},
-#endif
-#ifdef EL3RST
-  {"EL3RST", NULL, EL3RST, CONST_NUMBER},
+#ifdef ENAMETOOLONG
+  {"ENAMETOOLONG", NULL, ENAMETOOLONG, CONST_NUMBER},
 #endif
 #ifdef ECOMM
   {"ECOMM", NULL, ECOMM, CONST_NUMBER},
 #endif
-#ifdef ENOENT
-  {"ENOENT", NULL, ENOENT, CONST_NUMBER},
+#ifdef ENODATA
+  {"ENODATA", NULL, ENODATA, CONST_NUMBER},
 #endif
-#ifdef EHOSTUNREACH
-  {"EHOSTUNREACH", NULL, EHOSTUNREACH, CONST_NUMBER},
+#ifdef ENOTSOCK
+  {"ENOTSOCK", NULL, ENOTSOCK, CONST_NUMBER},
+#endif
+#ifdef EALREADY
+  {"EALREADY", NULL, EALREADY, CONST_NUMBER},
+#endif
+#ifdef EBADR
+  {"EBADR", NULL, EBADR, CONST_NUMBER},
+#endif
+#ifdef ENOSR
+  {"ENOSR", NULL, ENOSR, CONST_NUMBER},
+#endif
+#ifdef ECHRNG
+  {"ECHRNG", NULL, ECHRNG, CONST_NUMBER},
 #endif
 #ifdef EPROTONOSUPPORT
   {"EPROTONOSUPPORT", NULL, EPROTONOSUPPORT, CONST_NUMBER},
 #endif
-#ifdef EIDRM
-  {"EIDRM", NULL, EIDRM, CONST_NUMBER},
+#ifdef ENETRESET
+  {"ENETRESET", NULL, ENETRESET, CONST_NUMBER},
 #endif
-#ifdef EFAULT
-  {"EFAULT", NULL, EFAULT, CONST_NUMBER},
+#ifdef EFBIG
+  {"EFBIG", NULL, EFBIG, CONST_NUMBER},
+#endif
+#ifdef ELIBMAX
+  {"ELIBMAX", NULL, ELIBMAX, CONST_NUMBER},
+#endif
+#ifdef ENOBUFS
+  {"ENOBUFS", NULL, ENOBUFS, CONST_NUMBER},
+#endif
+#ifdef ENOTBLK
+  {"ENOTBLK", NULL, ENOTBLK, CONST_NUMBER},
+#endif
+#ifdef ENODEV
+  {"ENODEV", NULL, ENODEV, CONST_NUMBER},
+#endif
+#ifdef EPFNOSUPPORT
+  {"EPFNOSUPPORT", NULL, EPFNOSUPPORT, CONST_NUMBER},
+#endif
+#ifdef EPIPE
+  {"EPIPE", NULL, EPIPE, CONST_NUMBER},
+#endif
+#ifdef EL3HLT
+  {"EL3HLT", NULL, EL3HLT, CONST_NUMBER},
+#endif
+#ifdef ETOOMANYREFS
+  {"ETOOMANYREFS", NULL, ETOOMANYREFS, CONST_NUMBER},
+#endif
+#ifdef EMSGSIZE
+  {"EMSGSIZE", NULL, EMSGSIZE, CONST_NUMBER},
+#endif
+#ifdef EAFNOSUPPORT
+  {"EAFNOSUPPORT", NULL, EAFNOSUPPORT, CONST_NUMBER},
+#endif
+#ifdef EAGAIN
+  {"EAGAIN", NULL, EAGAIN, CONST_NUMBER},
+#endif
+#ifdef EREMOTE
+  {"EREMOTE", NULL, EREMOTE, CONST_NUMBER},
 #endif
 #ifdef E2BIG
   {"E2BIG", NULL, E2BIG, CONST_NUMBER},
@@ -11148,188 +11160,227 @@ static const obj_const obj_Errors_constants[] = {
 #ifdef EBFONT
   {"EBFONT", NULL, EBFONT, CONST_NUMBER},
 #endif
-#ifdef EINVAL
-  {"EINVAL", NULL, EINVAL, CONST_NUMBER},
-#endif
-#ifdef ENXIO
-  {"ENXIO", NULL, ENXIO, CONST_NUMBER},
-#endif
-#ifdef EDEADLK
-  {"EDEADLK", NULL, EDEADLK, CONST_NUMBER},
-#endif
-#ifdef EBADF
-  {"EBADF", NULL, EBADF, CONST_NUMBER},
-#endif
-#ifdef ENOBUFS
-  {"ENOBUFS", NULL, ENOBUFS, CONST_NUMBER},
-#endif
-#ifdef ENETUNREACH
-  {"ENETUNREACH", NULL, ENETUNREACH, CONST_NUMBER},
-#endif
-#ifdef EL2HLT
-  {"EL2HLT", NULL, EL2HLT, CONST_NUMBER},
-#endif
-#ifdef ESRMNT
-  {"ESRMNT", NULL, ESRMNT, CONST_NUMBER},
-#endif
-#ifdef ECHILD
-  {"ECHILD", NULL, ECHILD, CONST_NUMBER},
-#endif
-#ifdef EOWNERDEAD
-  {"EOWNERDEAD", NULL, EOWNERDEAD, CONST_NUMBER},
-#endif
-#ifdef ERFKILL
-  {"ERFKILL", NULL, ERFKILL, CONST_NUMBER},
-#endif
-#ifdef ELOOP
-  {"ELOOP", NULL, ELOOP, CONST_NUMBER},
-#endif
-#ifdef EPIPE
-  {"EPIPE", NULL, EPIPE, CONST_NUMBER},
-#endif
-#ifdef ESHUTDOWN
-  {"ESHUTDOWN", NULL, ESHUTDOWN, CONST_NUMBER},
-#endif
-#ifdef EISNAM
-  {"EISNAM", NULL, EISNAM, CONST_NUMBER},
-#endif
-#ifdef ERANGE
-  {"ERANGE", NULL, ERANGE, CONST_NUMBER},
-#endif
-#ifdef ENONET
-  {"ENONET", NULL, ENONET, CONST_NUMBER},
-#endif
 #ifdef EPERM
   {"EPERM", NULL, EPERM, CONST_NUMBER},
-#endif
-#ifdef EKEYREVOKED
-  {"EKEYREVOKED", NULL, EKEYREVOKED, CONST_NUMBER},
-#endif
-#ifdef ENOTNAM
-  {"ENOTNAM", NULL, ENOTNAM, CONST_NUMBER},
-#endif
-#ifdef EAGAIN
-  {"EAGAIN", NULL, EAGAIN, CONST_NUMBER},
-#endif
-#ifdef ESTRPIPE
-  {"ESTRPIPE", NULL, ESTRPIPE, CONST_NUMBER},
-#endif
-#ifdef ENOTSOCK
-  {"ENOTSOCK", NULL, ENOTSOCK, CONST_NUMBER},
-#endif
-#ifdef EL2NSYNC
-  {"EL2NSYNC", NULL, EL2NSYNC, CONST_NUMBER},
-#endif
-#ifdef ETIMEDOUT
-  {"ETIMEDOUT", NULL, ETIMEDOUT, CONST_NUMBER},
-#endif
-#ifdef ESTALE
-  {"ESTALE", NULL, ESTALE, CONST_NUMBER},
-#endif
-#ifdef ETXTBSY
-  {"ETXTBSY", NULL, ETXTBSY, CONST_NUMBER},
-#endif
-#ifdef EPROTO
-  {"EPROTO", NULL, EPROTO, CONST_NUMBER},
-#endif
-#ifdef ENOTCONN
-  {"ENOTCONN", NULL, ENOTCONN, CONST_NUMBER},
-#endif
-#ifdef EMSGSIZE
-  {"EMSGSIZE", NULL, EMSGSIZE, CONST_NUMBER},
-#endif
-#ifdef ENOTBLK
-  {"ENOTBLK", NULL, ENOTBLK, CONST_NUMBER},
-#endif
-#ifdef EALREADY
-  {"EALREADY", NULL, EALREADY, CONST_NUMBER},
-#endif
-#ifdef ENFILE
-  {"ENFILE", NULL, ENFILE, CONST_NUMBER},
-#endif
-#ifdef EPFNOSUPPORT
-  {"EPFNOSUPPORT", NULL, EPFNOSUPPORT, CONST_NUMBER},
-#endif
-#ifdef ELNRNG
-  {"ELNRNG", NULL, ELNRNG, CONST_NUMBER},
-#endif
-#ifdef ENETDOWN
-  {"ENETDOWN", NULL, ENETDOWN, CONST_NUMBER},
-#endif
-#ifdef EXDEV
-  {"EXDEV", NULL, EXDEV, CONST_NUMBER},
-#endif
-#ifdef ENOSTR
-  {"ENOSTR", NULL, ENOSTR, CONST_NUMBER},
-#endif
-#ifdef ENOSYS
-  {"ENOSYS", NULL, ENOSYS, CONST_NUMBER},
-#endif
-#ifdef EISCONN
-  {"EISCONN", NULL, EISCONN, CONST_NUMBER},
-#endif
-#ifdef ENOANO
-  {"ENOANO", NULL, ENOANO, CONST_NUMBER},
-#endif
-#ifdef EBUSY
-  {"EBUSY", NULL, EBUSY, CONST_NUMBER},
-#endif
-#ifdef EADV
-  {"EADV", NULL, EADV, CONST_NUMBER},
-#endif
-#ifdef ENODATA
-  {"ENODATA", NULL, ENODATA, CONST_NUMBER},
-#endif
-#ifdef ESOCKTNOSUPPORT
-  {"ESOCKTNOSUPPORT", NULL, ESOCKTNOSUPPORT, CONST_NUMBER},
-#endif
-#ifdef ELIBSCN
-  {"ELIBSCN", NULL, ELIBSCN, CONST_NUMBER},
-#endif
-#ifdef EDEADLOCK
-  {"EDEADLOCK", NULL, EDEADLOCK, CONST_NUMBER},
 #endif
 #ifdef EPROTOTYPE
   {"EPROTOTYPE", NULL, EPROTOTYPE, CONST_NUMBER},
 #endif
-#ifdef EADDRNOTAVAIL
-  {"EADDRNOTAVAIL", NULL, EADDRNOTAVAIL, CONST_NUMBER},
-#endif
-#ifdef EISDIR
-  {"EISDIR", NULL, EISDIR, CONST_NUMBER},
-#endif
 #ifdef EROFS
   {"EROFS", NULL, EROFS, CONST_NUMBER},
 #endif
-#ifdef EL3HLT
-  {"EL3HLT", NULL, EL3HLT, CONST_NUMBER},
-#endif
-#ifdef EREMCHG
-  {"EREMCHG", NULL, EREMCHG, CONST_NUMBER},
-#endif
-#ifdef ELIBACC
-  {"ELIBACC", NULL, ELIBACC, CONST_NUMBER},
-#endif
-#ifdef EKEYEXPIRED
-  {"EKEYEXPIRED", NULL, EKEYEXPIRED, CONST_NUMBER},
-#endif
-#ifdef EDOM
-  {"EDOM", NULL, EDOM, CONST_NUMBER},
-#endif
-#ifdef EFBIG
-  {"EFBIG", NULL, EFBIG, CONST_NUMBER},
-#endif
-#ifdef ELIBBAD
-  {"ELIBBAD", NULL, ELIBBAD, CONST_NUMBER},
+#ifdef EPROTO
+  {"EPROTO", NULL, EPROTO, CONST_NUMBER},
 #endif
 #ifdef ENOMEDIUM
   {"ENOMEDIUM", NULL, ENOMEDIUM, CONST_NUMBER},
 #endif
-#ifdef EUSERS
-  {"EUSERS", NULL, EUSERS, CONST_NUMBER},
+#ifdef ESPIPE
+  {"ESPIPE", NULL, ESPIPE, CONST_NUMBER},
+#endif
+#ifdef EFAULT
+  {"EFAULT", NULL, EFAULT, CONST_NUMBER},
+#endif
+#ifdef EL3RST
+  {"EL3RST", NULL, EL3RST, CONST_NUMBER},
+#endif
+#ifdef EDOTDOT
+  {"EDOTDOT", NULL, EDOTDOT, CONST_NUMBER},
+#endif
+#ifdef ESHUTDOWN
+  {"ESHUTDOWN", NULL, ESHUTDOWN, CONST_NUMBER},
 #endif
 #ifdef ESRCH
   {"ESRCH", NULL, ESRCH, CONST_NUMBER},
+#endif
+#ifdef ELNRNG
+  {"ELNRNG", NULL, ELNRNG, CONST_NUMBER},
+#endif
+#ifdef ERESTART
+  {"ERESTART", NULL, ERESTART, CONST_NUMBER},
+#endif
+#ifdef ELIBACC
+  {"ELIBACC", NULL, ELIBACC, CONST_NUMBER},
+#endif
+#ifdef ENOANO
+  {"ENOANO", NULL, ENOANO, CONST_NUMBER},
+#endif
+#ifdef EEXIST
+  {"EEXIST", NULL, EEXIST, CONST_NUMBER},
+#endif
+#ifdef ETIME
+  {"ETIME", NULL, ETIME, CONST_NUMBER},
+#endif
+#ifdef ENOTTY
+  {"ENOTTY", NULL, ENOTTY, CONST_NUMBER},
+#endif
+#ifdef ENOMEM
+  {"ENOMEM", NULL, ENOMEM, CONST_NUMBER},
+#endif
+#ifdef ENOTUNIQ
+  {"ENOTUNIQ", NULL, ENOTUNIQ, CONST_NUMBER},
+#endif
+#ifdef EDEADLK
+  {"EDEADLK", NULL, EDEADLK, CONST_NUMBER},
+#endif
+#ifdef EADV
+  {"EADV", NULL, EADV, CONST_NUMBER},
+#endif
+#ifdef ENOSYS
+  {"ENOSYS", NULL, ENOSYS, CONST_NUMBER},
+#endif
+#ifdef EADDRINUSE
+  {"EADDRINUSE", NULL, EADDRINUSE, CONST_NUMBER},
+#endif
+#ifdef ECANCELED
+  {"ECANCELED", NULL, ECANCELED, CONST_NUMBER},
+#endif
+#ifdef ESOCKTNOSUPPORT
+  {"ESOCKTNOSUPPORT", NULL, ESOCKTNOSUPPORT, CONST_NUMBER},
+#endif
+#ifdef EHOSTUNREACH
+  {"EHOSTUNREACH", NULL, EHOSTUNREACH, CONST_NUMBER},
+#endif
+#ifdef EINTR
+  {"EINTR", NULL, EINTR, CONST_NUMBER},
+#endif
+#ifdef ENONET
+  {"ENONET", NULL, ENONET, CONST_NUMBER},
+#endif
+#ifdef EWOULDBLOCK
+  {"EWOULDBLOCK", NULL, EWOULDBLOCK, CONST_NUMBER},
+#endif
+#ifdef EBADF
+  {"EBADF", NULL, EBADF, CONST_NUMBER},
+#endif
+#ifdef EINVAL
+  {"EINVAL", NULL, EINVAL, CONST_NUMBER},
+#endif
+#ifdef EMFILE
+  {"EMFILE", NULL, EMFILE, CONST_NUMBER},
+#endif
+#ifdef ESRMNT
+  {"ESRMNT", NULL, ESRMNT, CONST_NUMBER},
+#endif
+#ifdef ENOTNAM
+  {"ENOTNAM", NULL, ENOTNAM, CONST_NUMBER},
+#endif
+#ifdef ENOCSI
+  {"ENOCSI", NULL, ENOCSI, CONST_NUMBER},
+#endif
+#ifdef ENOKEY
+  {"ENOKEY", NULL, ENOKEY, CONST_NUMBER},
+#endif
+#ifdef ETIMEDOUT
+  {"ETIMEDOUT", NULL, ETIMEDOUT, CONST_NUMBER},
+#endif
+#ifdef ENOSTR
+  {"ENOSTR", NULL, ENOSTR, CONST_NUMBER},
+#endif
+#ifdef EINPROGRESS
+  {"EINPROGRESS", NULL, EINPROGRESS, CONST_NUMBER},
+#endif
+#ifdef EUNATCH
+  {"EUNATCH", NULL, EUNATCH, CONST_NUMBER},
+#endif
+#ifdef EREMCHG
+  {"EREMCHG", NULL, EREMCHG, CONST_NUMBER},
+#endif
+#ifdef ENOSPC
+  {"ENOSPC", NULL, ENOSPC, CONST_NUMBER},
+#endif
+#ifdef ENFILE
+  {"ENFILE", NULL, ENFILE, CONST_NUMBER},
+#endif
+#ifdef EUCLEAN
+  {"EUCLEAN", NULL, EUCLEAN, CONST_NUMBER},
+#endif
+#ifdef EIDRM
+  {"EIDRM", NULL, EIDRM, CONST_NUMBER},
+#endif
+#ifdef ENOMSG
+  {"ENOMSG", NULL, ENOMSG, CONST_NUMBER},
+#endif
+#ifdef EBADE
+  {"EBADE", NULL, EBADE, CONST_NUMBER},
+#endif
+#ifdef EUSERS
+  {"EUSERS", NULL, EUSERS, CONST_NUMBER},
+#endif
+#ifdef ERFKILL
+  {"ERFKILL", NULL, ERFKILL, CONST_NUMBER},
+#endif
+#ifdef ENOTRECOVERABLE
+  {"ENOTRECOVERABLE", NULL, ENOTRECOVERABLE, CONST_NUMBER},
+#endif
+#ifdef EOWNERDEAD
+  {"EOWNERDEAD", NULL, EOWNERDEAD, CONST_NUMBER},
+#endif
+#ifdef EKEYREJECTED
+  {"EKEYREJECTED", NULL, EKEYREJECTED, CONST_NUMBER},
+#endif
+#ifdef EKEYREVOKED
+  {"EKEYREVOKED", NULL, EKEYREVOKED, CONST_NUMBER},
+#endif
+#ifdef EDESTADDRREQ
+  {"EDESTADDRREQ", NULL, EDESTADDRREQ, CONST_NUMBER},
+#endif
+#ifdef ERANGE
+  {"ERANGE", NULL, ERANGE, CONST_NUMBER},
+#endif
+#ifdef EBUSY
+  {"EBUSY", NULL, EBUSY, CONST_NUMBER},
+#endif
+#ifdef EBADRQC
+  {"EBADRQC", NULL, EBADRQC, CONST_NUMBER},
+#endif
+#ifdef ENETUNREACH
+  {"ENETUNREACH", NULL, ENETUNREACH, CONST_NUMBER},
+#endif
+#ifdef ECHILD
+  {"ECHILD", NULL, ECHILD, CONST_NUMBER},
+#endif
+#ifdef ELIBEXEC
+  {"ELIBEXEC", NULL, ELIBEXEC, CONST_NUMBER},
+#endif
+#ifdef ECONNABORTED
+  {"ECONNABORTED", NULL, ECONNABORTED, CONST_NUMBER},
+#endif
+#ifdef EISCONN
+  {"EISCONN", NULL, EISCONN, CONST_NUMBER},
+#endif
+#ifdef EBADMSG
+  {"EBADMSG", NULL, EBADMSG, CONST_NUMBER},
+#endif
+#ifdef EL2NSYNC
+  {"EL2NSYNC", NULL, EL2NSYNC, CONST_NUMBER},
+#endif
+#ifdef ELIBBAD
+  {"ELIBBAD", NULL, ELIBBAD, CONST_NUMBER},
+#endif
+#ifdef ENOTEMPTY
+  {"ENOTEMPTY", NULL, ENOTEMPTY, CONST_NUMBER},
+#endif
+#ifdef ENOLCK
+  {"ENOLCK", NULL, ENOLCK, CONST_NUMBER},
+#endif
+#ifdef EOVERFLOW
+  {"EOVERFLOW", NULL, EOVERFLOW, CONST_NUMBER},
+#endif
+#ifdef ECONNREFUSED
+  {"ECONNREFUSED", NULL, ECONNREFUSED, CONST_NUMBER},
+#endif
+#ifdef ENOEXEC
+  {"ENOEXEC", NULL, ENOEXEC, CONST_NUMBER},
+#endif
+#ifdef ENOENT
+  {"ENOENT", NULL, ENOENT, CONST_NUMBER},
+#endif
+#ifdef EXFULL
+  {"EXFULL", NULL, EXFULL, CONST_NUMBER},
+#endif
+#ifdef EMEDIUMTYPE
+  {"EMEDIUMTYPE", NULL, EMEDIUMTYPE, CONST_NUMBER},
 #endif
 #ifdef EDQUOT
   {"EDQUOT", NULL, EDQUOT, CONST_NUMBER},
@@ -11337,125 +11388,74 @@ static const obj_const obj_Errors_constants[] = {
 #ifdef EREMOTEIO
   {"EREMOTEIO", NULL, EREMOTEIO, CONST_NUMBER},
 #endif
-#ifdef ENOKEY
-  {"ENOKEY", NULL, ENOKEY, CONST_NUMBER},
-#endif
-#ifdef ENOTUNIQ
-  {"ENOTUNIQ", NULL, ENOTUNIQ, CONST_NUMBER},
-#endif
-#ifdef ETIME
-  {"ETIME", NULL, ETIME, CONST_NUMBER},
-#endif
-#ifdef ESPIPE
-  {"ESPIPE", NULL, ESPIPE, CONST_NUMBER},
-#endif
-#ifdef ENOEXEC
-  {"ENOEXEC", NULL, ENOEXEC, CONST_NUMBER},
-#endif
-#ifdef ENOLCK
-  {"ENOLCK", NULL, ENOLCK, CONST_NUMBER},
-#endif
-#ifdef ENODEV
-  {"ENODEV", NULL, ENODEV, CONST_NUMBER},
-#endif
-#ifdef EUNATCH
-  {"EUNATCH", NULL, EUNATCH, CONST_NUMBER},
-#endif
-#ifdef EBADSLT
-  {"EBADSLT", NULL, EBADSLT, CONST_NUMBER},
-#endif
-#ifdef EUCLEAN
-  {"EUCLEAN", NULL, EUCLEAN, CONST_NUMBER},
-#endif
-#ifdef ELIBMAX
-  {"ELIBMAX", NULL, ELIBMAX, CONST_NUMBER},
-#endif
-#ifdef EMEDIUMTYPE
-  {"EMEDIUMTYPE", NULL, EMEDIUMTYPE, CONST_NUMBER},
-#endif
-#ifdef EACCES
-  {"EACCES", NULL, EACCES, CONST_NUMBER},
-#endif
-#ifdef EBADE
-  {"EBADE", NULL, EBADE, CONST_NUMBER},
-#endif
-#ifdef ENAVAIL
-  {"ENAVAIL", NULL, ENAVAIL, CONST_NUMBER},
-#endif
-#ifdef ENOCSI
-  {"ENOCSI", NULL, ENOCSI, CONST_NUMBER},
-#endif
-#ifdef EIO
-  {"EIO", NULL, EIO, CONST_NUMBER},
-#endif
-#ifdef ENOSPC
-  {"ENOSPC", NULL, ENOSPC, CONST_NUMBER},
-#endif
-#ifdef EINPROGRESS
-  {"EINPROGRESS", NULL, EINPROGRESS, CONST_NUMBER},
-#endif
-#ifdef EWOULDBLOCK
-  {"EWOULDBLOCK", NULL, EWOULDBLOCK, CONST_NUMBER},
-#endif
-#ifdef ECONNREFUSED
-  {"ECONNREFUSED", NULL, ECONNREFUSED, CONST_NUMBER},
-#endif
-#ifdef EBADR
-  {"EBADR", NULL, EBADR, CONST_NUMBER},
-#endif
-#ifdef ENOLINK
-  {"ENOLINK", NULL, ENOLINK, CONST_NUMBER},
-#endif
-#ifdef EDOTDOT
-  {"EDOTDOT", NULL, EDOTDOT, CONST_NUMBER},
-#endif
-#ifdef ECONNRESET
-  {"ECONNRESET", NULL, ECONNRESET, CONST_NUMBER},
-#endif
-#ifdef ENOTEMPTY
-  {"ENOTEMPTY", NULL, ENOTEMPTY, CONST_NUMBER},
-#endif
-#ifdef EOVERFLOW
-  {"EOVERFLOW", NULL, EOVERFLOW, CONST_NUMBER},
-#endif
-#ifdef ENOPKG
-  {"ENOPKG", NULL, ENOPKG, CONST_NUMBER},
-#endif
-#ifdef ECONNABORTED
-  {"ECONNABORTED", NULL, ECONNABORTED, CONST_NUMBER},
-#endif
-#ifdef EADDRINUSE
-  {"EADDRINUSE", NULL, EADDRINUSE, CONST_NUMBER},
-#endif
-#ifdef EAFNOSUPPORT
-  {"EAFNOSUPPORT", NULL, EAFNOSUPPORT, CONST_NUMBER},
-#endif
-#ifdef EOPNOTSUPP
-  {"EOPNOTSUPP", NULL, EOPNOTSUPP, CONST_NUMBER},
+#ifdef EKEYEXPIRED
+  {"EKEYEXPIRED", NULL, EKEYEXPIRED, CONST_NUMBER},
 #endif
 #ifdef EMLINK
   {"EMLINK", NULL, EMLINK, CONST_NUMBER},
 #endif
-#ifdef EXFULL
-  {"EXFULL", NULL, EXFULL, CONST_NUMBER},
+#ifdef EISNAM
+  {"EISNAM", NULL, EISNAM, CONST_NUMBER},
 #endif
-#ifdef EBADFD
-  {"EBADFD", NULL, EBADFD, CONST_NUMBER},
+#ifdef ENOPKG
+  {"ENOPKG", NULL, ENOPKG, CONST_NUMBER},
 #endif
-#ifdef EBADMSG
-  {"EBADMSG", NULL, EBADMSG, CONST_NUMBER},
+#ifdef EACCES
+  {"EACCES", NULL, EACCES, CONST_NUMBER},
 #endif
-#ifdef ERESTART
-  {"ERESTART", NULL, ERESTART, CONST_NUMBER},
+#ifdef ETXTBSY
+  {"ETXTBSY", NULL, ETXTBSY, CONST_NUMBER},
+#endif
+#ifdef ELOOP
+  {"ELOOP", NULL, ELOOP, CONST_NUMBER},
 #endif
 #ifdef EMULTIHOP
   {"EMULTIHOP", NULL, EMULTIHOP, CONST_NUMBER},
 #endif
-#ifdef EMFILE
-  {"EMFILE", NULL, EMFILE, CONST_NUMBER},
+#ifdef ESTALE
+  {"ESTALE", NULL, ESTALE, CONST_NUMBER},
 #endif
-#ifdef ENAMETOOLONG
-  {"ENAMETOOLONG", NULL, ENAMETOOLONG, CONST_NUMBER},
+#ifdef EL2HLT
+  {"EL2HLT", NULL, EL2HLT, CONST_NUMBER},
+#endif
+#ifdef EXDEV
+  {"EXDEV", NULL, EXDEV, CONST_NUMBER},
+#endif
+#ifdef EHOSTDOWN
+  {"EHOSTDOWN", NULL, EHOSTDOWN, CONST_NUMBER},
+#endif
+#ifdef EILSEQ
+  {"EILSEQ", NULL, EILSEQ, CONST_NUMBER},
+#endif
+#ifdef EBADSLT
+  {"EBADSLT", NULL, EBADSLT, CONST_NUMBER},
+#endif
+#ifdef ECONNRESET
+  {"ECONNRESET", NULL, ECONNRESET, CONST_NUMBER},
+#endif
+#ifdef ENOTCONN
+  {"ENOTCONN", NULL, ENOTCONN, CONST_NUMBER},
+#endif
+#ifdef EDOM
+  {"EDOM", NULL, EDOM, CONST_NUMBER},
+#endif
+#ifdef ENETDOWN
+  {"ENETDOWN", NULL, ENETDOWN, CONST_NUMBER},
+#endif
+#ifdef ENOTDIR
+  {"ENOTDIR", NULL, ENOTDIR, CONST_NUMBER},
+#endif
+#ifdef EDEADLOCK
+  {"EDEADLOCK", NULL, EDEADLOCK, CONST_NUMBER},
+#endif
+#ifdef ENXIO
+  {"ENXIO", NULL, ENXIO, CONST_NUMBER},
+#endif
+#ifdef ELIBSCN
+  {"ELIBSCN", NULL, ELIBSCN, CONST_NUMBER},
+#endif
+#ifdef EOPNOTSUPP
+  {"EOPNOTSUPP", NULL, EOPNOTSUPP, CONST_NUMBER},
 #endif
   {NULL, NULL, 0.0 , 0}
 };
@@ -11478,44 +11478,38 @@ static const luaL_Reg obj_EAI_Errors_metas[] = {
 };
 
 static const obj_const obj_EAI_Errors_constants[] = {
-#ifdef EAI_BADFLAGS
-  {"EAI_BADFLAGS", NULL, EAI_BADFLAGS, CONST_NUMBER},
-#endif
-#ifdef EAI_CANCELED
-  {"EAI_CANCELED", NULL, EAI_CANCELED, CONST_NUMBER},
-#endif
-#ifdef EAI_ALLDONE
-  {"EAI_ALLDONE", NULL, EAI_ALLDONE, CONST_NUMBER},
+#ifdef EAI_SERVICE
+  {"EAI_SERVICE", NULL, EAI_SERVICE, CONST_NUMBER},
 #endif
 #ifdef EAI_FAIL
   {"EAI_FAIL", NULL, EAI_FAIL, CONST_NUMBER},
 #endif
-#ifdef EAI_NOTCANCELED
-  {"EAI_NOTCANCELED", NULL, EAI_NOTCANCELED, CONST_NUMBER},
-#endif
-#ifdef EAI_AGAIN
-  {"EAI_AGAIN", NULL, EAI_AGAIN, CONST_NUMBER},
-#endif
-#ifdef EAI_NODATA
-  {"EAI_NODATA", NULL, EAI_NODATA, CONST_NUMBER},
-#endif
-#ifdef EAI_SERVICE
-  {"EAI_SERVICE", NULL, EAI_SERVICE, CONST_NUMBER},
-#endif
-#ifdef EAI_INPROGRESS
-  {"EAI_INPROGRESS", NULL, EAI_INPROGRESS, CONST_NUMBER},
-#endif
 #ifdef EAI_MEMORY
   {"EAI_MEMORY", NULL, EAI_MEMORY, CONST_NUMBER},
+#endif
+#ifdef EAI_FAMILY
+  {"EAI_FAMILY", NULL, EAI_FAMILY, CONST_NUMBER},
+#endif
+#ifdef EAI_NOTCANCELED
+  {"EAI_NOTCANCELED", NULL, EAI_NOTCANCELED, CONST_NUMBER},
 #endif
 #ifdef EAI_ADDRFAMILY
   {"EAI_ADDRFAMILY", NULL, EAI_ADDRFAMILY, CONST_NUMBER},
 #endif
-#ifdef EAI_SOCKTYPE
-  {"EAI_SOCKTYPE", NULL, EAI_SOCKTYPE, CONST_NUMBER},
+#ifdef EAI_INPROGRESS
+  {"EAI_INPROGRESS", NULL, EAI_INPROGRESS, CONST_NUMBER},
 #endif
-#ifdef EAI_FAMILY
-  {"EAI_FAMILY", NULL, EAI_FAMILY, CONST_NUMBER},
+#ifdef EAI_AGAIN
+  {"EAI_AGAIN", NULL, EAI_AGAIN, CONST_NUMBER},
+#endif
+#ifdef EAI_CANCELED
+  {"EAI_CANCELED", NULL, EAI_CANCELED, CONST_NUMBER},
+#endif
+#ifdef EAI_NONAME
+  {"EAI_NONAME", NULL, EAI_NONAME, CONST_NUMBER},
+#endif
+#ifdef EAI_NODATA
+  {"EAI_NODATA", NULL, EAI_NODATA, CONST_NUMBER},
 #endif
 #ifdef EAI_IDN_ENCODE
   {"EAI_IDN_ENCODE", NULL, EAI_IDN_ENCODE, CONST_NUMBER},
@@ -11523,14 +11517,20 @@ static const obj_const obj_EAI_Errors_constants[] = {
 #ifdef EAI_INTR
   {"EAI_INTR", NULL, EAI_INTR, CONST_NUMBER},
 #endif
+#ifdef EAI_ALLDONE
+  {"EAI_ALLDONE", NULL, EAI_ALLDONE, CONST_NUMBER},
+#endif
 #ifdef EAI_SYSTEM
   {"EAI_SYSTEM", NULL, EAI_SYSTEM, CONST_NUMBER},
 #endif
+#ifdef EAI_SOCKTYPE
+  {"EAI_SOCKTYPE", NULL, EAI_SOCKTYPE, CONST_NUMBER},
+#endif
+#ifdef EAI_BADFLAGS
+  {"EAI_BADFLAGS", NULL, EAI_BADFLAGS, CONST_NUMBER},
+#endif
 #ifdef EAI_OVERFLOW
   {"EAI_OVERFLOW", NULL, EAI_OVERFLOW, CONST_NUMBER},
-#endif
-#ifdef EAI_NONAME
-  {"EAI_NONAME", NULL, EAI_NONAME, CONST_NUMBER},
 #endif
   {NULL, NULL, 0.0 , 0}
 };
@@ -11677,149 +11677,161 @@ static const luaL_Reg obj_Options_pub_funcs[] = {
 };
 
 static const obj_const obj_Options_constants[] = {
-#ifdef IPV6_TCLASS
-  {"IPV6_TCLASS", NULL, IPV6_TCLASS, CONST_NUMBER},
-#endif
-#ifdef TCP_KEEPCNT
-  {"TCP_KEEPCNT", NULL, TCP_KEEPCNT, CONST_NUMBER},
-#endif
 #ifdef TCP_KEEPINTVL
   {"TCP_KEEPINTVL", NULL, TCP_KEEPINTVL, CONST_NUMBER},
-#endif
-#ifdef IP_RECVTOS
-  {"IP_RECVTOS", NULL, IP_RECVTOS, CONST_NUMBER},
-#endif
-#ifdef SOL_UDP
-  {"SOL_UDP", NULL, SOL_UDP, CONST_NUMBER},
-#endif
-#ifdef IPV6_NEXTHOP
-  {"IPV6_NEXTHOP", NULL, IPV6_NEXTHOP, CONST_NUMBER},
-#endif
-#ifdef TCP_DEFER_ACCEPT
-  {"TCP_DEFER_ACCEPT", NULL, TCP_DEFER_ACCEPT, CONST_NUMBER},
-#endif
-#ifdef SO_BSDCOMPAT
-  {"SO_BSDCOMPAT", NULL, SO_BSDCOMPAT, CONST_NUMBER},
-#endif
-#ifdef IP_RETOPTS
-  {"IP_RETOPTS", NULL, IP_RETOPTS, CONST_NUMBER},
-#endif
-#ifdef IPV6_RECVPKTINFO
-  {"IPV6_RECVPKTINFO", NULL, IPV6_RECVPKTINFO, CONST_NUMBER},
-#endif
-#ifdef TCP_LINGER2
-  {"TCP_LINGER2", NULL, TCP_LINGER2, CONST_NUMBER},
-#endif
-#ifdef IPV6_MTU_DISCOVER
-  {"IPV6_MTU_DISCOVER", NULL, IPV6_MTU_DISCOVER, CONST_NUMBER},
-#endif
-#ifdef IPV6_HOPLIMIT
-  {"IPV6_HOPLIMIT", NULL, IPV6_HOPLIMIT, CONST_NUMBER},
-#endif
-#ifdef SO_ACCEPTCONN
-  {"SO_ACCEPTCONN", NULL, SO_ACCEPTCONN, CONST_NUMBER},
-#endif
-#ifdef IPV6_UNICAST_HOPS
-  {"IPV6_UNICAST_HOPS", NULL, IPV6_UNICAST_HOPS, CONST_NUMBER},
-#endif
-#ifdef TCP_SYNCNT
-  {"TCP_SYNCNT", NULL, TCP_SYNCNT, CONST_NUMBER},
-#endif
-#ifdef SO_KEEPALIVE
-  {"SO_KEEPALIVE", NULL, SO_KEEPALIVE, CONST_NUMBER},
-#endif
-#ifdef SOL_TCP
-  {"SOL_TCP", NULL, SOL_TCP, CONST_NUMBER},
-#endif
-#ifdef IPV6_MULTICAST_HOPS
-  {"IPV6_MULTICAST_HOPS", NULL, IPV6_MULTICAST_HOPS, CONST_NUMBER},
-#endif
-#ifdef IP_PKTINFO
-  {"IP_PKTINFO", NULL, IP_PKTINFO, CONST_NUMBER},
-#endif
-#ifdef SOL_UNIX
-  {"SOL_UNIX", NULL, SOL_UNIX, CONST_NUMBER},
-#endif
-#ifdef SO_NO_CHECK
-  {"SO_NO_CHECK", NULL, SO_NO_CHECK, CONST_NUMBER},
-#endif
-#ifdef SO_PRIORITY
-  {"SO_PRIORITY", NULL, SO_PRIORITY, CONST_NUMBER},
-#endif
-#ifdef SO_RCVLOWAT
-  {"SO_RCVLOWAT", NULL, SO_RCVLOWAT, CONST_NUMBER},
-#endif
-#ifdef IP_RECVORIGDSTADDR
-  {"IP_RECVORIGDSTADDR", NULL, IP_RECVORIGDSTADDR, CONST_NUMBER},
-#endif
-#ifdef IPV6_RECVERR
-  {"IPV6_RECVERR", NULL, IPV6_RECVERR, CONST_NUMBER},
-#endif
-#ifdef IP_MINTTL
-  {"IP_MINTTL", NULL, IP_MINTTL, CONST_NUMBER},
-#endif
-#ifdef IP_RECVRETOPTS
-  {"IP_RECVRETOPTS", NULL, IP_RECVRETOPTS, CONST_NUMBER},
-#endif
-#ifdef IP_MTU_DISCOVER
-  {"IP_MTU_DISCOVER", NULL, IP_MTU_DISCOVER, CONST_NUMBER},
-#endif
-#ifdef IPV6_RECVDSTOPTS
-  {"IPV6_RECVDSTOPTS", NULL, IPV6_RECVDSTOPTS, CONST_NUMBER},
-#endif
-#ifdef SO_PROTOCOL
-  {"SO_PROTOCOL", NULL, SO_PROTOCOL, CONST_NUMBER},
-#endif
-#ifdef IPV6_ADDRFORM
-  {"IPV6_ADDRFORM", NULL, IPV6_ADDRFORM, CONST_NUMBER},
-#endif
-#ifdef SO_OOBINLINE
-  {"SO_OOBINLINE", NULL, SO_OOBINLINE, CONST_NUMBER},
-#endif
-#ifdef SO_DEBUG
-  {"SO_DEBUG", NULL, SO_DEBUG, CONST_NUMBER},
-#endif
-#ifdef SO_REUSEADDR
-  {"SO_REUSEADDR", NULL, SO_REUSEADDR, CONST_NUMBER},
 #endif
 #ifdef SO_SNDBUFFORCE
   {"SO_SNDBUFFORCE", NULL, SO_SNDBUFFORCE, CONST_NUMBER},
 #endif
-#ifdef IP_MULTICAST_LOOP
-  {"IP_MULTICAST_LOOP", NULL, IP_MULTICAST_LOOP, CONST_NUMBER},
+#ifdef IPV6_MTU
+  {"IPV6_MTU", NULL, IPV6_MTU, CONST_NUMBER},
 #endif
-#ifdef SO_MARK
-  {"SO_MARK", NULL, SO_MARK, CONST_NUMBER},
+#ifdef SOL_UNIX
+  {"SOL_UNIX", NULL, SOL_UNIX, CONST_NUMBER},
 #endif
-#ifdef TCP_NODELAY
-  {"TCP_NODELAY", NULL, TCP_NODELAY, CONST_NUMBER},
-#endif
-#ifdef IP_TTL
-  {"IP_TTL", NULL, IP_TTL, CONST_NUMBER},
+#ifdef IPV6_ADDRFORM
+  {"IPV6_ADDRFORM", NULL, IPV6_ADDRFORM, CONST_NUMBER},
 #endif
 #ifdef SOL_IPV6
   {"SOL_IPV6", NULL, SOL_IPV6, CONST_NUMBER},
 #endif
-#ifdef TCP_KEEPIDLE
-  {"TCP_KEEPIDLE", NULL, TCP_KEEPIDLE, CONST_NUMBER},
+#ifdef TCP_SYNCNT
+  {"TCP_SYNCNT", NULL, TCP_SYNCNT, CONST_NUMBER},
+#endif
+#ifdef SO_BINDTODEVICE
+  {"SO_BINDTODEVICE", NULL, SO_BINDTODEVICE, CONST_NUMBER},
+#endif
+#ifdef IP_RETOPTS
+  {"IP_RETOPTS", NULL, IP_RETOPTS, CONST_NUMBER},
+#endif
+#ifdef IP_OPTIONS
+  {"IP_OPTIONS", NULL, IP_OPTIONS, CONST_NUMBER},
+#endif
+#ifdef IPV6_UNICAST_HOPS
+  {"IPV6_UNICAST_HOPS", NULL, IPV6_UNICAST_HOPS, CONST_NUMBER},
+#endif
+#ifdef IPV6_NEXTHOP
+  {"IPV6_NEXTHOP", NULL, IPV6_NEXTHOP, CONST_NUMBER},
+#endif
+#ifdef IPV6_RECVRTHDR
+  {"IPV6_RECVRTHDR", NULL, IPV6_RECVRTHDR, CONST_NUMBER},
+#endif
+#ifdef SO_KEEPALIVE
+  {"SO_KEEPALIVE", NULL, SO_KEEPALIVE, CONST_NUMBER},
+#endif
+#ifdef SOL_UDP
+  {"SOL_UDP", NULL, SOL_UDP, CONST_NUMBER},
+#endif
+#ifdef SO_BROADCAST
+  {"SO_BROADCAST", NULL, SO_BROADCAST, CONST_NUMBER},
+#endif
+#ifdef IPV6_RECVHOPLIMIT
+  {"IPV6_RECVHOPLIMIT", NULL, IPV6_RECVHOPLIMIT, CONST_NUMBER},
+#endif
+#ifdef IPV6_RECVTCLASS
+  {"IPV6_RECVTCLASS", NULL, IPV6_RECVTCLASS, CONST_NUMBER},
+#endif
+#ifdef IP_RECVRETOPTS
+  {"IP_RECVRETOPTS", NULL, IP_RECVRETOPTS, CONST_NUMBER},
+#endif
+#ifdef IPV6_MULTICAST_HOPS
+  {"IPV6_MULTICAST_HOPS", NULL, IPV6_MULTICAST_HOPS, CONST_NUMBER},
+#endif
+#ifdef SO_TIMESTAMPNS
+  {"SO_TIMESTAMPNS", NULL, SO_TIMESTAMPNS, CONST_NUMBER},
+#endif
+#ifdef TCP_KEEPCNT
+  {"TCP_KEEPCNT", NULL, TCP_KEEPCNT, CONST_NUMBER},
+#endif
+#ifdef SO_ERROR
+  {"SO_ERROR", NULL, SO_ERROR, CONST_NUMBER},
+#endif
+#ifdef SO_BSDCOMPAT
+  {"SO_BSDCOMPAT", NULL, SO_BSDCOMPAT, CONST_NUMBER},
+#endif
+#ifdef IP_MTU_DISCOVER
+  {"IP_MTU_DISCOVER", NULL, IP_MTU_DISCOVER, CONST_NUMBER},
+#endif
+#ifdef SO_RCVBUFFORCE
+  {"SO_RCVBUFFORCE", NULL, SO_RCVBUFFORCE, CONST_NUMBER},
+#endif
+#ifdef IPV6_MTU_DISCOVER
+  {"IPV6_MTU_DISCOVER", NULL, IPV6_MTU_DISCOVER, CONST_NUMBER},
+#endif
+#ifdef IPV6_MULTICAST_IF
+  {"IPV6_MULTICAST_IF", NULL, IPV6_MULTICAST_IF, CONST_NUMBER},
+#endif
+#ifdef SO_RCVLOWAT
+  {"SO_RCVLOWAT", NULL, SO_RCVLOWAT, CONST_NUMBER},
+#endif
+#ifdef SO_NO_CHECK
+  {"SO_NO_CHECK", NULL, SO_NO_CHECK, CONST_NUMBER},
+#endif
+#ifdef SO_RCVBUF
+  {"SO_RCVBUF", NULL, SO_RCVBUF, CONST_NUMBER},
+#endif
+#ifdef IP_MULTICAST_TTL
+  {"IP_MULTICAST_TTL", NULL, IP_MULTICAST_TTL, CONST_NUMBER},
+#endif
+#ifdef IP_MINTTL
+  {"IP_MINTTL", NULL, IP_MINTTL, CONST_NUMBER},
+#endif
+#ifdef IP_RECVTTL
+  {"IP_RECVTTL", NULL, IP_RECVTTL, CONST_NUMBER},
 #endif
 #ifdef IP_RECVOPTS
   {"IP_RECVOPTS", NULL, IP_RECVOPTS, CONST_NUMBER},
 #endif
-#ifdef IPV6_V6ONLY
-  {"IPV6_V6ONLY", NULL, IPV6_V6ONLY, CONST_NUMBER},
+#ifdef SO_TIMESTAMP
+  {"SO_TIMESTAMP", NULL, SO_TIMESTAMP, CONST_NUMBER},
 #endif
-#ifdef TCP_CORK
-  {"TCP_CORK", NULL, TCP_CORK, CONST_NUMBER},
+#ifdef IPV6_MULTICAST_LOOP
+  {"IPV6_MULTICAST_LOOP", NULL, IPV6_MULTICAST_LOOP, CONST_NUMBER},
 #endif
-#ifdef SOL_IP
-  {"SOL_IP", NULL, SOL_IP, CONST_NUMBER},
+#ifdef SO_DOMAIN
+  {"SO_DOMAIN", NULL, SO_DOMAIN, CONST_NUMBER},
+#endif
+#ifdef IPV6_CHECKSUM
+  {"IPV6_CHECKSUM", NULL, IPV6_CHECKSUM, CONST_NUMBER},
+#endif
+#ifdef IPV6_RECVDSTOPTS
+  {"IPV6_RECVDSTOPTS", NULL, IPV6_RECVDSTOPTS, CONST_NUMBER},
+#endif
+#ifdef SO_SNDBUF
+  {"SO_SNDBUF", NULL, SO_SNDBUF, CONST_NUMBER},
+#endif
+#ifdef IP_PKTINFO
+  {"IP_PKTINFO", NULL, IP_PKTINFO, CONST_NUMBER},
+#endif
+#ifdef TCP_LINGER2
+  {"TCP_LINGER2", NULL, TCP_LINGER2, CONST_NUMBER},
+#endif
+#ifdef TCP_NODELAY
+  {"TCP_NODELAY", NULL, TCP_NODELAY, CONST_NUMBER},
+#endif
+#ifdef IP_ROUTER_ALERT
+  {"IP_ROUTER_ALERT", NULL, IP_ROUTER_ALERT, CONST_NUMBER},
+#endif
+#ifdef IP_RECVTOS
+  {"IP_RECVTOS", NULL, IP_RECVTOS, CONST_NUMBER},
+#endif
+#ifdef TCP_KEEPIDLE
+  {"TCP_KEEPIDLE", NULL, TCP_KEEPIDLE, CONST_NUMBER},
 #endif
 #ifdef TCP_MAXSEG
   {"TCP_MAXSEG", NULL, TCP_MAXSEG, CONST_NUMBER},
 #endif
-#ifdef TCP_CONGESTION
-  {"TCP_CONGESTION", NULL, TCP_CONGESTION, CONST_NUMBER},
+#ifdef IPV6_RECVERR
+  {"IPV6_RECVERR", NULL, IPV6_RECVERR, CONST_NUMBER},
+#endif
+#ifdef TCP_CORK
+  {"TCP_CORK", NULL, TCP_CORK, CONST_NUMBER},
+#endif
+#ifdef IPV6_HOPLIMIT
+  {"IPV6_HOPLIMIT", NULL, IPV6_HOPLIMIT, CONST_NUMBER},
+#endif
+#ifdef SOL_TCP
+  {"SOL_TCP", NULL, SOL_TCP, CONST_NUMBER},
 #endif
 #ifdef TCP_QUICKACK
   {"TCP_QUICKACK", NULL, TCP_QUICKACK, CONST_NUMBER},
@@ -11827,107 +11839,95 @@ static const obj_const obj_Options_constants[] = {
 #ifdef TCP_WINDOW_CLAMP
   {"TCP_WINDOW_CLAMP", NULL, TCP_WINDOW_CLAMP, CONST_NUMBER},
 #endif
-#ifdef IPV6_CHECKSUM
-  {"IPV6_CHECKSUM", NULL, IPV6_CHECKSUM, CONST_NUMBER},
-#endif
-#ifdef SO_BROADCAST
-  {"SO_BROADCAST", NULL, SO_BROADCAST, CONST_NUMBER},
-#endif
-#ifdef IPV6_RECVTCLASS
-  {"IPV6_RECVTCLASS", NULL, IPV6_RECVTCLASS, CONST_NUMBER},
-#endif
-#ifdef IP_MTU
-  {"IP_MTU", NULL, IP_MTU, CONST_NUMBER},
-#endif
-#ifdef SO_RCVBUFFORCE
-  {"SO_RCVBUFFORCE", NULL, SO_RCVBUFFORCE, CONST_NUMBER},
-#endif
-#ifdef SO_ERROR
-  {"SO_ERROR", NULL, SO_ERROR, CONST_NUMBER},
-#endif
-#ifdef SO_SNDBUF
-  {"SO_SNDBUF", NULL, SO_SNDBUF, CONST_NUMBER},
-#endif
-#ifdef IPV6_MTU
-  {"IPV6_MTU", NULL, IPV6_MTU, CONST_NUMBER},
-#endif
-#ifdef IPV6_ROUTER_ALERT
-  {"IPV6_ROUTER_ALERT", NULL, IPV6_ROUTER_ALERT, CONST_NUMBER},
-#endif
-#ifdef IPV6_RECVHOPOPTS
-  {"IPV6_RECVHOPOPTS", NULL, IPV6_RECVHOPOPTS, CONST_NUMBER},
-#endif
-#ifdef IP_FREEBIND
-  {"IP_FREEBIND", NULL, IP_FREEBIND, CONST_NUMBER},
-#endif
-#ifdef SO_DONTROUTE
-  {"SO_DONTROUTE", NULL, SO_DONTROUTE, CONST_NUMBER},
-#endif
-#ifdef SO_TIMESTAMPING
-  {"SO_TIMESTAMPING", NULL, SO_TIMESTAMPING, CONST_NUMBER},
-#endif
-#ifdef SO_RCVBUF
-  {"SO_RCVBUF", NULL, SO_RCVBUF, CONST_NUMBER},
-#endif
-#ifdef SO_BINDTODEVICE
-  {"SO_BINDTODEVICE", NULL, SO_BINDTODEVICE, CONST_NUMBER},
-#endif
-#ifdef SO_PASSCRED
-  {"SO_PASSCRED", NULL, SO_PASSCRED, CONST_NUMBER},
-#endif
-#ifdef IP_OPTIONS
-  {"IP_OPTIONS", NULL, IP_OPTIONS, CONST_NUMBER},
-#endif
-#ifdef SO_TIMESTAMP
-  {"SO_TIMESTAMP", NULL, SO_TIMESTAMP, CONST_NUMBER},
-#endif
-#ifdef IPV6_RECVRTHDR
-  {"IPV6_RECVRTHDR", NULL, IPV6_RECVRTHDR, CONST_NUMBER},
-#endif
-#ifdef SO_TIMESTAMPNS
-  {"SO_TIMESTAMPNS", NULL, SO_TIMESTAMPNS, CONST_NUMBER},
+#ifdef SO_REUSEADDR
+  {"SO_REUSEADDR", NULL, SO_REUSEADDR, CONST_NUMBER},
 #endif
 #ifdef SO_TYPE
   {"SO_TYPE", NULL, SO_TYPE, CONST_NUMBER},
 #endif
-#ifdef IP_ROUTER_ALERT
-  {"IP_ROUTER_ALERT", NULL, IP_ROUTER_ALERT, CONST_NUMBER},
-#endif
-#ifdef IP_RECVTTL
-  {"IP_RECVTTL", NULL, IP_RECVTTL, CONST_NUMBER},
-#endif
-#ifdef IPV6_MULTICAST_LOOP
-  {"IPV6_MULTICAST_LOOP", NULL, IPV6_MULTICAST_LOOP, CONST_NUMBER},
-#endif
-#ifdef SO_SNDLOWAT
-  {"SO_SNDLOWAT", NULL, SO_SNDLOWAT, CONST_NUMBER},
-#endif
-#ifdef IP_HDRINCL
-  {"IP_HDRINCL", NULL, IP_HDRINCL, CONST_NUMBER},
-#endif
-#ifdef IPV6_MULTICAST_IF
-  {"IPV6_MULTICAST_IF", NULL, IPV6_MULTICAST_IF, CONST_NUMBER},
+#ifdef SO_PASSCRED
+  {"SO_PASSCRED", NULL, SO_PASSCRED, CONST_NUMBER},
 #endif
 #ifdef IP_RECVERR
   {"IP_RECVERR", NULL, IP_RECVERR, CONST_NUMBER},
 #endif
-#ifdef SO_DOMAIN
-  {"SO_DOMAIN", NULL, SO_DOMAIN, CONST_NUMBER},
+#ifdef IPV6_RECVPKTINFO
+  {"IPV6_RECVPKTINFO", NULL, IPV6_RECVPKTINFO, CONST_NUMBER},
+#endif
+#ifdef SO_SNDLOWAT
+  {"SO_SNDLOWAT", NULL, SO_SNDLOWAT, CONST_NUMBER},
+#endif
+#ifdef SO_DEBUG
+  {"SO_DEBUG", NULL, SO_DEBUG, CONST_NUMBER},
+#endif
+#ifdef IP_HDRINCL
+  {"IP_HDRINCL", NULL, IP_HDRINCL, CONST_NUMBER},
+#endif
+#ifdef IP_RECVORIGDSTADDR
+  {"IP_RECVORIGDSTADDR", NULL, IP_RECVORIGDSTADDR, CONST_NUMBER},
+#endif
+#ifdef SO_ACCEPTCONN
+  {"SO_ACCEPTCONN", NULL, SO_ACCEPTCONN, CONST_NUMBER},
+#endif
+#ifdef TCP_CONGESTION
+  {"TCP_CONGESTION", NULL, TCP_CONGESTION, CONST_NUMBER},
 #endif
 #ifdef SOL_SOCKET
   {"SOL_SOCKET", NULL, SOL_SOCKET, CONST_NUMBER},
 #endif
-#ifdef SOL_ICMPV6
-  {"SOL_ICMPV6", NULL, SOL_ICMPV6, CONST_NUMBER},
+#ifdef IP_FREEBIND
+  {"IP_FREEBIND", NULL, IP_FREEBIND, CONST_NUMBER},
+#endif
+#ifdef SO_MARK
+  {"SO_MARK", NULL, SO_MARK, CONST_NUMBER},
+#endif
+#ifdef SO_TIMESTAMPING
+  {"SO_TIMESTAMPING", NULL, SO_TIMESTAMPING, CONST_NUMBER},
+#endif
+#ifdef IPV6_ROUTER_ALERT
+  {"IPV6_ROUTER_ALERT", NULL, IPV6_ROUTER_ALERT, CONST_NUMBER},
+#endif
+#ifdef SO_OOBINLINE
+  {"SO_OOBINLINE", NULL, SO_OOBINLINE, CONST_NUMBER},
+#endif
+#ifdef IPV6_RECVHOPOPTS
+  {"IPV6_RECVHOPOPTS", NULL, IPV6_RECVHOPOPTS, CONST_NUMBER},
+#endif
+#ifdef SO_PROTOCOL
+  {"SO_PROTOCOL", NULL, SO_PROTOCOL, CONST_NUMBER},
 #endif
 #ifdef IP_TOS
   {"IP_TOS", NULL, IP_TOS, CONST_NUMBER},
 #endif
-#ifdef IPV6_RECVHOPLIMIT
-  {"IPV6_RECVHOPLIMIT", NULL, IPV6_RECVHOPLIMIT, CONST_NUMBER},
+#ifdef IPV6_V6ONLY
+  {"IPV6_V6ONLY", NULL, IPV6_V6ONLY, CONST_NUMBER},
 #endif
-#ifdef IP_MULTICAST_TTL
-  {"IP_MULTICAST_TTL", NULL, IP_MULTICAST_TTL, CONST_NUMBER},
+#ifdef IPV6_TCLASS
+  {"IPV6_TCLASS", NULL, IPV6_TCLASS, CONST_NUMBER},
+#endif
+#ifdef IP_TTL
+  {"IP_TTL", NULL, IP_TTL, CONST_NUMBER},
+#endif
+#ifdef SO_PRIORITY
+  {"SO_PRIORITY", NULL, SO_PRIORITY, CONST_NUMBER},
+#endif
+#ifdef SOL_IP
+  {"SOL_IP", NULL, SOL_IP, CONST_NUMBER},
+#endif
+#ifdef SO_DONTROUTE
+  {"SO_DONTROUTE", NULL, SO_DONTROUTE, CONST_NUMBER},
+#endif
+#ifdef IP_MULTICAST_LOOP
+  {"IP_MULTICAST_LOOP", NULL, IP_MULTICAST_LOOP, CONST_NUMBER},
+#endif
+#ifdef TCP_DEFER_ACCEPT
+  {"TCP_DEFER_ACCEPT", NULL, TCP_DEFER_ACCEPT, CONST_NUMBER},
+#endif
+#ifdef IP_MTU
+  {"IP_MTU", NULL, IP_MTU, CONST_NUMBER},
+#endif
+#ifdef SOL_ICMPV6
+  {"SOL_ICMPV6", NULL, SOL_ICMPV6, CONST_NUMBER},
 #endif
   {NULL, NULL, 0.0 , 0}
 };
@@ -11937,32 +11937,41 @@ static const reg_impl obj_Options_implements[] = {
 };
 
 static const luaL_Reg obj_SetSocketOption_pub_funcs[] = {
+#if (IPV6_MTU)
+  {"IPV6_MTU", SetSocketOption__IPV6_MTU__func},
+#endif
 #if (IPV6_ADDRFORM)
   {"IPV6_ADDRFORM", SetSocketOption__IPV6_ADDRFORM__func},
-#endif
-#if (IPV6_NEXTHOP)
-  {"IPV6_NEXTHOP", SetSocketOption__IPV6_NEXTHOP__func},
 #endif
 #if (IPV6_MULTICAST_LOOP)
   {"IPV6_MULTICAST_LOOP", SetSocketOption__IPV6_MULTICAST_LOOP__func},
 #endif
-#if (IPV6_RECVPKTINFO)
-  {"IPV6_RECVPKTINFO", SetSocketOption__IPV6_RECVPKTINFO__func},
+#if (IPV6_CHECKSUM)
+  {"IPV6_CHECKSUM", SetSocketOption__IPV6_CHECKSUM__func},
+#endif
+#if (IPV6_RECVDSTOPTS)
+  {"IPV6_RECVDSTOPTS", SetSocketOption__IPV6_RECVDSTOPTS__func},
+#endif
+#if (IPV6_ROUTER_ALERT)
+  {"IPV6_ROUTER_ALERT", SetSocketOption__IPV6_ROUTER_ALERT__func},
 #endif
 #if (IPV6_V6ONLY)
   {"IPV6_V6ONLY", SetSocketOption__IPV6_V6ONLY__func},
 #endif
-#if (IPV6_MTU_DISCOVER)
-  {"IPV6_MTU_DISCOVER", SetSocketOption__IPV6_MTU_DISCOVER__func},
+#if (IPV6_UNICAST_HOPS)
+  {"IPV6_UNICAST_HOPS", SetSocketOption__IPV6_UNICAST_HOPS__func},
+#endif
+#if (IPV6_NEXTHOP)
+  {"IPV6_NEXTHOP", SetSocketOption__IPV6_NEXTHOP__func},
+#endif
+#if (IPV6_RECVERR)
+  {"IPV6_RECVERR", SetSocketOption__IPV6_RECVERR__func},
 #endif
 #if (IPV6_HOPLIMIT)
   {"IPV6_HOPLIMIT", SetSocketOption__IPV6_HOPLIMIT__func},
 #endif
-#if (IPV6_UNICAST_HOPS)
-  {"IPV6_UNICAST_HOPS", SetSocketOption__IPV6_UNICAST_HOPS__func},
-#endif
-#if (IPV6_CHECKSUM)
-  {"IPV6_CHECKSUM", SetSocketOption__IPV6_CHECKSUM__func},
+#if (IPV6_RECVPKTINFO)
+  {"IPV6_RECVPKTINFO", SetSocketOption__IPV6_RECVPKTINFO__func},
 #endif
 #if (IPV6_RECVTCLASS)
   {"IPV6_RECVTCLASS", SetSocketOption__IPV6_RECVTCLASS__func},
@@ -11970,53 +11979,23 @@ static const luaL_Reg obj_SetSocketOption_pub_funcs[] = {
 #if (IPV6_MULTICAST_HOPS)
   {"IPV6_MULTICAST_HOPS", SetSocketOption__IPV6_MULTICAST_HOPS__func},
 #endif
-#if (IPV6_ROUTER_ALERT)
-  {"IPV6_ROUTER_ALERT", SetSocketOption__IPV6_ROUTER_ALERT__func},
-#endif
 #if (IPV6_RECVHOPOPTS)
   {"IPV6_RECVHOPOPTS", SetSocketOption__IPV6_RECVHOPOPTS__func},
-#endif
-#if (IPV6_RECVERR)
-  {"IPV6_RECVERR", SetSocketOption__IPV6_RECVERR__func},
 #endif
 #if (IPV6_TCLASS)
   {"IPV6_TCLASS", SetSocketOption__IPV6_TCLASS__func},
 #endif
-#if (IPV6_MULTICAST_IF)
-  {"IPV6_MULTICAST_IF", SetSocketOption__IPV6_MULTICAST_IF__func},
+#if (IPV6_RECVHOPLIMIT)
+  {"IPV6_RECVHOPLIMIT", SetSocketOption__IPV6_RECVHOPLIMIT__func},
 #endif
 #if (IPV6_RECVRTHDR)
   {"IPV6_RECVRTHDR", SetSocketOption__IPV6_RECVRTHDR__func},
 #endif
-#if (IPV6_RECVDSTOPTS)
-  {"IPV6_RECVDSTOPTS", SetSocketOption__IPV6_RECVDSTOPTS__func},
+#if (IPV6_MTU_DISCOVER)
+  {"IPV6_MTU_DISCOVER", SetSocketOption__IPV6_MTU_DISCOVER__func},
 #endif
-#if (IPV6_RECVHOPLIMIT)
-  {"IPV6_RECVHOPLIMIT", SetSocketOption__IPV6_RECVHOPLIMIT__func},
-#endif
-#if (IPV6_MTU)
-  {"IPV6_MTU", SetSocketOption__IPV6_MTU__func},
-#endif
-#if (IP_MTU)
-  {"IP_MTU", SetSocketOption__IP_MTU__func},
-#endif
-#if (IP_RECVTOS)
-  {"IP_RECVTOS", SetSocketOption__IP_RECVTOS__func},
-#endif
-#if (IP_PKTINFO)
-  {"IP_PKTINFO", SetSocketOption__IP_PKTINFO__func},
-#endif
-#if (IP_RECVORIGDSTADDR)
-  {"IP_RECVORIGDSTADDR", SetSocketOption__IP_RECVORIGDSTADDR__func},
-#endif
-#if (IP_FREEBIND)
-  {"IP_FREEBIND", SetSocketOption__IP_FREEBIND__func},
-#endif
-#if (IP_RECVERR)
-  {"IP_RECVERR", SetSocketOption__IP_RECVERR__func},
-#endif
-#if (IP_OPTIONS)
-  {"IP_OPTIONS", SetSocketOption__IP_OPTIONS__func},
+#if (IPV6_MULTICAST_IF)
+  {"IPV6_MULTICAST_IF", SetSocketOption__IPV6_MULTICAST_IF__func},
 #endif
 #if (IP_MULTICAST_LOOP)
   {"IP_MULTICAST_LOOP", SetSocketOption__IP_MULTICAST_LOOP__func},
@@ -12024,104 +12003,122 @@ static const luaL_Reg obj_SetSocketOption_pub_funcs[] = {
 #if (IP_MINTTL)
   {"IP_MINTTL", SetSocketOption__IP_MINTTL__func},
 #endif
-#if (IP_ROUTER_ALERT)
-  {"IP_ROUTER_ALERT", SetSocketOption__IP_ROUTER_ALERT__func},
-#endif
-#if (IP_TTL)
-  {"IP_TTL", SetSocketOption__IP_TTL__func},
+#if (IP_MULTICAST_TTL)
+  {"IP_MULTICAST_TTL", SetSocketOption__IP_MULTICAST_TTL__func},
 #endif
 #if (IP_RECVTTL)
   {"IP_RECVTTL", SetSocketOption__IP_RECVTTL__func},
 #endif
-#if (IP_RECVRETOPTS)
-  {"IP_RECVRETOPTS", SetSocketOption__IP_RECVRETOPTS__func},
-#endif
 #if (IP_RECVOPTS)
   {"IP_RECVOPTS", SetSocketOption__IP_RECVOPTS__func},
 #endif
-#if (IP_HDRINCL)
-  {"IP_HDRINCL", SetSocketOption__IP_HDRINCL__func},
+#if (IP_RECVRETOPTS)
+  {"IP_RECVRETOPTS", SetSocketOption__IP_RECVRETOPTS__func},
 #endif
-#if (IP_MULTICAST_TTL)
-  {"IP_MULTICAST_TTL", SetSocketOption__IP_MULTICAST_TTL__func},
+#if (IP_RECVORIGDSTADDR)
+  {"IP_RECVORIGDSTADDR", SetSocketOption__IP_RECVORIGDSTADDR__func},
 #endif
-#if (IP_MTU_DISCOVER)
-  {"IP_MTU_DISCOVER", SetSocketOption__IP_MTU_DISCOVER__func},
+#if (IP_FREEBIND)
+  {"IP_FREEBIND", SetSocketOption__IP_FREEBIND__func},
 #endif
-#if (IP_TOS)
-  {"IP_TOS", SetSocketOption__IP_TOS__func},
+#if (IP_TTL)
+  {"IP_TTL", SetSocketOption__IP_TTL__func},
+#endif
+#if (IP_RECVTOS)
+  {"IP_RECVTOS", SetSocketOption__IP_RECVTOS__func},
+#endif
+#if (IP_RECVERR)
+  {"IP_RECVERR", SetSocketOption__IP_RECVERR__func},
 #endif
 #if (IP_RETOPTS)
   {"IP_RETOPTS", SetSocketOption__IP_RETOPTS__func},
 #endif
-#if (SO_RCVBUFFORCE)
-  {"SO_RCVBUFFORCE", SetSocketOption__SO_RCVBUFFORCE__func},
+#if (IP_TOS)
+  {"IP_TOS", SetSocketOption__IP_TOS__func},
 #endif
-#if (SO_DEBUG)
-  {"SO_DEBUG", SetSocketOption__SO_DEBUG__func},
+#if (IP_MTU_DISCOVER)
+  {"IP_MTU_DISCOVER", SetSocketOption__IP_MTU_DISCOVER__func},
 #endif
-#if (SO_REUSEADDR)
-  {"SO_REUSEADDR", SetSocketOption__SO_REUSEADDR__func},
+#if (IP_OPTIONS)
+  {"IP_OPTIONS", SetSocketOption__IP_OPTIONS__func},
 #endif
-#if (SO_PASSCRED)
-  {"SO_PASSCRED", SetSocketOption__SO_PASSCRED__func},
+#if (IP_PKTINFO)
+  {"IP_PKTINFO", SetSocketOption__IP_PKTINFO__func},
 #endif
-#if (SO_SNDLOWAT)
-  {"SO_SNDLOWAT", SetSocketOption__SO_SNDLOWAT__func},
+#if (IP_ROUTER_ALERT)
+  {"IP_ROUTER_ALERT", SetSocketOption__IP_ROUTER_ALERT__func},
 #endif
-#if (SO_SNDBUFFORCE)
-  {"SO_SNDBUFFORCE", SetSocketOption__SO_SNDBUFFORCE__func},
+#if (IP_MTU)
+  {"IP_MTU", SetSocketOption__IP_MTU__func},
 #endif
-#if (SO_MARK)
-  {"SO_MARK", SetSocketOption__SO_MARK__func},
-#endif
-#if (SO_RCVLOWAT)
-  {"SO_RCVLOWAT", SetSocketOption__SO_RCVLOWAT__func},
-#endif
-#if (SO_BSDCOMPAT)
-  {"SO_BSDCOMPAT", SetSocketOption__SO_BSDCOMPAT__func},
-#endif
-#if (SO_TIMESTAMPNS)
-  {"SO_TIMESTAMPNS", SetSocketOption__SO_TIMESTAMPNS__func},
-#endif
-#if (SO_TIMESTAMP)
-  {"SO_TIMESTAMP", SetSocketOption__SO_TIMESTAMP__func},
-#endif
-#if (SO_OOBINLINE)
-  {"SO_OOBINLINE", SetSocketOption__SO_OOBINLINE__func},
-#endif
-#if (SO_BINDTODEVICE)
-  {"SO_BINDTODEVICE", SetSocketOption__SO_BINDTODEVICE__func},
-#endif
-#if (SO_RCVBUF)
-  {"SO_RCVBUF", SetSocketOption__SO_RCVBUF__func},
-#endif
-#if (SO_TIMESTAMPING)
-  {"SO_TIMESTAMPING", SetSocketOption__SO_TIMESTAMPING__func},
-#endif
-#if (SO_PRIORITY)
-  {"SO_PRIORITY", SetSocketOption__SO_PRIORITY__func},
-#endif
-#if (SO_NO_CHECK)
-  {"SO_NO_CHECK", SetSocketOption__SO_NO_CHECK__func},
+#if (IP_HDRINCL)
+  {"IP_HDRINCL", SetSocketOption__IP_HDRINCL__func},
 #endif
 #if (SO_KEEPALIVE)
   {"SO_KEEPALIVE", SetSocketOption__SO_KEEPALIVE__func},
 #endif
+#if (SO_RCVLOWAT)
+  {"SO_RCVLOWAT", SetSocketOption__SO_RCVLOWAT__func},
+#endif
+#if (SO_SNDBUFFORCE)
+  {"SO_SNDBUFFORCE", SetSocketOption__SO_SNDBUFFORCE__func},
+#endif
+#if (SO_RCVBUF)
+  {"SO_RCVBUF", SetSocketOption__SO_RCVBUF__func},
+#endif
 #if (SO_DONTROUTE)
   {"SO_DONTROUTE", SetSocketOption__SO_DONTROUTE__func},
+#endif
+#if (SO_DEBUG)
+  {"SO_DEBUG", SetSocketOption__SO_DEBUG__func},
+#endif
+#if (SO_TIMESTAMPNS)
+  {"SO_TIMESTAMPNS", SetSocketOption__SO_TIMESTAMPNS__func},
+#endif
+#if (SO_MARK)
+  {"SO_MARK", SetSocketOption__SO_MARK__func},
+#endif
+#if (SO_TIMESTAMPING)
+  {"SO_TIMESTAMPING", SetSocketOption__SO_TIMESTAMPING__func},
+#endif
+#if (SO_TIMESTAMP)
+  {"SO_TIMESTAMP", SetSocketOption__SO_TIMESTAMP__func},
+#endif
+#if (SO_BINDTODEVICE)
+  {"SO_BINDTODEVICE", SetSocketOption__SO_BINDTODEVICE__func},
+#endif
+#if (SO_OOBINLINE)
+  {"SO_OOBINLINE", SetSocketOption__SO_OOBINLINE__func},
 #endif
 #if (SO_SNDBUF)
   {"SO_SNDBUF", SetSocketOption__SO_SNDBUF__func},
 #endif
+#if (SO_BSDCOMPAT)
+  {"SO_BSDCOMPAT", SetSocketOption__SO_BSDCOMPAT__func},
+#endif
+#if (SO_PRIORITY)
+  {"SO_PRIORITY", SetSocketOption__SO_PRIORITY__func},
+#endif
+#if (SO_RCVBUFFORCE)
+  {"SO_RCVBUFFORCE", SetSocketOption__SO_RCVBUFFORCE__func},
+#endif
+#if (SO_SNDLOWAT)
+  {"SO_SNDLOWAT", SetSocketOption__SO_SNDLOWAT__func},
+#endif
+#if (SO_PASSCRED)
+  {"SO_PASSCRED", SetSocketOption__SO_PASSCRED__func},
+#endif
+#if (SO_NO_CHECK)
+  {"SO_NO_CHECK", SetSocketOption__SO_NO_CHECK__func},
+#endif
 #if (SO_BROADCAST)
   {"SO_BROADCAST", SetSocketOption__SO_BROADCAST__func},
 #endif
-#if (TCP_MAXSEG)
-  {"TCP_MAXSEG", SetSocketOption__TCP_MAXSEG__func},
+#if (SO_REUSEADDR)
+  {"SO_REUSEADDR", SetSocketOption__SO_REUSEADDR__func},
 #endif
-#if (TCP_KEEPCNT)
-  {"TCP_KEEPCNT", SetSocketOption__TCP_KEEPCNT__func},
+#if (TCP_WINDOW_CLAMP)
+  {"TCP_WINDOW_CLAMP", SetSocketOption__TCP_WINDOW_CLAMP__func},
 #endif
 #if (TCP_KEEPINTVL)
   {"TCP_KEEPINTVL", SetSocketOption__TCP_KEEPINTVL__func},
@@ -12129,29 +12126,32 @@ static const luaL_Reg obj_SetSocketOption_pub_funcs[] = {
 #if (TCP_QUICKACK)
   {"TCP_QUICKACK", SetSocketOption__TCP_QUICKACK__func},
 #endif
-#if (TCP_KEEPIDLE)
-  {"TCP_KEEPIDLE", SetSocketOption__TCP_KEEPIDLE__func},
-#endif
-#if (TCP_CONGESTION)
-  {"TCP_CONGESTION", SetSocketOption__TCP_CONGESTION__func},
+#if (TCP_KEEPCNT)
+  {"TCP_KEEPCNT", SetSocketOption__TCP_KEEPCNT__func},
 #endif
 #if (TCP_CORK)
   {"TCP_CORK", SetSocketOption__TCP_CORK__func},
 #endif
-#if (TCP_LINGER2)
-  {"TCP_LINGER2", SetSocketOption__TCP_LINGER2__func},
+#if (TCP_MAXSEG)
+  {"TCP_MAXSEG", SetSocketOption__TCP_MAXSEG__func},
+#endif
+#if (TCP_KEEPIDLE)
+  {"TCP_KEEPIDLE", SetSocketOption__TCP_KEEPIDLE__func},
+#endif
+#if (TCP_SYNCNT)
+  {"TCP_SYNCNT", SetSocketOption__TCP_SYNCNT__func},
+#endif
+#if (TCP_CONGESTION)
+  {"TCP_CONGESTION", SetSocketOption__TCP_CONGESTION__func},
 #endif
 #if (TCP_DEFER_ACCEPT)
   {"TCP_DEFER_ACCEPT", SetSocketOption__TCP_DEFER_ACCEPT__func},
 #endif
-#if (TCP_WINDOW_CLAMP)
-  {"TCP_WINDOW_CLAMP", SetSocketOption__TCP_WINDOW_CLAMP__func},
-#endif
 #if (TCP_NODELAY)
   {"TCP_NODELAY", SetSocketOption__TCP_NODELAY__func},
 #endif
-#if (TCP_SYNCNT)
-  {"TCP_SYNCNT", SetSocketOption__TCP_SYNCNT__func},
+#if (TCP_LINGER2)
+  {"TCP_LINGER2", SetSocketOption__TCP_LINGER2__func},
 #endif
   {NULL, NULL}
 };
@@ -12165,29 +12165,38 @@ static const reg_impl obj_SetSocketOption_implements[] = {
 };
 
 static const luaL_Reg obj_GetSocketOption_pub_funcs[] = {
-#if (IPV6_NEXTHOP)
-  {"IPV6_NEXTHOP", GetSocketOption__IPV6_NEXTHOP__func},
+#if (IPV6_MTU)
+  {"IPV6_MTU", GetSocketOption__IPV6_MTU__func},
 #endif
 #if (IPV6_MULTICAST_LOOP)
   {"IPV6_MULTICAST_LOOP", GetSocketOption__IPV6_MULTICAST_LOOP__func},
 #endif
-#if (IPV6_RECVPKTINFO)
-  {"IPV6_RECVPKTINFO", GetSocketOption__IPV6_RECVPKTINFO__func},
+#if (IPV6_CHECKSUM)
+  {"IPV6_CHECKSUM", GetSocketOption__IPV6_CHECKSUM__func},
+#endif
+#if (IPV6_RECVDSTOPTS)
+  {"IPV6_RECVDSTOPTS", GetSocketOption__IPV6_RECVDSTOPTS__func},
+#endif
+#if (IPV6_ROUTER_ALERT)
+  {"IPV6_ROUTER_ALERT", GetSocketOption__IPV6_ROUTER_ALERT__func},
 #endif
 #if (IPV6_V6ONLY)
   {"IPV6_V6ONLY", GetSocketOption__IPV6_V6ONLY__func},
 #endif
-#if (IPV6_MTU_DISCOVER)
-  {"IPV6_MTU_DISCOVER", GetSocketOption__IPV6_MTU_DISCOVER__func},
+#if (IPV6_UNICAST_HOPS)
+  {"IPV6_UNICAST_HOPS", GetSocketOption__IPV6_UNICAST_HOPS__func},
+#endif
+#if (IPV6_NEXTHOP)
+  {"IPV6_NEXTHOP", GetSocketOption__IPV6_NEXTHOP__func},
+#endif
+#if (IPV6_RECVERR)
+  {"IPV6_RECVERR", GetSocketOption__IPV6_RECVERR__func},
 #endif
 #if (IPV6_HOPLIMIT)
   {"IPV6_HOPLIMIT", GetSocketOption__IPV6_HOPLIMIT__func},
 #endif
-#if (IPV6_UNICAST_HOPS)
-  {"IPV6_UNICAST_HOPS", GetSocketOption__IPV6_UNICAST_HOPS__func},
-#endif
-#if (IPV6_CHECKSUM)
-  {"IPV6_CHECKSUM", GetSocketOption__IPV6_CHECKSUM__func},
+#if (IPV6_RECVPKTINFO)
+  {"IPV6_RECVPKTINFO", GetSocketOption__IPV6_RECVPKTINFO__func},
 #endif
 #if (IPV6_RECVTCLASS)
   {"IPV6_RECVTCLASS", GetSocketOption__IPV6_RECVTCLASS__func},
@@ -12195,53 +12204,23 @@ static const luaL_Reg obj_GetSocketOption_pub_funcs[] = {
 #if (IPV6_MULTICAST_HOPS)
   {"IPV6_MULTICAST_HOPS", GetSocketOption__IPV6_MULTICAST_HOPS__func},
 #endif
-#if (IPV6_ROUTER_ALERT)
-  {"IPV6_ROUTER_ALERT", GetSocketOption__IPV6_ROUTER_ALERT__func},
-#endif
 #if (IPV6_RECVHOPOPTS)
   {"IPV6_RECVHOPOPTS", GetSocketOption__IPV6_RECVHOPOPTS__func},
-#endif
-#if (IPV6_RECVERR)
-  {"IPV6_RECVERR", GetSocketOption__IPV6_RECVERR__func},
 #endif
 #if (IPV6_TCLASS)
   {"IPV6_TCLASS", GetSocketOption__IPV6_TCLASS__func},
 #endif
-#if (IPV6_MULTICAST_IF)
-  {"IPV6_MULTICAST_IF", GetSocketOption__IPV6_MULTICAST_IF__func},
+#if (IPV6_RECVHOPLIMIT)
+  {"IPV6_RECVHOPLIMIT", GetSocketOption__IPV6_RECVHOPLIMIT__func},
 #endif
 #if (IPV6_RECVRTHDR)
   {"IPV6_RECVRTHDR", GetSocketOption__IPV6_RECVRTHDR__func},
 #endif
-#if (IPV6_RECVDSTOPTS)
-  {"IPV6_RECVDSTOPTS", GetSocketOption__IPV6_RECVDSTOPTS__func},
+#if (IPV6_MTU_DISCOVER)
+  {"IPV6_MTU_DISCOVER", GetSocketOption__IPV6_MTU_DISCOVER__func},
 #endif
-#if (IPV6_RECVHOPLIMIT)
-  {"IPV6_RECVHOPLIMIT", GetSocketOption__IPV6_RECVHOPLIMIT__func},
-#endif
-#if (IPV6_MTU)
-  {"IPV6_MTU", GetSocketOption__IPV6_MTU__func},
-#endif
-#if (IP_MTU)
-  {"IP_MTU", GetSocketOption__IP_MTU__func},
-#endif
-#if (IP_RECVTOS)
-  {"IP_RECVTOS", GetSocketOption__IP_RECVTOS__func},
-#endif
-#if (IP_PKTINFO)
-  {"IP_PKTINFO", GetSocketOption__IP_PKTINFO__func},
-#endif
-#if (IP_RECVORIGDSTADDR)
-  {"IP_RECVORIGDSTADDR", GetSocketOption__IP_RECVORIGDSTADDR__func},
-#endif
-#if (IP_FREEBIND)
-  {"IP_FREEBIND", GetSocketOption__IP_FREEBIND__func},
-#endif
-#if (IP_RECVERR)
-  {"IP_RECVERR", GetSocketOption__IP_RECVERR__func},
-#endif
-#if (IP_OPTIONS)
-  {"IP_OPTIONS", GetSocketOption__IP_OPTIONS__func},
+#if (IPV6_MULTICAST_IF)
+  {"IPV6_MULTICAST_IF", GetSocketOption__IPV6_MULTICAST_IF__func},
 #endif
 #if (IP_MULTICAST_LOOP)
   {"IP_MULTICAST_LOOP", GetSocketOption__IP_MULTICAST_LOOP__func},
@@ -12249,119 +12228,137 @@ static const luaL_Reg obj_GetSocketOption_pub_funcs[] = {
 #if (IP_MINTTL)
   {"IP_MINTTL", GetSocketOption__IP_MINTTL__func},
 #endif
-#if (IP_ROUTER_ALERT)
-  {"IP_ROUTER_ALERT", GetSocketOption__IP_ROUTER_ALERT__func},
-#endif
-#if (IP_TTL)
-  {"IP_TTL", GetSocketOption__IP_TTL__func},
+#if (IP_MULTICAST_TTL)
+  {"IP_MULTICAST_TTL", GetSocketOption__IP_MULTICAST_TTL__func},
 #endif
 #if (IP_RECVTTL)
   {"IP_RECVTTL", GetSocketOption__IP_RECVTTL__func},
 #endif
-#if (IP_RECVRETOPTS)
-  {"IP_RECVRETOPTS", GetSocketOption__IP_RECVRETOPTS__func},
-#endif
 #if (IP_RECVOPTS)
   {"IP_RECVOPTS", GetSocketOption__IP_RECVOPTS__func},
 #endif
-#if (IP_HDRINCL)
-  {"IP_HDRINCL", GetSocketOption__IP_HDRINCL__func},
+#if (IP_RECVRETOPTS)
+  {"IP_RECVRETOPTS", GetSocketOption__IP_RECVRETOPTS__func},
 #endif
-#if (IP_MULTICAST_TTL)
-  {"IP_MULTICAST_TTL", GetSocketOption__IP_MULTICAST_TTL__func},
+#if (IP_RECVORIGDSTADDR)
+  {"IP_RECVORIGDSTADDR", GetSocketOption__IP_RECVORIGDSTADDR__func},
 #endif
-#if (IP_MTU_DISCOVER)
-  {"IP_MTU_DISCOVER", GetSocketOption__IP_MTU_DISCOVER__func},
+#if (IP_FREEBIND)
+  {"IP_FREEBIND", GetSocketOption__IP_FREEBIND__func},
 #endif
-#if (IP_TOS)
-  {"IP_TOS", GetSocketOption__IP_TOS__func},
+#if (IP_TTL)
+  {"IP_TTL", GetSocketOption__IP_TTL__func},
+#endif
+#if (IP_RECVTOS)
+  {"IP_RECVTOS", GetSocketOption__IP_RECVTOS__func},
+#endif
+#if (IP_RECVERR)
+  {"IP_RECVERR", GetSocketOption__IP_RECVERR__func},
 #endif
 #if (IP_RETOPTS)
   {"IP_RETOPTS", GetSocketOption__IP_RETOPTS__func},
 #endif
-#if (SO_PROTOCOL)
-  {"SO_PROTOCOL", GetSocketOption__SO_PROTOCOL__func},
+#if (IP_TOS)
+  {"IP_TOS", GetSocketOption__IP_TOS__func},
 #endif
-#if (SO_RCVBUFFORCE)
-  {"SO_RCVBUFFORCE", GetSocketOption__SO_RCVBUFFORCE__func},
+#if (IP_MTU_DISCOVER)
+  {"IP_MTU_DISCOVER", GetSocketOption__IP_MTU_DISCOVER__func},
 #endif
-#if (SO_ERROR)
-  {"SO_ERROR", GetSocketOption__SO_ERROR__func},
+#if (IP_OPTIONS)
+  {"IP_OPTIONS", GetSocketOption__IP_OPTIONS__func},
 #endif
-#if (SO_DOMAIN)
-  {"SO_DOMAIN", GetSocketOption__SO_DOMAIN__func},
+#if (IP_PKTINFO)
+  {"IP_PKTINFO", GetSocketOption__IP_PKTINFO__func},
 #endif
-#if (SO_DEBUG)
-  {"SO_DEBUG", GetSocketOption__SO_DEBUG__func},
+#if (IP_ROUTER_ALERT)
+  {"IP_ROUTER_ALERT", GetSocketOption__IP_ROUTER_ALERT__func},
 #endif
-#if (SO_REUSEADDR)
-  {"SO_REUSEADDR", GetSocketOption__SO_REUSEADDR__func},
+#if (IP_MTU)
+  {"IP_MTU", GetSocketOption__IP_MTU__func},
 #endif
-#if (SO_PASSCRED)
-  {"SO_PASSCRED", GetSocketOption__SO_PASSCRED__func},
-#endif
-#if (SO_SNDLOWAT)
-  {"SO_SNDLOWAT", GetSocketOption__SO_SNDLOWAT__func},
-#endif
-#if (SO_SNDBUFFORCE)
-  {"SO_SNDBUFFORCE", GetSocketOption__SO_SNDBUFFORCE__func},
-#endif
-#if (SO_MARK)
-  {"SO_MARK", GetSocketOption__SO_MARK__func},
-#endif
-#if (SO_RCVLOWAT)
-  {"SO_RCVLOWAT", GetSocketOption__SO_RCVLOWAT__func},
-#endif
-#if (SO_BSDCOMPAT)
-  {"SO_BSDCOMPAT", GetSocketOption__SO_BSDCOMPAT__func},
-#endif
-#if (SO_TYPE)
-  {"SO_TYPE", GetSocketOption__SO_TYPE__func},
-#endif
-#if (SO_TIMESTAMPNS)
-  {"SO_TIMESTAMPNS", GetSocketOption__SO_TIMESTAMPNS__func},
-#endif
-#if (SO_TIMESTAMP)
-  {"SO_TIMESTAMP", GetSocketOption__SO_TIMESTAMP__func},
-#endif
-#if (SO_ACCEPTCONN)
-  {"SO_ACCEPTCONN", GetSocketOption__SO_ACCEPTCONN__func},
-#endif
-#if (SO_OOBINLINE)
-  {"SO_OOBINLINE", GetSocketOption__SO_OOBINLINE__func},
-#endif
-#if (SO_BINDTODEVICE)
-  {"SO_BINDTODEVICE", GetSocketOption__SO_BINDTODEVICE__func},
-#endif
-#if (SO_RCVBUF)
-  {"SO_RCVBUF", GetSocketOption__SO_RCVBUF__func},
-#endif
-#if (SO_TIMESTAMPING)
-  {"SO_TIMESTAMPING", GetSocketOption__SO_TIMESTAMPING__func},
-#endif
-#if (SO_PRIORITY)
-  {"SO_PRIORITY", GetSocketOption__SO_PRIORITY__func},
-#endif
-#if (SO_NO_CHECK)
-  {"SO_NO_CHECK", GetSocketOption__SO_NO_CHECK__func},
+#if (IP_HDRINCL)
+  {"IP_HDRINCL", GetSocketOption__IP_HDRINCL__func},
 #endif
 #if (SO_KEEPALIVE)
   {"SO_KEEPALIVE", GetSocketOption__SO_KEEPALIVE__func},
 #endif
+#if (SO_RCVLOWAT)
+  {"SO_RCVLOWAT", GetSocketOption__SO_RCVLOWAT__func},
+#endif
+#if (SO_TYPE)
+  {"SO_TYPE", GetSocketOption__SO_TYPE__func},
+#endif
+#if (SO_SNDBUFFORCE)
+  {"SO_SNDBUFFORCE", GetSocketOption__SO_SNDBUFFORCE__func},
+#endif
+#if (SO_RCVBUF)
+  {"SO_RCVBUF", GetSocketOption__SO_RCVBUF__func},
+#endif
 #if (SO_DONTROUTE)
   {"SO_DONTROUTE", GetSocketOption__SO_DONTROUTE__func},
+#endif
+#if (SO_DEBUG)
+  {"SO_DEBUG", GetSocketOption__SO_DEBUG__func},
+#endif
+#if (SO_TIMESTAMPNS)
+  {"SO_TIMESTAMPNS", GetSocketOption__SO_TIMESTAMPNS__func},
+#endif
+#if (SO_PROTOCOL)
+  {"SO_PROTOCOL", GetSocketOption__SO_PROTOCOL__func},
+#endif
+#if (SO_MARK)
+  {"SO_MARK", GetSocketOption__SO_MARK__func},
+#endif
+#if (SO_TIMESTAMPING)
+  {"SO_TIMESTAMPING", GetSocketOption__SO_TIMESTAMPING__func},
+#endif
+#if (SO_DOMAIN)
+  {"SO_DOMAIN", GetSocketOption__SO_DOMAIN__func},
+#endif
+#if (SO_TIMESTAMP)
+  {"SO_TIMESTAMP", GetSocketOption__SO_TIMESTAMP__func},
+#endif
+#if (SO_BINDTODEVICE)
+  {"SO_BINDTODEVICE", GetSocketOption__SO_BINDTODEVICE__func},
+#endif
+#if (SO_OOBINLINE)
+  {"SO_OOBINLINE", GetSocketOption__SO_OOBINLINE__func},
+#endif
+#if (SO_ERROR)
+  {"SO_ERROR", GetSocketOption__SO_ERROR__func},
 #endif
 #if (SO_SNDBUF)
   {"SO_SNDBUF", GetSocketOption__SO_SNDBUF__func},
 #endif
+#if (SO_ACCEPTCONN)
+  {"SO_ACCEPTCONN", GetSocketOption__SO_ACCEPTCONN__func},
+#endif
+#if (SO_BSDCOMPAT)
+  {"SO_BSDCOMPAT", GetSocketOption__SO_BSDCOMPAT__func},
+#endif
+#if (SO_PRIORITY)
+  {"SO_PRIORITY", GetSocketOption__SO_PRIORITY__func},
+#endif
+#if (SO_RCVBUFFORCE)
+  {"SO_RCVBUFFORCE", GetSocketOption__SO_RCVBUFFORCE__func},
+#endif
+#if (SO_SNDLOWAT)
+  {"SO_SNDLOWAT", GetSocketOption__SO_SNDLOWAT__func},
+#endif
+#if (SO_PASSCRED)
+  {"SO_PASSCRED", GetSocketOption__SO_PASSCRED__func},
+#endif
+#if (SO_NO_CHECK)
+  {"SO_NO_CHECK", GetSocketOption__SO_NO_CHECK__func},
+#endif
 #if (SO_BROADCAST)
   {"SO_BROADCAST", GetSocketOption__SO_BROADCAST__func},
 #endif
-#if (TCP_MAXSEG)
-  {"TCP_MAXSEG", GetSocketOption__TCP_MAXSEG__func},
+#if (SO_REUSEADDR)
+  {"SO_REUSEADDR", GetSocketOption__SO_REUSEADDR__func},
 #endif
-#if (TCP_KEEPCNT)
-  {"TCP_KEEPCNT", GetSocketOption__TCP_KEEPCNT__func},
+#if (TCP_WINDOW_CLAMP)
+  {"TCP_WINDOW_CLAMP", GetSocketOption__TCP_WINDOW_CLAMP__func},
 #endif
 #if (TCP_KEEPINTVL)
   {"TCP_KEEPINTVL", GetSocketOption__TCP_KEEPINTVL__func},
@@ -12369,29 +12366,32 @@ static const luaL_Reg obj_GetSocketOption_pub_funcs[] = {
 #if (TCP_QUICKACK)
   {"TCP_QUICKACK", GetSocketOption__TCP_QUICKACK__func},
 #endif
-#if (TCP_KEEPIDLE)
-  {"TCP_KEEPIDLE", GetSocketOption__TCP_KEEPIDLE__func},
-#endif
-#if (TCP_CONGESTION)
-  {"TCP_CONGESTION", GetSocketOption__TCP_CONGESTION__func},
+#if (TCP_KEEPCNT)
+  {"TCP_KEEPCNT", GetSocketOption__TCP_KEEPCNT__func},
 #endif
 #if (TCP_CORK)
   {"TCP_CORK", GetSocketOption__TCP_CORK__func},
 #endif
-#if (TCP_LINGER2)
-  {"TCP_LINGER2", GetSocketOption__TCP_LINGER2__func},
+#if (TCP_MAXSEG)
+  {"TCP_MAXSEG", GetSocketOption__TCP_MAXSEG__func},
+#endif
+#if (TCP_KEEPIDLE)
+  {"TCP_KEEPIDLE", GetSocketOption__TCP_KEEPIDLE__func},
+#endif
+#if (TCP_SYNCNT)
+  {"TCP_SYNCNT", GetSocketOption__TCP_SYNCNT__func},
+#endif
+#if (TCP_CONGESTION)
+  {"TCP_CONGESTION", GetSocketOption__TCP_CONGESTION__func},
 #endif
 #if (TCP_DEFER_ACCEPT)
   {"TCP_DEFER_ACCEPT", GetSocketOption__TCP_DEFER_ACCEPT__func},
 #endif
-#if (TCP_WINDOW_CLAMP)
-  {"TCP_WINDOW_CLAMP", GetSocketOption__TCP_WINDOW_CLAMP__func},
-#endif
 #if (TCP_NODELAY)
   {"TCP_NODELAY", GetSocketOption__TCP_NODELAY__func},
 #endif
-#if (TCP_SYNCNT)
-  {"TCP_SYNCNT", GetSocketOption__TCP_SYNCNT__func},
+#if (TCP_LINGER2)
+  {"TCP_LINGER2", GetSocketOption__TCP_LINGER2__func},
 #endif
   {NULL, NULL}
 };
@@ -12510,80 +12510,80 @@ static const luaL_Reg llnet_function[] = {
 };
 
 static const obj_const llnet_constants[] = {
-#ifdef IPV6_PMTUDISC_PROBE
-  {"IPV6_PMTUDISC_PROBE", NULL, IPV6_PMTUDISC_PROBE, CONST_NUMBER},
-#endif
-#ifdef SOCK_RDM
-  {"SOCK_RDM", NULL, SOCK_RDM, CONST_NUMBER},
-#endif
-#ifdef AF_INET
-  {"AF_INET", NULL, AF_INET, CONST_NUMBER},
-#endif
-#ifdef SOCK_DGRAM
-  {"SOCK_DGRAM", NULL, SOCK_DGRAM, CONST_NUMBER},
-#endif
-#ifdef IPV6_PMTUDISC_WANT
-  {"IPV6_PMTUDISC_WANT", NULL, IPV6_PMTUDISC_WANT, CONST_NUMBER},
-#endif
-#ifdef SOCK_NONBLOCK
-  {"SOCK_NONBLOCK", NULL, SOCK_NONBLOCK, CONST_NUMBER},
-#endif
-#ifdef AF_PACKET
-  {"AF_PACKET", NULL, AF_PACKET, CONST_NUMBER},
-#endif
-#ifdef IP_PMTUDISC_WANT
-  {"IP_PMTUDISC_WANT", NULL, IP_PMTUDISC_WANT, CONST_NUMBER},
-#endif
-#ifdef AF_UNSPEC
-  {"AF_UNSPEC", NULL, AF_UNSPEC, CONST_NUMBER},
-#endif
-#ifdef IP_PMTUDISC_DONT
-  {"IP_PMTUDISC_DONT", NULL, IP_PMTUDISC_DONT, CONST_NUMBER},
-#endif
-#ifdef IPV6_PMTUDISC_DONT
-  {"IPV6_PMTUDISC_DONT", NULL, IPV6_PMTUDISC_DONT, CONST_NUMBER},
-#endif
-#ifdef SOCK_CLOEXEC
-  {"SOCK_CLOEXEC", NULL, SOCK_CLOEXEC, CONST_NUMBER},
-#endif
-#ifdef AF_UNIX
-  {"AF_UNIX", NULL, AF_UNIX, CONST_NUMBER},
-#endif
-#ifdef IPV6_PMTUDISC_DO
-  {"IPV6_PMTUDISC_DO", NULL, IPV6_PMTUDISC_DO, CONST_NUMBER},
-#endif
-#ifdef SOCK_RAW
-  {"SOCK_RAW", NULL, SOCK_RAW, CONST_NUMBER},
-#endif
-#ifdef SOCK_STREAM
-  {"SOCK_STREAM", NULL, SOCK_STREAM, CONST_NUMBER},
-#endif
 #ifdef SOCK_SEQPACKET
   {"SOCK_SEQPACKET", NULL, SOCK_SEQPACKET, CONST_NUMBER},
-#endif
-#ifdef IPV6_RTHDR_TYPE_0
-  {"IPV6_RTHDR_TYPE_0", NULL, IPV6_RTHDR_TYPE_0, CONST_NUMBER},
-#endif
-#ifdef IPV6_RTHDR_STRICT
-  {"IPV6_RTHDR_STRICT", NULL, IPV6_RTHDR_STRICT, CONST_NUMBER},
-#endif
-#ifdef IPV6_RTHDR_LOOSE
-  {"IPV6_RTHDR_LOOSE", NULL, IPV6_RTHDR_LOOSE, CONST_NUMBER},
 #endif
 #ifdef IP_PMTUDISC_PROBE
   {"IP_PMTUDISC_PROBE", NULL, IP_PMTUDISC_PROBE, CONST_NUMBER},
 #endif
-#ifdef IP_PMTUDISC_DO
-  {"IP_PMTUDISC_DO", NULL, IP_PMTUDISC_DO, CONST_NUMBER},
+#ifdef AF_UNSPEC
+  {"AF_UNSPEC", NULL, AF_UNSPEC, CONST_NUMBER},
 #endif
-#ifdef AF_INET6
-  {"AF_INET6", NULL, AF_INET6, CONST_NUMBER},
+#ifdef AF_INET
+  {"AF_INET", NULL, AF_INET, CONST_NUMBER},
+#endif
+#ifdef AF_IPX
+  {"AF_IPX", NULL, AF_IPX, CONST_NUMBER},
+#endif
+#ifdef IPV6_RTHDR_TYPE_0
+  {"IPV6_RTHDR_TYPE_0", NULL, IPV6_RTHDR_TYPE_0, CONST_NUMBER},
+#endif
+#ifdef SOCK_CLOEXEC
+  {"SOCK_CLOEXEC", NULL, SOCK_CLOEXEC, CONST_NUMBER},
+#endif
+#ifdef IPV6_RTHDR_STRICT
+  {"IPV6_RTHDR_STRICT", NULL, IPV6_RTHDR_STRICT, CONST_NUMBER},
+#endif
+#ifdef SOCK_RAW
+  {"SOCK_RAW", NULL, SOCK_RAW, CONST_NUMBER},
+#endif
+#ifdef SOCK_RDM
+  {"SOCK_RDM", NULL, SOCK_RDM, CONST_NUMBER},
+#endif
+#ifdef IP_PMTUDISC_DONT
+  {"IP_PMTUDISC_DONT", NULL, IP_PMTUDISC_DONT, CONST_NUMBER},
+#endif
+#ifdef SOCK_DGRAM
+  {"SOCK_DGRAM", NULL, SOCK_DGRAM, CONST_NUMBER},
 #endif
 #ifdef AF_NETLINK
   {"AF_NETLINK", NULL, AF_NETLINK, CONST_NUMBER},
 #endif
-#ifdef AF_IPX
-  {"AF_IPX", NULL, AF_IPX, CONST_NUMBER},
+#ifdef IPV6_RTHDR_LOOSE
+  {"IPV6_RTHDR_LOOSE", NULL, IPV6_RTHDR_LOOSE, CONST_NUMBER},
+#endif
+#ifdef IPV6_PMTUDISC_PROBE
+  {"IPV6_PMTUDISC_PROBE", NULL, IPV6_PMTUDISC_PROBE, CONST_NUMBER},
+#endif
+#ifdef IPV6_PMTUDISC_DO
+  {"IPV6_PMTUDISC_DO", NULL, IPV6_PMTUDISC_DO, CONST_NUMBER},
+#endif
+#ifdef AF_UNIX
+  {"AF_UNIX", NULL, AF_UNIX, CONST_NUMBER},
+#endif
+#ifdef IPV6_PMTUDISC_WANT
+  {"IPV6_PMTUDISC_WANT", NULL, IPV6_PMTUDISC_WANT, CONST_NUMBER},
+#endif
+#ifdef SOCK_STREAM
+  {"SOCK_STREAM", NULL, SOCK_STREAM, CONST_NUMBER},
+#endif
+#ifdef IPV6_PMTUDISC_DONT
+  {"IPV6_PMTUDISC_DONT", NULL, IPV6_PMTUDISC_DONT, CONST_NUMBER},
+#endif
+#ifdef AF_PACKET
+  {"AF_PACKET", NULL, AF_PACKET, CONST_NUMBER},
+#endif
+#ifdef SOCK_NONBLOCK
+  {"SOCK_NONBLOCK", NULL, SOCK_NONBLOCK, CONST_NUMBER},
+#endif
+#ifdef AF_INET6
+  {"AF_INET6", NULL, AF_INET6, CONST_NUMBER},
+#endif
+#ifdef IP_PMTUDISC_WANT
+  {"IP_PMTUDISC_WANT", NULL, IP_PMTUDISC_WANT, CONST_NUMBER},
+#endif
+#ifdef IP_PMTUDISC_DO
+  {"IP_PMTUDISC_DO", NULL, IP_PMTUDISC_DO, CONST_NUMBER},
 #endif
   {NULL, NULL, 0.0 , 0}
 };

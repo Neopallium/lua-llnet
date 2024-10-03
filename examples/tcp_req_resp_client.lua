@@ -117,7 +117,7 @@ local checkpoint = math.floor(requests / progress_units)
 local percent = 0
 local function print_progress()
 	percent = percent + progress_units
-	stdout:write(sformat("progress: %i%% done\n", percent))
+	stdout:write(sformat("progress: %f%% done\n", percent))
 end
 
 local READ_LEN = 2 * 1024
@@ -243,9 +243,9 @@ local throughput = done / (elapsed / 1000000)
 
 print(sformat([[
 
-finished in %i sec, %i millisec and %i microsec, %i req/s
-requests: %i total, %i started, %i done, %i succeeded, %i failed, %i errored
-connections: %i total, %i concurrent
+finished in %f sec, %f millisec and %f microsec, %f req/s
+requests: %f total, %f started, %f done, %f succeeded, %f failed, %f errored
+connections: %f total, %f concurrent
 ]],
 (elapsed / 1000000), (elapsed / 1000) % 1000, (elapsed % 1000), throughput,
 requests, started, done, succeeded, failed, errored,
